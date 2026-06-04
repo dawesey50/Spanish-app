@@ -96,7 +96,7 @@ export default function OnboardingScreen() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [unitScores, setUnitScores] = useState([0, 0, 0]);
+  const [unitScores, setUnitScores] = useState([0, 0, 0, 0]);
 
   const current = PLACEMENT_QUESTIONS[questionIndex];
 
@@ -124,9 +124,9 @@ export default function OnboardingScreen() {
   };
 
   const determineStartUnit = (): number => {
-    const maxPossible = [3, 4, 3];
-    const thresholds = maxPossible.map((m, i) => unitScores[i] / m >= 0.7);
-    if (thresholds[0] && thresholds[1] && thresholds[2]) return 2;
+    const maxPossible = [3, 4, 3, 0]; // unit 4 has no placement questions yet
+    const thresholds = maxPossible.map((m, i) => m === 0 ? false : unitScores[i] / m >= 0.7);
+    if (thresholds[0] && thresholds[1] && thresholds[2]) return 3;
     if (thresholds[0] && thresholds[1]) return 2;
     if (thresholds[0]) return 1;
     return 0;

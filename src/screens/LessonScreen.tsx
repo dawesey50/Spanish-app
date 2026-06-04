@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,150 +10,86 @@ import {
   Platform,
   Animated,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
 import * as Speech from 'expo-speech';
-import type { RootStackParamList, Question, Correction } from '../types';
-import { LESSONS_BY_ID } from '../data/units';
+import type { RootStackParamList, Correction } from '../types';
+import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
 import { completeLesson, recordWrongAnswer } from '../database/db';
+import { buildQuestions, isCorrect } from '../utils/questionGenerator';
+import HeartsDisplay from '../components/HeartsDisplay';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Lesson'>;
 
+const MAX_HEARTS = 3;
 const XP_PER_CORRECT = 10;
-const XP_PER_LESSON_BONUS = 20;
+const XP_LESSON_BONUS = 20;
+const XP_HEART_BONUS = 10;
 
-function buildQuestions(lessonId: string): Question[] {
-  const lesson = LESSONS_BY_ID[lessonId];
-  if (!lesson) return [];
-
-  const questions: Question[] = [];
-
-  lesson.wordIds.forEach((wordId) => {
-    const word = WORDS_BY_ID[wordId];
-    if (!word) return;
-
-    const allWords = Object.values(WORDS_BY_ID);
-    const distractors = allWords
-      .filter((w) => w.id !== wordId)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-      .map((w) => w.english);
-
-    const options = [...distractors, word.english].sort(() => Math.random() - 0.5);
-
-    questions.push({
-      id: `q_mc_${wordId}`,
-      type: 'multipleChoice',
-      wordId,
-      prompt: `What does "${word.spanish}" mean?`,
-      correctAnswer: word.english,
-      options,
-    });
-
-    if (lesson.questionTypes.includes('typing')) {
-      questions.push({
-        id: `q_type_${wordId}`,
-        type: 'typing',
-        wordId,
-        prompt: `Type the Spanish for: "${word.english}"`,
-        correctAnswer: word.spanish,
-      });
-    }
-
-    if (lesson.questionTypes.includes('listening')) {
-      questions.push({
-        id: `q_listen_${wordId}`,
-        type: 'listening',
-        wordId,
-        prompt: 'Listen and type what you hear:',
-        correctAnswer: word.spanish,
-        audioText: word.spanish,
-        options,
-      });
-    }
-  });
-
-  return questions.sort(() => Math.random() - 0.5).slice(0, 10);
-}
-
-function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[¿¡]/g, '');
-}
-
-function isCorrect(answer: string, correct: string): boolean {
-  const a = normalize(answer);
-  const c = normalize(correct);
-  if (a === c) return true;
-  // allow 1 typo for strings longer than 4 chars
-  if (c.length > 4 && levenshtein(a, c) === 1) return true;
-  return false;
-}
-
-function levenshtein(a: string, b: string): number {
-  const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
-  );
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      dp[i][j] =
-        a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-    }
-  }
-  return dp[a.length][b.length];
-}
+type Phase = 'preview' | 'quiz' | 'no_hearts';
 
 export default function LessonScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { lessonId } = route.params;
 
-  const [questions] = useState(() => buildQuestions(lessonId));
+  const lesson = LESSONS_BY_ID[lessonId];
+  const unit = lesson ? UNITS_BY_ID[lesson.unitId] : null;
+
+  const [phase, setPhase] = useState<Phase>('preview');
+  const [questions, setQuestions] = useState(() => buildQuestions(lessonId));
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [typedAnswer, setTypedAnswer] = useState('');
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [hearts, setHearts] = useState(MAX_HEARTS);
   const [corrections, setCorrections] = useState<Correction[]>([]);
+
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const heartAnim = useRef(new Animated.Value(1)).current;
 
   const current = questions[index];
 
   useEffect(() => {
+    if (phase !== 'quiz') return;
     Animated.timing(progressAnim, {
       toValue: index / questions.length,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [index]);
+  }, [index, phase]);
 
   useEffect(() => {
+    if (phase !== 'quiz') return;
     if (current?.type === 'listening' && current.audioText) {
-      Speech.speak(current.audioText, { language: 'es', rate: 0.8 });
+      setTimeout(() => Speech.speak(current.audioText!, { language: 'es-ES', rate: 0.8 }), 400);
     }
-  }, [index]);
+  }, [index, phase]);
 
   const shake = () => {
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 12, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -12, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const pulseHeart = () => {
+    Animated.sequence([
+      Animated.timing(heartAnim, { toValue: 1.4, duration: 100, useNativeDriver: true }),
+      Animated.timing(heartAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
     ]).start();
   };
 
   const checkAnswer = (answer: string) => {
-    if (revealed) return;
+    if (revealed || !current) return;
     const correct = isCorrect(answer, current.correctAnswer);
     setSelected(answer);
     setRevealed(true);
@@ -163,14 +99,21 @@ export default function LessonScreen() {
     } else {
       shake();
       recordWrongAnswer(current.wordId);
+      const newHearts = hearts - 1;
+      setHearts(newHearts);
+      pulseHeart();
       setCorrections((prev) => [
         ...prev,
         {
-          original: answer,
+          original: answer || '(no answer)',
           corrected: current.correctAnswer,
-          explanation: `"${answer}" is incorrect. The correct answer is "${current.correctAnswer}".`,
+          explanation: `"${answer || '(blank)'}" is incorrect. The correct answer is "${current.correctAnswer}".`,
         },
       ]);
+      if (newHearts <= 0) {
+        // Short delay so the user sees the wrong answer highlighted before overlay
+        setTimeout(() => setPhase('no_hearts'), 800);
+      }
     }
   };
 
@@ -181,7 +124,7 @@ export default function LessonScreen() {
 
     if (index + 1 >= questions.length) {
       const score = Math.round((correctCount / questions.length) * 100);
-      const xpEarned = correctCount * XP_PER_CORRECT + XP_PER_LESSON_BONUS;
+      const xpEarned = correctCount * XP_PER_CORRECT + XP_LESSON_BONUS + hearts * XP_HEART_BONUS;
       await completeLesson(lessonId, score, xpEarned);
       navigation.replace('Results', { lessonId, score, xpEarned, corrections });
     } else {
@@ -189,18 +132,91 @@ export default function LessonScreen() {
     }
   };
 
+  const restartLesson = () => {
+    setQuestions(buildQuestions(lessonId));
+    setIndex(0);
+    setSelected(null);
+    setTypedAnswer('');
+    setRevealed(false);
+    setCorrectCount(0);
+    setHearts(MAX_HEARTS);
+    setCorrections([]);
+    setPhase('quiz');
+  };
+
   const confirmQuit = () => {
-    Alert.alert('Quit Lesson?', 'Your progress will not be saved.', [
+    Alert.alert('Quit Lesson?', 'Your progress in this lesson will not be saved.', [
       { text: 'Keep Going', style: 'cancel' },
       { text: 'Quit', style: 'destructive', onPress: () => navigation.goBack() },
     ]);
   };
 
-  if (!current) return null;
+  // ─── Preview screen ──────────────────────────────────────────────────────────
+  if (phase === 'preview') {
+    const words = lesson?.wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean) ?? [];
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.previewHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.quitBtn}>
+            <Text style={styles.quitText}>✕</Text>
+          </TouchableOpacity>
+          <Text style={styles.previewHeaderTitle} numberOfLines={1}>
+            {lesson?.title ?? lessonId}
+          </Text>
+          <View style={{ width: 32 }} />
+        </View>
 
-  const answerGiven = current.type === 'typing' || current.type === 'listening'
-    ? typedAnswer.trim().length > 0
-    : selected !== null;
+        <ScrollView contentContainerStyle={styles.previewScroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.previewUnit}>{unit?.title}</Text>
+          <Text style={styles.previewTitle}>{lesson?.title}</Text>
+          <Text style={styles.previewDesc}>
+            {words.length} words · {questions.length} questions · {MAX_HEARTS} lives
+          </Text>
+
+          <Text style={styles.previewWordsLabel}>Words in this lesson</Text>
+          <View style={styles.previewWordList}>
+            {words.map((w) => (
+              <View key={w.id} style={styles.previewWordRow}>
+                <Text style={styles.previewWordSpanish}>{w.spanish}</Text>
+                <Text style={styles.previewWordArrow}>→</Text>
+                <Text style={styles.previewWordEnglish}>{w.english}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        <View style={styles.previewFooter}>
+          <TouchableOpacity style={styles.startBtn} onPress={() => setPhase('quiz')}>
+            <Text style={styles.startBtnText}>Start Lesson →</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── No hearts overlay ───────────────────────────────────────────────────────
+  if (phase === 'no_hearts') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.noHeartsContainer}>
+          <Text style={styles.noHeartsEmoji}>💔</Text>
+          <Text style={styles.noHeartsTitle}>No Hearts Left</Text>
+          <Text style={styles.noHeartsDesc}>
+            You ran out of lives. Try again — you'll get it!
+          </Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={restartLesson}>
+            <Text style={styles.retryBtnText}>Try Again</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quitLinkBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.quitLinkText}>Back to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Quiz ────────────────────────────────────────────────────────────────────
+  if (!current) return null;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -208,11 +224,12 @@ export default function LessonScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Progress bar */}
+        {/* Top bar */}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={confirmQuit} style={styles.quitBtn}>
             <Text style={styles.quitText}>✕</Text>
           </TouchableOpacity>
+
           <View style={styles.progressTrack}>
             <Animated.View
               style={[
@@ -226,13 +243,14 @@ export default function LessonScreen() {
               ]}
             />
           </View>
-          <Text style={styles.counter}>
-            {index + 1}/{questions.length}
-          </Text>
+
+          <Animated.View style={{ transform: [{ scale: heartAnim }] }}>
+            <HeartsDisplay count={hearts} max={MAX_HEARTS} />
+          </Animated.View>
         </View>
 
         <Animated.View style={[styles.content, { transform: [{ translateX: shakeAnim }] }]}>
-          {/* Question type badge */}
+          {/* Type badge */}
           <View style={styles.typeBadge}>
             <Text style={styles.typeText}>
               {current.type === 'multipleChoice'
@@ -240,6 +258,9 @@ export default function LessonScreen() {
                 : current.type === 'typing'
                 ? '⌨️ Type the Answer'
                 : '🔊 Listening'}
+            </Text>
+            <Text style={styles.counterBadge}>
+              {index + 1}/{questions.length}
             </Text>
           </View>
 
@@ -249,7 +270,7 @@ export default function LessonScreen() {
             <TouchableOpacity
               style={styles.playBtn}
               onPress={() =>
-                Speech.speak(current.audioText!, { language: 'es', rate: 0.8 })
+                Speech.speak(current.audioText!, { language: 'es-ES', rate: 0.8 })
               }
             >
               <Text style={styles.playBtnText}>🔊 Play Again</Text>
@@ -258,28 +279,30 @@ export default function LessonScreen() {
 
           {/* Multiple choice options */}
           {(current.type === 'multipleChoice' || current.type === 'listening') &&
-            current.type !== 'typing' &&
             current.options && (
               <View style={styles.options}>
                 {current.options.map((opt) => {
                   const isSelected = selected === opt;
                   const isRight = opt === current.correctAnswer;
+                  let borderColor = '#E5E7EB';
                   let bg = '#FFFFFF';
-                  if (revealed && isSelected && isRight) bg = '#D1FAE5';
-                  if (revealed && isSelected && !isRight) bg = '#FEE2E2';
-                  if (revealed && !isSelected && isRight) bg = '#D1FAE5';
+                  if (revealed && isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
+                  if (revealed && isSelected && !isRight) { bg = '#FEE2E2'; borderColor = '#DC2626'; }
+                  if (revealed && !isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
 
                   return (
                     <TouchableOpacity
                       key={opt}
-                      style={[styles.option, { backgroundColor: bg }]}
+                      style={[styles.option, { backgroundColor: bg, borderColor }]}
                       onPress={() => checkAnswer(opt)}
                       disabled={revealed}
                       activeOpacity={0.7}
                     >
                       <Text style={styles.optionText}>{opt}</Text>
-                      {revealed && isRight && <Text>✓</Text>}
-                      {revealed && isSelected && !isRight && <Text>✗</Text>}
+                      {revealed && isRight && <Text style={styles.optionMark}>✓</Text>}
+                      {revealed && isSelected && !isRight && (
+                        <Text style={[styles.optionMark, { color: '#DC2626' }]}>✗</Text>
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -303,6 +326,7 @@ export default function LessonScreen() {
                 autoCorrect={false}
                 autoCapitalize="none"
                 editable={!revealed}
+                returnKeyType="done"
                 onSubmitEditing={() => {
                   if (!revealed && typedAnswer.trim()) checkAnswer(typedAnswer.trim());
                 }}
@@ -310,27 +334,51 @@ export default function LessonScreen() {
               {revealed && !isCorrect(typedAnswer, current.correctAnswer) && (
                 <Text style={styles.correction}>✓ {current.correctAnswer}</Text>
               )}
+              {revealed && isCorrect(typedAnswer, current.correctAnswer) && (
+                <Text style={styles.correctionGood}>✓ Correct!</Text>
+              )}
             </View>
           )}
         </Animated.View>
 
-        {/* Footer button */}
+        {/* Footer */}
         <View style={styles.footer}>
-          {!revealed && (current.type === 'typing' || current.type === 'listening') && (
+          {!revealed && current.type === 'typing' && (
             <TouchableOpacity
-              style={[styles.checkBtn, !typedAnswer.trim() && styles.checkBtnDisabled]}
+              style={[styles.actionBtn, styles.checkBtn, !typedAnswer.trim() && styles.btnDisabled]}
               onPress={() => checkAnswer(typedAnswer.trim())}
               disabled={!typedAnswer.trim()}
             >
-              <Text style={styles.checkBtnText}>Check</Text>
+              <Text style={styles.actionBtnText}>Check</Text>
             </TouchableOpacity>
           )}
           {revealed && (
-            <TouchableOpacity style={styles.nextBtn} onPress={next}>
-              <Text style={styles.nextBtnText}>
-                {index + 1 >= questions.length ? 'Finish' : 'Continue →'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.revealedFooter}>
+              <View
+                style={[
+                  styles.resultBanner,
+                  selected === current.correctAnswer ||
+                  (current.type === 'typing' && isCorrect(typedAnswer, current.correctAnswer))
+                    ? styles.resultBannerCorrect
+                    : styles.resultBannerWrong,
+                ]}
+              >
+                <Text style={styles.resultBannerText}>
+                  {selected === current.correctAnswer ||
+                  (current.type === 'typing' && isCorrect(typedAnswer, current.correctAnswer))
+                    ? '🎉 Correct!'
+                    : `💡 Answer: ${current.correctAnswer}`}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.nextBtn]}
+                onPress={next}
+              >
+                <Text style={styles.actionBtnText}>
+                  {index + 1 >= questions.length ? 'Finish →' : 'Continue →'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </KeyboardAvoidingView>
@@ -341,6 +389,90 @@ export default function LessonScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F9FAFB' },
   flex: { flex: 1 },
+
+  // Preview
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  previewHeaderTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  previewScroll: { paddingHorizontal: 20, paddingBottom: 40 },
+  previewUnit: { fontSize: 13, color: '#4F46E5', fontWeight: '600', marginBottom: 4 },
+  previewTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 6 },
+  previewDesc: { fontSize: 14, color: '#6B7280', marginBottom: 24 },
+  previewWordsLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+  },
+  previewWordList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  previewWordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#F3F4F6',
+    gap: 8,
+  },
+  previewWordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827', flex: 1 },
+  previewWordArrow: { fontSize: 14, color: '#9CA3AF' },
+  previewWordEnglish: { fontSize: 14, color: '#6B7280', flex: 1, textAlign: 'right' },
+  previewFooter: { padding: 20, paddingBottom: 32 },
+  startBtn: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 14,
+    padding: 18,
+    alignItems: 'center',
+  },
+  startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+
+  // No hearts
+  noHeartsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  noHeartsEmoji: { fontSize: 72, marginBottom: 20 },
+  noHeartsTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 10 },
+  noHeartsDesc: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 36,
+  },
+  retryBtn: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 14,
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    marginBottom: 14,
+  },
+  retryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  quitLinkBtn: { padding: 12 },
+  quitLinkText: { fontSize: 15, color: '#6B7280', textDecorationLine: 'underline' },
+
+  // Quiz
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -348,8 +480,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
   },
-  quitBtn: { padding: 4 },
-  quitText: { fontSize: 18, color: '#6B7280' },
+  quitBtn: { padding: 4, width: 32 },
+  quitText: { fontSize: 18, color: '#9CA3AF' },
   progressTrack: {
     flex: 1,
     height: 8,
@@ -362,17 +494,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#4F46E5',
     borderRadius: 4,
   },
-  counter: { fontSize: 13, color: '#6B7280', fontWeight: '600', width: 36, textAlign: 'right' },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
   typeBadge: {
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  typeText: {
+    fontSize: 13,
+    color: '#4F46E5',
+    fontWeight: '600',
     backgroundColor: '#EEF2FF',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    marginBottom: 20,
   },
-  typeText: { fontSize: 13, color: '#4F46E5', fontWeight: '600' },
+  counterBadge: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '600',
+  },
   prompt: {
     fontSize: 22,
     fontWeight: '700',
@@ -383,16 +525,15 @@ const styles = StyleSheet.create({
   playBtn: {
     alignSelf: 'center',
     backgroundColor: '#4F46E5',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 28,
     marginBottom: 24,
   },
   playBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   options: { gap: 10 },
   option: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -400,6 +541,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
+  optionMark: { fontSize: 18, color: '#059669', fontWeight: '700' },
   typingArea: { gap: 8 },
   input: {
     borderWidth: 2,
@@ -412,24 +554,27 @@ const styles = StyleSheet.create({
   },
   inputCorrect: { borderColor: '#059669', backgroundColor: '#D1FAE5' },
   inputWrong: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
-  correction: { fontSize: 16, color: '#059669', fontWeight: '600', paddingLeft: 4 },
-  footer: {
-    padding: 20,
-    paddingBottom: 32,
+  correction: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
+  correctionGood: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
+
+  // Footer
+  footer: { paddingHorizontal: 20, paddingBottom: 32 },
+  revealedFooter: { gap: 12 },
+  resultBanner: {
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
   },
-  checkBtn: {
-    backgroundColor: '#4F46E5',
+  resultBannerCorrect: { backgroundColor: '#D1FAE5' },
+  resultBannerWrong: { backgroundColor: '#FEE2E2' },
+  resultBannerText: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  actionBtn: {
     borderRadius: 14,
     padding: 18,
     alignItems: 'center',
   },
-  checkBtnDisabled: { backgroundColor: '#C7D2FE' },
-  checkBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  nextBtn: {
-    backgroundColor: '#059669',
-    borderRadius: 14,
-    padding: 18,
-    alignItems: 'center',
-  },
-  nextBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  checkBtn: { backgroundColor: '#4F46E5' },
+  nextBtn: { backgroundColor: '#059669' },
+  btnDisabled: { backgroundColor: '#C7D2FE' },
+  actionBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 });

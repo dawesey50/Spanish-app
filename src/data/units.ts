@@ -69,6 +69,36 @@ export const LESSONS: Lesson[] = [
     questionTypes: ['multipleChoice', 'typing', 'listening'],
     wordIds: ['w045', 'w046', 'w047', 'w048', 'w049', 'w050'],
   },
+
+  // Unit 4
+  {
+    id: 'lesson_10',
+    unitId: 'unit_04',
+    title: 'Family Members',
+    questionTypes: ['multipleChoice', 'typing', 'listening'],
+    wordIds: ['w051', 'w052', 'w053', 'w054', 'w055', 'w056', 'w057', 'w058', 'w059', 'w060'],
+  },
+  {
+    id: 'lesson_11',
+    unitId: 'unit_04',
+    title: 'Describing Things',
+    questionTypes: ['multipleChoice', 'typing', 'listening'],
+    wordIds: ['w061', 'w062', 'w063', 'w064', 'w065', 'w066', 'w067', 'w068', 'w069', 'w070'],
+  },
+  {
+    id: 'lesson_12',
+    unitId: 'unit_04',
+    title: 'Colors',
+    questionTypes: ['multipleChoice', 'typing', 'listening'],
+    wordIds: ['w071', 'w072', 'w073', 'w074', 'w075', 'w076', 'w077', 'w078'],
+  },
+  {
+    id: 'lesson_13',
+    unitId: 'unit_04',
+    title: 'Time & Frequency',
+    questionTypes: ['multipleChoice', 'typing', 'listening'],
+    wordIds: ['w079', 'w080', 'w081', 'w082', 'w083', 'w084', 'w085', 'w086'],
+  },
 ];
 
 export const UNITS: Unit[] = [
@@ -92,6 +122,13 @@ export const UNITS: Unit[] = [
     description: 'Navigate airports, hotels, and streets with confidence.',
     lessonIds: ['lesson_08', 'lesson_09'],
     icon: '✈️',
+  },
+  {
+    id: 'unit_04',
+    title: 'Family & Descriptions',
+    description: 'Talk about your family, describe people and things using adjectives and colors.',
+    lessonIds: ['lesson_10', 'lesson_11', 'lesson_12', 'lesson_13'],
+    icon: '👨‍👩‍👧‍👦',
   },
 ];
 

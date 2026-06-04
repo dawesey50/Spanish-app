@@ -60,6 +60,50 @@ export const WORDS: Word[] = [
   { id: 'w048', spanish: 'cerca', english: 'near / close', example: 'El supermercado está cerca de aquí.', topic: 'travel', difficulty: 2 },
   { id: 'w049', spanish: 'lejos', english: 'far', example: 'La playa no está muy lejos.', topic: 'travel', difficulty: 2 },
   { id: 'w050', spanish: '¿dónde está?', english: 'where is?', example: '¿Dónde está la farmacia?', topic: 'travel', difficulty: 2 },
+
+  // Unit 4 — Family
+  { id: 'w051', spanish: 'la madre', english: 'mother', example: 'Mi madre cocina muy bien.', topic: 'family', difficulty: 1 },
+  { id: 'w052', spanish: 'el padre', english: 'father', example: 'Mi padre trabaja en la ciudad.', topic: 'family', difficulty: 1 },
+  { id: 'w053', spanish: 'el hermano', english: 'brother', example: 'Tengo dos hermanos mayores.', topic: 'family', difficulty: 1 },
+  { id: 'w054', spanish: 'la hermana', english: 'sister', example: 'Mi hermana estudia medicina.', topic: 'family', difficulty: 1 },
+  { id: 'w055', spanish: 'el hijo', english: 'son', example: 'Mi hijo tiene cinco años.', topic: 'family', difficulty: 1 },
+  { id: 'w056', spanish: 'la hija', english: 'daughter', example: 'Su hija toca el piano.', topic: 'family', difficulty: 1 },
+  { id: 'w057', spanish: 'el abuelo', english: 'grandfather', example: 'Mi abuelo cuenta muchas historias.', topic: 'family', difficulty: 1 },
+  { id: 'w058', spanish: 'la abuela', english: 'grandmother', example: 'La abuela prepara tamales.', topic: 'family', difficulty: 1 },
+  { id: 'w059', spanish: 'el amigo', english: 'friend (male)', example: 'Pedro es mi mejor amigo.', topic: 'family', difficulty: 1 },
+  { id: 'w060', spanish: 'la amiga', english: 'friend (female)', example: 'Ana es mi amiga de la escuela.', topic: 'family', difficulty: 1 },
+
+  // Unit 4 — Adjectives
+  { id: 'w061', spanish: 'grande', english: 'big / large', example: 'El elefante es muy grande.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w062', spanish: 'pequeño', english: 'small', example: 'El gato es pequeño y bonito.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w063', spanish: 'bueno', english: 'good', example: 'Este restaurante es muy bueno.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w064', spanish: 'malo', english: 'bad', example: 'El tiempo está muy malo hoy.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w065', spanish: 'nuevo', english: 'new', example: 'Tengo un teléfono nuevo.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w066', spanish: 'viejo', english: 'old', example: 'Este edificio es muy viejo.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w067', spanish: 'bonito', english: 'beautiful / pretty', example: '¡Qué vestido tan bonito!', topic: 'adjectives', difficulty: 1 },
+  { id: 'w068', spanish: 'fácil', english: 'easy', example: 'Este ejercicio es fácil.', topic: 'adjectives', difficulty: 1 },
+  { id: 'w069', spanish: 'difícil', english: 'difficult', example: 'El examen fue muy difícil.', topic: 'adjectives', difficulty: 2 },
+  { id: 'w070', spanish: 'interesante', english: 'interesting', example: 'Este libro es muy interesante.', topic: 'adjectives', difficulty: 2 },
+
+  // Unit 4 — Colors
+  { id: 'w071', spanish: 'rojo', english: 'red', example: 'La rosa es roja.', topic: 'colors', difficulty: 1 },
+  { id: 'w072', spanish: 'azul', english: 'blue', example: 'El cielo es azul.', topic: 'colors', difficulty: 1 },
+  { id: 'w073', spanish: 'verde', english: 'green', example: 'El árbol tiene hojas verdes.', topic: 'colors', difficulty: 1 },
+  { id: 'w074', spanish: 'amarillo', english: 'yellow', example: 'El sol es amarillo.', topic: 'colors', difficulty: 1 },
+  { id: 'w075', spanish: 'blanco', english: 'white', example: 'La nieve es blanca.', topic: 'colors', difficulty: 1 },
+  { id: 'w076', spanish: 'negro', english: 'black', example: 'El gato negro trae suerte.', topic: 'colors', difficulty: 1 },
+  { id: 'w077', spanish: 'naranja', english: 'orange', example: 'La naranja tiene color naranja.', topic: 'colors', difficulty: 1 },
+  { id: 'w078', spanish: 'morado', english: 'purple', example: 'Me gustan las flores moradas.', topic: 'colors', difficulty: 1 },
+
+  // Unit 4 — Time & Frequency
+  { id: 'w079', spanish: 'hoy', english: 'today', example: 'Hoy es lunes.', topic: 'time', difficulty: 1 },
+  { id: 'w080', spanish: 'mañana', english: 'tomorrow', example: 'Mañana tengo una reunión.', topic: 'time', difficulty: 1 },
+  { id: 'w081', spanish: 'ayer', english: 'yesterday', example: 'Ayer fui al cine.', topic: 'time', difficulty: 1 },
+  { id: 'w082', spanish: 'ahora', english: 'now', example: 'Ahora mismo estoy ocupado.', topic: 'time', difficulty: 1 },
+  { id: 'w083', spanish: 'siempre', english: 'always', example: 'Siempre llego a tiempo.', topic: 'time', difficulty: 1 },
+  { id: 'w084', spanish: 'nunca', english: 'never', example: 'Nunca llego tarde.', topic: 'time', difficulty: 1 },
+  { id: 'w085', spanish: 'a veces', english: 'sometimes', example: 'A veces como pizza.', topic: 'time', difficulty: 1 },
+  { id: 'w086', spanish: 'tarde', english: 'late / afternoon', example: 'Llegué tarde a la clase.', topic: 'time', difficulty: 1 },
 ];
 
 export const WORDS_BY_ID: Record<string, Word> = Object.fromEntries(

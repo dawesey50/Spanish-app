@@ -11,6 +11,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { LESSONS_BY_ID } from '../data/units';
+import { WORDS_BY_ID } from '../data/words';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Results'>;
@@ -20,6 +21,9 @@ export default function ResultsScreen() {
   const route = useRoute<Route>();
   const { lessonId, score, xpEarned, corrections } = route.params;
   const lesson = LESSONS_BY_ID[lessonId];
+  const lessonWords = (lesson?.wordIds ?? [])
+    .map((id) => WORDS_BY_ID[id])
+    .filter(Boolean);
 
   const grade =
     score >= 90 ? { label: 'Excellent!', color: '#059669', emoji: '🌟' }
@@ -62,6 +66,23 @@ export default function ResultsScreen() {
                 <Text style={styles.explanation}>{c.explanation}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {lessonWords.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Words in This Lesson</Text>
+            <View style={styles.wordList}>
+              {lessonWords.map((w) => (
+                <View key={w.id} style={styles.wordRow}>
+                  <View style={styles.wordLeft}>
+                    <Text style={styles.wordSpanish}>{w.spanish}</Text>
+                    <Text style={styles.wordExample} numberOfLines={1}>{w.example}</Text>
+                  </View>
+                  <Text style={styles.wordEnglish}>{w.english}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -120,6 +141,26 @@ const styles = StyleSheet.create({
   wrongAnswer: { fontSize: 14, color: '#DC2626', fontWeight: '600', marginBottom: 4 },
   rightAnswer: { fontSize: 14, color: '#059669', fontWeight: '600', marginBottom: 4 },
   explanation: { fontSize: 13, color: '#6B7280' },
+  wordList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  wordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#F3F4F6',
+    gap: 8,
+  },
+  wordLeft: { flex: 1 },
+  wordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  wordExample: { fontSize: 12, color: '#9CA3AF', marginTop: 1 },
+  wordEnglish: { fontSize: 13, color: '#4F46E5', fontWeight: '600', textAlign: 'right' },
   actions: { gap: 12 },
   primaryBtn: {
     backgroundColor: '#4F46E5',
