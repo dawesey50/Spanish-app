@@ -15,6 +15,7 @@ import {
   updateDailyGoal,
   updateTTSRate,
   updateNotificationSettings,
+  updateDeveloperMode,
   clearAllProgress,
 } from '../database/db';
 import {
@@ -87,6 +88,11 @@ export default function SettingsScreen() {
     }
     await updateNotificationSettings(progress?.notificationsEnabled ?? false, hour);
     setProgress((p) => (p ? { ...p, notificationHour: hour } : p));
+  };
+
+  const toggleDeveloperMode = async (enabled: boolean) => {
+    await updateDeveloperMode(enabled);
+    setProgress((p) => (p ? { ...p, developerMode: enabled } : p));
   };
 
   const confirmClear = () => {
@@ -205,6 +211,31 @@ export default function SettingsScreen() {
 
         <View style={styles.divider} />
 
+        {/* Developer Options */}
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Developer Options</Text>
+            <Text style={styles.sectionDesc}>
+              Testing tools — unlock all lessons without completing prerequisites.
+            </Text>
+          </View>
+          <Switch
+            value={progress.developerMode}
+            onValueChange={toggleDeveloperMode}
+            trackColor={{ false: '#E5E7EB', true: '#FCA5A5' }}
+            thumbColor={progress.developerMode ? '#DC2626' : '#9CA3AF'}
+          />
+        </View>
+        {progress.developerMode && (
+          <View style={styles.devWarning}>
+            <Text style={styles.devWarningText}>
+              🔓 All lessons unlocked for testing. Turn off when done.
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
@@ -316,6 +347,15 @@ const styles = StyleSheet.create({
   },
   rowLabel: { fontSize: 14, color: '#374151', fontWeight: '500' },
   rowValue: { fontSize: 14, color: '#6B7280' },
+  devWarning: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    marginTop: 4,
+  },
+  devWarningText: { fontSize: 13, color: '#DC2626', fontWeight: '600' },
   dangerBtn: {
     borderWidth: 2,
     borderColor: '#DC2626',

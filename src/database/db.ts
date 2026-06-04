@@ -13,6 +13,7 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE user_progress ADD COLUMN tts_rate REAL NOT NULL DEFAULT 0.8',
     'ALTER TABLE user_progress ADD COLUMN notifications_enabled INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE user_progress ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 20',
+    'ALTER TABLE user_progress ADD COLUMN developer_mode INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -38,6 +39,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     tts_rate: number;
     notifications_enabled: number;
     notification_hour: number;
+    developer_mode: number;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -85,6 +87,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     ttsRate: row?.tts_rate ?? 0.8,
     notificationsEnabled: (row?.notifications_enabled ?? 0) === 1,
     notificationHour: row?.notification_hour ?? 20,
+    developerMode: (row?.developer_mode ?? 0) === 1,
   };
 }
 
@@ -157,6 +160,13 @@ export async function updateNotificationSettings(
   await getDb().runAsync(
     'UPDATE user_progress SET notifications_enabled = ?, notification_hour = ? WHERE id = 1',
     [enabled ? 1 : 0, hour]
+  );
+}
+
+export async function updateDeveloperMode(enabled: boolean): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET developer_mode = ? WHERE id = 1',
+    [enabled ? 1 : 0]
   );
 }
 

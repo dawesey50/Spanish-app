@@ -73,6 +73,7 @@ export default function HomeScreen() {
         <UnitMap
           completedLessons={progress.completedLessons}
           onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
+          unlockAll={progress.developerMode}
         />
       </ScrollView>
     </SafeAreaView>

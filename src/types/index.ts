@@ -45,6 +45,7 @@ export interface UserProgress {
   ttsRate: number;
   notificationsEnabled: boolean;
   notificationHour: number;
+  developerMode: boolean;
 }
 
 export type RootStackParamList = {

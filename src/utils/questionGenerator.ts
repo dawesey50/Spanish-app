@@ -1,12 +1,11 @@
 import type { Question } from '../types';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID, WORDS } from '../data/words';
-import Constants from 'expo-constants';
 
-function isInExpoGo(): boolean {
+function isVoiceAvailable(): boolean {
   try {
-    const c = Constants as any;
-    return c.executionEnvironment === 'storeClient' || c.appOwnership === 'expo';
+    require('@react-native-voice/voice');
+    return true;
   } catch {
     return false;
   }
@@ -123,7 +122,7 @@ export function buildQuestions(lessonId: string): Question[] {
     }
 
     // Speaking: say the Spanish word aloud (dev builds only)
-    if (lesson.questionTypes.includes('speaking') && !isInExpoGo()) {
+    if (lesson.questionTypes.includes('speaking') && isVoiceAvailable()) {
       pool.push({
         id: `speak_${word.id}`,
         type: 'speaking',

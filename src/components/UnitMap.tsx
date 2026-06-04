@@ -5,13 +5,14 @@ import { UNITS, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/
 interface Props {
   completedLessons: string[];
   onLessonPress: (lessonId: string) => void;
+  unlockAll?: boolean;
 }
 
-export default function UnitMap({ completedLessons, onLessonPress }: Props) {
+export default function UnitMap({ completedLessons, onLessonPress, unlockAll = false }: Props) {
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       {UNITS.map((unit) => {
-        const unlocked = isUnitUnlocked(unit.id, completedLessons);
+        const unlocked = unlockAll || isUnitUnlocked(unit.id, completedLessons);
         const allDone = unit.lessonIds.every((id) => completedLessons.includes(id));
 
         return (
@@ -32,7 +33,7 @@ export default function UnitMap({ completedLessons, onLessonPress }: Props) {
             <View style={styles.lessonList}>
               {unit.lessonIds.map((lessonId, index) => {
                 const lesson = LESSONS_BY_ID[lessonId];
-                const lessonUnlocked = isLessonUnlocked(lessonId, completedLessons);
+                const lessonUnlocked = unlockAll || isLessonUnlocked(lessonId, completedLessons);
                 const lessonDone = completedLessons.includes(lessonId);
 
                 return (

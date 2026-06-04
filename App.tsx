@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { initDatabase, getUserProgress } from './src/database/db';
+import { setupNotificationChannel } from './src/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 
 Notifications.setNotificationHandler({
@@ -20,6 +21,7 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      await setupNotificationChannel();
       await initDatabase();
       const progress = await getUserProgress();
       setOnboarded(progress.hasCompletedOnboarding);
