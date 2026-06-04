@@ -8,14 +8,22 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spanishapp.learn"
+      "bundleIdentifier": "com.spanishapp.learn",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Used to check your spoken Spanish pronunciation.",
+        "NSMicrophoneUsageDescription": "Used to record your voice for speaking practice."
+      }
     },
     "android": {
-      "package": "com.spanishapp.learn"
+      "package": "com.spanishapp.learn",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-sqlite",
-      "expo-notifications"
+      "expo-notifications",
+      "@react-native-voice/voice"
     ]
   }
 }

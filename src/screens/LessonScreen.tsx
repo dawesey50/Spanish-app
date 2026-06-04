@@ -22,6 +22,7 @@ import { completeLesson, recordWrongAnswer, getUserProgress } from '../database/
 import { buildQuestions, isCorrect } from '../utils/questionGenerator';
 import HeartsDisplay from '../components/HeartsDisplay';
 import AudioButton from '../components/AudioButton';
+import SpeakingQuestion from '../components/SpeakingQuestion';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Lesson'>;
@@ -151,6 +152,35 @@ export default function LessonScreen() {
     ]);
   };
 
+  const handleSpeakingResult = (correct: boolean, recognized: string) => {
+    if (correct) {
+      setCorrectCount((n) => n + 1);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSelected(current.correctAnswer);
+    } else {
+      shake();
+      pulseHeart();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      recordWrongAnswer(current.wordId);
+      const newHearts = hearts - 1;
+      setHearts(newHearts);
+      const displayText = recognized || '(no speech)';
+      setCorrections((prev) => [
+        ...prev,
+        {
+          original: displayText,
+          corrected: current.correctAnswer,
+          explanation: `You said "${displayText}". The correct answer is "${current.correctAnswer}".`,
+        },
+      ]);
+      if (newHearts <= 0) {
+        setTimeout(() => setPhase('no_hearts'), 900);
+      }
+      setSelected(recognized || '');
+    }
+    setRevealed(true);
+  };
+
   // ─── Preview ─────────────────────────────────────────────────────────────────
   if (phase === 'preview') {
     const words = lesson?.wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean) ?? [];
@@ -269,6 +299,8 @@ export default function LessonScreen() {
                   ? '🔤 Multiple Choice'
                   : current.type === 'typing'
                   ? '⌨️ Type the Answer'
+                  : current.type === 'speaking'
+                  ? '🎤 Speaking'
                   : '🔊 Listening'}
               </Text>
               <Text style={styles.counterBadge}>
@@ -276,7 +308,9 @@ export default function LessonScreen() {
               </Text>
             </View>
 
-            <Text style={styles.prompt}>{current.prompt}</Text>
+            {current.type !== 'speaking' && (
+              <Text style={styles.prompt}>{current.prompt}</Text>
+            )}
 
             {/* Listening: big play button */}
             {current.type === 'listening' && current.audioText && (
@@ -326,6 +360,18 @@ export default function LessonScreen() {
                   })}
                 </View>
               )}
+
+            {/* Speaking question */}
+            {current.type === 'speaking' && !revealed && (
+              <SpeakingQuestion
+                key={current.id}
+                wordId={current.wordId}
+                correctAnswer={current.correctAnswer}
+                ttsRate={ttsRate}
+                onResult={handleSpeakingResult}
+                onSkip={next}
+              />
+            )}
 
             {/* Typing input */}
             {current.type === 'typing' && (

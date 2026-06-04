@@ -1,6 +1,16 @@
 import type { Question } from '../types';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID, WORDS } from '../data/words';
+import Constants from 'expo-constants';
+
+function isInExpoGo(): boolean {
+  try {
+    const c = Constants as any;
+    return c.executionEnvironment === 'storeClient' || c.appOwnership === 'expo';
+  } catch {
+    return false;
+  }
+}
 
 export function normalize(s: string): string {
   return s
@@ -109,6 +119,17 @@ export function buildQuestions(lessonId: string): Question[] {
         options: [...new Set([...esDistractors, word.spanish])]
           .slice(0, 4)
           .sort(() => Math.random() - 0.5),
+      });
+    }
+
+    // Speaking: say the Spanish word aloud (dev builds only)
+    if (lesson.questionTypes.includes('speaking') && !isInExpoGo()) {
+      pool.push({
+        id: `speak_${word.id}`,
+        type: 'speaking',
+        wordId: word.id,
+        prompt: '',
+        correctAnswer: word.spanish,
       });
     }
   });
