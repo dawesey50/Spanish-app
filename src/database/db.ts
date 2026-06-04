@@ -8,11 +8,14 @@ export async function initDatabase(): Promise<void> {
   db = await SQLite.openDatabaseAsync('spanish_app.db');
   await db.execAsync(CREATE_TABLES_SQL);
   await db.execAsync(DEFAULT_PROGRESS_SQL);
-  // Safe migration: add tts_rate column if upgrading from a previous install
-  try {
-    await db.execAsync('ALTER TABLE user_progress ADD COLUMN tts_rate REAL NOT NULL DEFAULT 0.8');
-  } catch {
-    // Column already exists — ignore
+  // Safe column migrations — catch means the column already exists
+  const migrations = [
+    'ALTER TABLE user_progress ADD COLUMN tts_rate REAL NOT NULL DEFAULT 0.8',
+    'ALTER TABLE user_progress ADD COLUMN notifications_enabled INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE user_progress ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 20',
+  ];
+  for (const sql of migrations) {
+    try { await db.execAsync(sql); } catch { /* already exists */ }
   }
 }
 
@@ -33,6 +36,8 @@ export async function getUserProgress(): Promise<UserProgress> {
     has_completed_onboarding: number;
     starting_unit_id: string;
     tts_rate: number;
+    notifications_enabled: number;
+    notification_hour: number;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -78,6 +83,8 @@ export async function getUserProgress(): Promise<UserProgress> {
     hasCompletedOnboarding: (row?.has_completed_onboarding ?? 0) === 1,
     startingUnitId: row?.starting_unit_id ?? 'unit_01',
     ttsRate: row?.tts_rate ?? 0.8,
+    notificationsEnabled: (row?.notifications_enabled ?? 0) === 1,
+    notificationHour: row?.notification_hour ?? 20,
   };
 }
 
@@ -141,6 +148,16 @@ export async function updateDailyGoal(goalXP: number): Promise<void> {
 
 export async function updateTTSRate(rate: number): Promise<void> {
   await getDb().runAsync('UPDATE user_progress SET tts_rate = ? WHERE id = 1', [rate]);
+}
+
+export async function updateNotificationSettings(
+  enabled: boolean,
+  hour: number
+): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET notifications_enabled = ?, notification_hour = ? WHERE id = 1',
+    [enabled ? 1 : 0, hour]
+  );
 }
 
 export async function setOnboardingComplete(startingUnitId: string): Promise<void> {

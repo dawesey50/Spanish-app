@@ -43,6 +43,8 @@ export interface UserProgress {
   hasCompletedOnboarding: boolean;
   startingUnitId: string;
   ttsRate: number;
+  notificationsEnabled: boolean;
+  notificationHour: number;
 }
 
 export type RootStackParamList = {

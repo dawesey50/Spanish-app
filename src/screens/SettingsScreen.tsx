@@ -5,20 +5,39 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  Switch,
   TouchableOpacity,
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getUserProgress, updateDailyGoal, updateTTSRate, clearAllProgress } from '../database/db';
+import {
+  getUserProgress,
+  updateDailyGoal,
+  updateTTSRate,
+  updateNotificationSettings,
+  clearAllProgress,
+} from '../database/db';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  cancelDailyReminder,
+} from '../notifications';
 import AudioButton from '../components/AudioButton';
 import type { UserProgress } from '../types';
 
 const GOAL_OPTIONS = [10, 20, 30, 50];
 
 const TTS_SPEEDS: { label: string; value: number; desc: string }[] = [
-  { label: 'Slow', value: 0.6, desc: 'Good for beginners' },
+  { label: 'Slow', value: 0.4, desc: 'Great for beginners' },
   { label: 'Normal', value: 0.8, desc: 'Recommended' },
-  { label: 'Fast', value: 1.0, desc: 'Challenge yourself' },
+  { label: 'Fast', value: 1.4, desc: 'Challenge yourself' },
+];
+
+const REMINDER_TIMES: { label: string; hour: number }[] = [
+  { label: 'Morning  8am', hour: 8 },
+  { label: 'Midday  12pm', hour: 12 },
+  { label: 'Evening  6pm', hour: 18 },
+  { label: 'Night  9pm', hour: 21 },
 ];
 
 const DEMO_WORD = 'Buenos días';
@@ -40,6 +59,34 @@ export default function SettingsScreen() {
   const setSpeed = async (rate: number) => {
     await updateTTSRate(rate);
     setProgress((p) => (p ? { ...p, ttsRate: rate } : p));
+  };
+
+  const toggleNotifications = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please allow notifications in your device settings to enable reminders.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      const hour = progress?.notificationHour ?? 20;
+      await scheduleDailyReminder(hour, 0);
+    } else {
+      await cancelDailyReminder();
+    }
+    await updateNotificationSettings(enabled, progress?.notificationHour ?? 20);
+    setProgress((p) => (p ? { ...p, notificationsEnabled: enabled } : p));
+  };
+
+  const setReminderTime = async (hour: number) => {
+    if (progress?.notificationsEnabled) {
+      await scheduleDailyReminder(hour, 0);
+    }
+    await updateNotificationSettings(progress?.notificationsEnabled ?? false, hour);
+    setProgress((p) => (p ? { ...p, notificationHour: hour } : p));
   };
 
   const confirmClear = () => {
@@ -72,7 +119,7 @@ export default function SettingsScreen() {
         {/* Daily Goal */}
         <Text style={styles.sectionTitle}>Daily XP Goal</Text>
         <Text style={styles.sectionDesc}>How much XP do you want to earn each day?</Text>
-        <View style={styles.optionRow}>
+        <View style={styles.chipRow}>
           {GOAL_OPTIONS.map((g) => (
             <TouchableOpacity
               key={g}
@@ -91,9 +138,9 @@ export default function SettingsScreen() {
         {/* Audio Speed */}
         <Text style={styles.sectionTitle}>Audio Speed</Text>
         <Text style={styles.sectionDesc}>
-          Controls how fast Spanish is spoken in listening questions and word previews.
+          Controls how fast Spanish words are spoken in listening questions and previews.
         </Text>
-        <View style={styles.speedCards}>
+        <View style={styles.speedRow}>
           {TTS_SPEEDS.map((s) => (
             <TouchableOpacity
               key={s.value}
@@ -107,7 +154,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
         <View style={styles.demoRow}>
           <AudioButton text={DEMO_WORD} rate={progress.ttsRate} size="sm" />
           <Text style={styles.demoText}>
@@ -118,20 +164,51 @@ export default function SettingsScreen() {
         <View style={styles.divider} />
 
         {/* Notifications */}
-        <Text style={styles.sectionTitle}>Notifications</Text>
-        <Text style={styles.sectionDesc}>
-          Daily reminders will be added in Phase 4.
-        </Text>
-        <View style={styles.comingSoon}>
-          <Text style={styles.comingSoonText}>Coming in Phase 4</Text>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Daily Reminders</Text>
+            <Text style={styles.sectionDesc}>
+              Get a notification if you haven't practised by the set time.
+            </Text>
+          </View>
+          <Switch
+            value={progress.notificationsEnabled}
+            onValueChange={toggleNotifications}
+            trackColor={{ false: '#E5E7EB', true: '#A5B4FC' }}
+            thumbColor={progress.notificationsEnabled ? '#4F46E5' : '#9CA3AF'}
+          />
         </View>
+
+        {progress.notificationsEnabled && (
+          <View style={styles.timeGrid}>
+            {REMINDER_TIMES.map((t) => (
+              <TouchableOpacity
+                key={t.hour}
+                style={[
+                  styles.timeBtn,
+                  progress.notificationHour === t.hour && styles.timeBtnActive,
+                ]}
+                onPress={() => setReminderTime(t.hour)}
+              >
+                <Text
+                  style={[
+                    styles.timeText,
+                    progress.notificationHour === t.hour && styles.timeTextActive,
+                  ]}
+                >
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={styles.divider} />
 
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
-          <Row label="Version" value="1.0.0 (Phase 3)" />
+          <Row label="Version" value="1.0.0 (Phase 4)" />
           <Row label="Progress stored" value="On-device (SQLite)" />
           <Row label="AI conversation" value="Groq → Gemini → HuggingFace" />
         </View>
@@ -161,7 +238,14 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 4 },
   sectionDesc: { fontSize: 13, color: '#6B7280', marginBottom: 14, lineHeight: 19 },
-  optionRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 16,
+    marginBottom: 4,
+  },
+  chipRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   chipBtn: {
     borderWidth: 2,
     borderColor: '#E5E7EB',
@@ -173,7 +257,7 @@ const styles = StyleSheet.create({
   chipBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
   chipText: { fontSize: 15, fontWeight: '600', color: '#374151' },
   chipTextActive: { color: '#4F46E5' },
-  speedCards: { flexDirection: 'row', gap: 10 },
+  speedRow: { flexDirection: 'row', gap: 10 },
   speedCard: {
     flex: 1,
     borderWidth: 2,
@@ -191,7 +275,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 14,
+    marginTop: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 14,
@@ -199,14 +283,22 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   demoText: { fontSize: 14, color: '#6B7280', flex: 1 },
-  divider: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 24 },
-  comingSoon: {
-    backgroundColor: '#EEF2FF',
+  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  timeBtn: {
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
     borderRadius: 10,
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    minWidth: '45%',
+    flex: 1,
     alignItems: 'center',
   },
-  comingSoonText: { fontSize: 13, color: '#4F46E5', fontWeight: '600' },
+  timeBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
+  timeText: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  timeTextActive: { color: '#4F46E5' },
+  divider: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 24 },
   aboutCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,

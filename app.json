@@ -14,7 +14,8 @@
       "package": "com.spanishapp.learn"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-notifications"
     ]
   }
 }
