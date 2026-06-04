@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/nat
 import type { RootStackParamList } from '../types';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
+import AudioButton from '../components/AudioButton';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Results'>;
@@ -75,6 +76,7 @@ export default function ResultsScreen() {
             <View style={styles.wordList}>
               {lessonWords.map((w) => (
                 <View key={w.id} style={styles.wordRow}>
+                  <AudioButton text={w.spanish} size="sm" />
                   <View style={styles.wordLeft}>
                     <Text style={styles.wordSpanish}>{w.spanish}</Text>
                     <Text style={styles.wordExample} numberOfLines={1}>{w.example}</Text>

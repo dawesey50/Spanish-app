@@ -8,6 +8,12 @@ export async function initDatabase(): Promise<void> {
   db = await SQLite.openDatabaseAsync('spanish_app.db');
   await db.execAsync(CREATE_TABLES_SQL);
   await db.execAsync(DEFAULT_PROGRESS_SQL);
+  // Safe migration: add tts_rate column if upgrading from a previous install
+  try {
+    await db.execAsync('ALTER TABLE user_progress ADD COLUMN tts_rate REAL NOT NULL DEFAULT 0.8');
+  } catch {
+    // Column already exists — ignore
+  }
 }
 
 function getDb(): SQLite.SQLiteDatabase {
@@ -26,6 +32,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     daily_xp_today: number;
     has_completed_onboarding: number;
     starting_unit_id: string;
+    tts_rate: number;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -70,6 +77,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     weakWords: weakRows.map((r) => r.word_id),
     hasCompletedOnboarding: (row?.has_completed_onboarding ?? 0) === 1,
     startingUnitId: row?.starting_unit_id ?? 'unit_01',
+    ttsRate: row?.tts_rate ?? 0.8,
   };
 }
 
@@ -129,6 +137,10 @@ export async function updateDailyGoal(goalXP: number): Promise<void> {
     'UPDATE user_progress SET daily_goal_xp = ? WHERE id = 1',
     [goalXP]
   );
+}
+
+export async function updateTTSRate(rate: number): Promise<void> {
+  await getDb().runAsync('UPDATE user_progress SET tts_rate = ? WHERE id = 1', [rate]);
 }
 
 export async function setOnboardingComplete(startingUnitId: string): Promise<void> {

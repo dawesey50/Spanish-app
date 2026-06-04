@@ -42,6 +42,7 @@ export interface UserProgress {
   weakWords: string[];
   hasCompletedOnboarding: boolean;
   startingUnitId: string;
+  ttsRate: number;
 }
 
 export type RootStackParamList = {

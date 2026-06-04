@@ -14,13 +14,14 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
-import * as Speech from 'expo-speech';
+import * as Haptics from 'expo-haptics';
 import type { RootStackParamList, Correction } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
-import { completeLesson, recordWrongAnswer } from '../database/db';
+import { completeLesson, recordWrongAnswer, getUserProgress } from '../database/db';
 import { buildQuestions, isCorrect } from '../utils/questionGenerator';
 import HeartsDisplay from '../components/HeartsDisplay';
+import AudioButton from '../components/AudioButton';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Lesson'>;
@@ -49,6 +50,7 @@ export default function LessonScreen() {
   const [correctCount, setCorrectCount] = useState(0);
   const [hearts, setHearts] = useState(MAX_HEARTS);
   const [corrections, setCorrections] = useState<Correction[]>([]);
+  const [ttsRate, setTtsRate] = useState(0.8);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -57,19 +59,16 @@ export default function LessonScreen() {
   const current = questions[index];
 
   useEffect(() => {
+    getUserProgress().then((p) => setTtsRate(p.ttsRate));
+  }, []);
+
+  useEffect(() => {
     if (phase !== 'quiz') return;
     Animated.timing(progressAnim, {
       toValue: index / questions.length,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [index, phase]);
-
-  useEffect(() => {
-    if (phase !== 'quiz') return;
-    if (current?.type === 'listening' && current.audioText) {
-      setTimeout(() => Speech.speak(current.audioText!, { language: 'es-ES', rate: 0.8 }), 400);
-    }
   }, [index, phase]);
 
   const shake = () => {
@@ -83,8 +82,8 @@ export default function LessonScreen() {
 
   const pulseHeart = () => {
     Animated.sequence([
-      Animated.timing(heartAnim, { toValue: 1.4, duration: 100, useNativeDriver: true }),
-      Animated.timing(heartAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.timing(heartAnim, { toValue: 1.5, duration: 100, useNativeDriver: true }),
+      Animated.timing(heartAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
     ]).start();
   };
 
@@ -96,23 +95,24 @@ export default function LessonScreen() {
 
     if (correct) {
       setCorrectCount((n) => n + 1);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       shake();
+      pulseHeart();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       recordWrongAnswer(current.wordId);
       const newHearts = hearts - 1;
       setHearts(newHearts);
-      pulseHeart();
       setCorrections((prev) => [
         ...prev,
         {
-          original: answer || '(no answer)',
+          original: answer || '(blank)',
           corrected: current.correctAnswer,
           explanation: `"${answer || '(blank)'}" is incorrect. The correct answer is "${current.correctAnswer}".`,
         },
       ]);
       if (newHearts <= 0) {
-        // Short delay so the user sees the wrong answer highlighted before overlay
-        setTimeout(() => setPhase('no_hearts'), 800);
+        setTimeout(() => setPhase('no_hearts'), 900);
       }
     }
   };
@@ -151,7 +151,7 @@ export default function LessonScreen() {
     ]);
   };
 
-  // ─── Preview screen ──────────────────────────────────────────────────────────
+  // ─── Preview ─────────────────────────────────────────────────────────────────
   if (phase === 'preview') {
     const words = lesson?.wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean) ?? [];
     return (
@@ -177,8 +177,8 @@ export default function LessonScreen() {
           <View style={styles.previewWordList}>
             {words.map((w) => (
               <View key={w.id} style={styles.previewWordRow}>
+                <AudioButton text={w.spanish} size="sm" rate={ttsRate} />
                 <Text style={styles.previewWordSpanish}>{w.spanish}</Text>
-                <Text style={styles.previewWordArrow}>→</Text>
                 <Text style={styles.previewWordEnglish}>{w.english}</Text>
               </View>
             ))}
@@ -194,7 +194,7 @@ export default function LessonScreen() {
     );
   }
 
-  // ─── No hearts overlay ───────────────────────────────────────────────────────
+  // ─── No Hearts ───────────────────────────────────────────────────────────────
   if (phase === 'no_hearts') {
     return (
       <SafeAreaView style={styles.safe}>
@@ -202,7 +202,7 @@ export default function LessonScreen() {
           <Text style={styles.noHeartsEmoji}>💔</Text>
           <Text style={styles.noHeartsTitle}>No Hearts Left</Text>
           <Text style={styles.noHeartsDesc}>
-            You ran out of lives. Try again — you'll get it!
+            You ran out of lives. Review the words and try again!
           </Text>
           <TouchableOpacity style={styles.retryBtn} onPress={restartLesson}>
             <Text style={styles.retryBtnText}>Try Again</Text>
@@ -215,8 +215,15 @@ export default function LessonScreen() {
     );
   }
 
-  // ─── Quiz ────────────────────────────────────────────────────────────────────
+  // ─── Quiz ─────────────────────────────────────────────────────────────────────
   if (!current) return null;
+
+  const answerGiven = current.type === 'typing' ? typedAnswer.trim().length > 0 : selected !== null;
+  const wasCorrect =
+    revealed &&
+    (current.type === 'typing'
+      ? isCorrect(typedAnswer, current.correctAnswer)
+      : selected === current.correctAnswer);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -229,7 +236,6 @@ export default function LessonScreen() {
           <TouchableOpacity onPress={confirmQuit} style={styles.quitBtn}>
             <Text style={styles.quitText}>✕</Text>
           </TouchableOpacity>
-
           <View style={styles.progressTrack}>
             <Animated.View
               style={[
@@ -243,103 +249,112 @@ export default function LessonScreen() {
               ]}
             />
           </View>
-
           <Animated.View style={{ transform: [{ scale: heartAnim }] }}>
             <HeartsDisplay count={hearts} max={MAX_HEARTS} />
           </Animated.View>
         </View>
 
-        <Animated.View style={[styles.content, { transform: [{ translateX: shakeAnim }] }]}>
-          {/* Type badge */}
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeText}>
-              {current.type === 'multipleChoice'
-                ? '🔤 Multiple Choice'
-                : current.type === 'typing'
-                ? '⌨️ Type the Answer'
-                : '🔊 Listening'}
-            </Text>
-            <Text style={styles.counterBadge}>
-              {index + 1}/{questions.length}
-            </Text>
-          </View>
+        <Animated.ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        >
+          <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+            {/* Type badge + counter */}
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeText}>
+                {current.type === 'multipleChoice'
+                  ? '🔤 Multiple Choice'
+                  : current.type === 'typing'
+                  ? '⌨️ Type the Answer'
+                  : '🔊 Listening'}
+              </Text>
+              <Text style={styles.counterBadge}>
+                {index + 1}/{questions.length}
+              </Text>
+            </View>
 
-          <Text style={styles.prompt}>{current.prompt}</Text>
+            <Text style={styles.prompt}>{current.prompt}</Text>
 
-          {current.type === 'listening' && (
-            <TouchableOpacity
-              style={styles.playBtn}
-              onPress={() =>
-                Speech.speak(current.audioText!, { language: 'es-ES', rate: 0.8 })
-              }
-            >
-              <Text style={styles.playBtnText}>🔊 Play Again</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Multiple choice options */}
-          {(current.type === 'multipleChoice' || current.type === 'listening') &&
-            current.options && (
-              <View style={styles.options}>
-                {current.options.map((opt) => {
-                  const isSelected = selected === opt;
-                  const isRight = opt === current.correctAnswer;
-                  let borderColor = '#E5E7EB';
-                  let bg = '#FFFFFF';
-                  if (revealed && isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
-                  if (revealed && isSelected && !isRight) { bg = '#FEE2E2'; borderColor = '#DC2626'; }
-                  if (revealed && !isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
-
-                  return (
-                    <TouchableOpacity
-                      key={opt}
-                      style={[styles.option, { backgroundColor: bg, borderColor }]}
-                      onPress={() => checkAnswer(opt)}
-                      disabled={revealed}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.optionText}>{opt}</Text>
-                      {revealed && isRight && <Text style={styles.optionMark}>✓</Text>}
-                      {revealed && isSelected && !isRight && (
-                        <Text style={[styles.optionMark, { color: '#DC2626' }]}>✗</Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+            {/* Listening: big play button */}
+            {current.type === 'listening' && current.audioText && (
+              <View style={styles.listeningArea}>
+                <AudioButton
+                  key={current.id}
+                  text={current.audioText}
+                  rate={ttsRate}
+                  size="lg"
+                  autoPlay
+                  autoPlayDelay={500}
+                />
+                <Text style={styles.listeningHint}>Tap to replay</Text>
               </View>
             )}
 
-          {/* Typing input */}
-          {current.type === 'typing' && (
-            <View style={styles.typingArea}>
-              <TextInput
-                style={[
-                  styles.input,
-                  revealed &&
-                    (isCorrect(typedAnswer, current.correctAnswer)
+            {/* MCQ options (both multipleChoice and listening) */}
+            {(current.type === 'multipleChoice' || current.type === 'listening') &&
+              current.options && (
+                <View style={styles.options}>
+                  {current.options.map((opt) => {
+                    const isSelected = selected === opt;
+                    const isRight = opt === current.correctAnswer;
+                    let borderColor = '#E5E7EB';
+                    let bg = '#FFFFFF';
+                    if (revealed && isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
+                    if (revealed && isSelected && !isRight) { bg = '#FEE2E2'; borderColor = '#DC2626'; }
+                    if (revealed && !isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
+
+                    return (
+                      <TouchableOpacity
+                        key={opt}
+                        style={[styles.option, { backgroundColor: bg, borderColor }]}
+                        onPress={() => checkAnswer(opt)}
+                        disabled={revealed}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={styles.optionText}>{opt}</Text>
+                        {revealed && isRight && (
+                          <Text style={styles.optionMarkGood}>✓</Text>
+                        )}
+                        {revealed && isSelected && !isRight && (
+                          <Text style={styles.optionMarkBad}>✗</Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+            {/* Typing input */}
+            {current.type === 'typing' && (
+              <View style={styles.typingArea}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    revealed && (isCorrect(typedAnswer, current.correctAnswer)
                       ? styles.inputCorrect
                       : styles.inputWrong),
-                ]}
-                value={typedAnswer}
-                onChangeText={setTypedAnswer}
-                placeholder="Type your answer..."
-                autoCorrect={false}
-                autoCapitalize="none"
-                editable={!revealed}
-                returnKeyType="done"
-                onSubmitEditing={() => {
-                  if (!revealed && typedAnswer.trim()) checkAnswer(typedAnswer.trim());
-                }}
-              />
-              {revealed && !isCorrect(typedAnswer, current.correctAnswer) && (
-                <Text style={styles.correction}>✓ {current.correctAnswer}</Text>
-              )}
-              {revealed && isCorrect(typedAnswer, current.correctAnswer) && (
-                <Text style={styles.correctionGood}>✓ Correct!</Text>
-              )}
-            </View>
-          )}
-        </Animated.View>
+                  ]}
+                  value={typedAnswer}
+                  onChangeText={setTypedAnswer}
+                  placeholder="Type your answer..."
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  editable={!revealed}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    if (!revealed && typedAnswer.trim()) checkAnswer(typedAnswer.trim());
+                  }}
+                />
+                {revealed && !isCorrect(typedAnswer, current.correctAnswer) && (
+                  <Text style={styles.correctionText}>✓ {current.correctAnswer}</Text>
+                )}
+              </View>
+            )}
+          </Animated.View>
+        </Animated.ScrollView>
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -352,28 +367,15 @@ export default function LessonScreen() {
               <Text style={styles.actionBtnText}>Check</Text>
             </TouchableOpacity>
           )}
+
           {revealed && (
             <View style={styles.revealedFooter}>
-              <View
-                style={[
-                  styles.resultBanner,
-                  selected === current.correctAnswer ||
-                  (current.type === 'typing' && isCorrect(typedAnswer, current.correctAnswer))
-                    ? styles.resultBannerCorrect
-                    : styles.resultBannerWrong,
-                ]}
-              >
+              <View style={[styles.resultBanner, wasCorrect ? styles.bannerCorrect : styles.bannerWrong]}>
                 <Text style={styles.resultBannerText}>
-                  {selected === current.correctAnswer ||
-                  (current.type === 'typing' && isCorrect(typedAnswer, current.correctAnswer))
-                    ? '🎉 Correct!'
-                    : `💡 Answer: ${current.correctAnswer}`}
+                  {wasCorrect ? '🎉 Correct!' : `💡 Answer: ${current.correctAnswer}`}
                 </Text>
               </View>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.nextBtn]}
-                onPress={next}
-              >
+              <TouchableOpacity style={[styles.actionBtn, styles.nextBtn]} onPress={next}>
                 <Text style={styles.actionBtnText}>
                   {index + 1 >= questions.length ? 'Finish →' : 'Continue →'}
                 </Text>
@@ -410,7 +412,7 @@ const styles = StyleSheet.create({
   previewTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 6 },
   previewDesc: { fontSize: 14, color: '#6B7280', marginBottom: 24 },
   previewWordsLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#6B7280',
     textTransform: 'uppercase',
@@ -427,22 +429,16 @@ const styles = StyleSheet.create({
   previewWordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#F3F4F6',
-    gap: 8,
+    gap: 10,
   },
   previewWordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827', flex: 1 },
-  previewWordArrow: { fontSize: 14, color: '#9CA3AF' },
-  previewWordEnglish: { fontSize: 14, color: '#6B7280', flex: 1, textAlign: 'right' },
+  previewWordEnglish: { fontSize: 14, color: '#6B7280' },
   previewFooter: { padding: 20, paddingBottom: 32 },
-  startBtn: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 14,
-    padding: 18,
-    alignItems: 'center',
-  },
+  startBtn: { backgroundColor: '#4F46E5', borderRadius: 14, padding: 18, alignItems: 'center' },
   startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 
   // No hearts
@@ -489,12 +485,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4F46E5',
-    borderRadius: 4,
-  },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  progressFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 4 },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
   typeBadge: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -510,27 +502,25 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  counterBadge: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
+  counterBadge: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
   prompt: {
     fontSize: 22,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 28,
+    marginBottom: 24,
     lineHeight: 30,
   },
-  playBtn: {
-    alignSelf: 'center',
-    backgroundColor: '#4F46E5',
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 28,
-    marginBottom: 24,
+
+  // Listening
+  listeningArea: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 10,
+    marginBottom: 16,
   },
-  playBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  listeningHint: { fontSize: 13, color: '#9CA3AF', fontWeight: '500' },
+
+  // Options
   options: { gap: 10 },
   option: {
     borderWidth: 2,
@@ -541,7 +531,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
-  optionMark: { fontSize: 18, color: '#059669', fontWeight: '700' },
+  optionMarkGood: { fontSize: 18, color: '#059669', fontWeight: '700' },
+  optionMarkBad: { fontSize: 18, color: '#DC2626', fontWeight: '700' },
+
+  // Typing
   typingArea: { gap: 8 },
   input: {
     borderWidth: 2,
@@ -554,25 +547,16 @@ const styles = StyleSheet.create({
   },
   inputCorrect: { borderColor: '#059669', backgroundColor: '#D1FAE5' },
   inputWrong: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
-  correction: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
-  correctionGood: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
+  correctionText: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
 
   // Footer
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   revealedFooter: { gap: 12 },
-  resultBanner: {
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-  },
-  resultBannerCorrect: { backgroundColor: '#D1FAE5' },
-  resultBannerWrong: { backgroundColor: '#FEE2E2' },
+  resultBanner: { borderRadius: 12, padding: 14, alignItems: 'center' },
+  bannerCorrect: { backgroundColor: '#D1FAE5' },
+  bannerWrong: { backgroundColor: '#FEE2E2' },
   resultBannerText: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  actionBtn: {
-    borderRadius: 14,
-    padding: 18,
-    alignItems: 'center',
-  },
+  actionBtn: { borderRadius: 14, padding: 18, alignItems: 'center' },
   checkBtn: { backgroundColor: '#4F46E5' },
   nextBtn: { backgroundColor: '#059669' },
   btnDisabled: { backgroundColor: '#C7D2FE' },
