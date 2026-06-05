@@ -163,6 +163,28 @@ export async function updateNotificationSettings(
   );
 }
 
+export async function awardXP(amount: number): Promise<void> {
+  const database = getDb();
+  const today = new Date().toISOString().split('T')[0];
+  const row = await database.getFirstAsync<{
+    xp: number;
+    streak: number;
+    last_active_date: string;
+    daily_xp_today: number;
+  }>('SELECT xp, streak, last_active_date, daily_xp_today FROM user_progress WHERE id = 1');
+  const lastActive = row?.last_active_date ?? '';
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  let newStreak = row?.streak ?? 0;
+  const newDailyXP = lastActive === today ? (row?.daily_xp_today ?? 0) + amount : amount;
+  if (lastActive !== today) {
+    newStreak = lastActive === yesterday ? newStreak + 1 : 1;
+  }
+  await database.runAsync(
+    'UPDATE user_progress SET xp = ?, streak = ?, last_active_date = ?, daily_xp_today = ? WHERE id = 1',
+    [(row?.xp ?? 0) + amount, newStreak, today, newDailyXP]
+  );
+}
+
 export async function updateDeveloperMode(enabled: boolean): Promise<void> {
   await getDb().runAsync(
     'UPDATE user_progress SET developer_mode = ? WHERE id = 1',

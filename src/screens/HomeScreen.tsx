@@ -69,6 +69,21 @@ export default function HomeScreen() {
           <Text style={styles.totalXP}>{progress.xp} total XP</Text>
         </View>
 
+        <TouchableOpacity
+          style={styles.chatCard}
+          onPress={() => navigation.navigate('Conversation', {})}
+          activeOpacity={0.82}
+        >
+          <View style={styles.chatCardLeft}>
+            <Text style={styles.chatCardEmoji}>💬</Text>
+            <View>
+              <Text style={styles.chatCardTitle}>AI Conversation</Text>
+              <Text style={styles.chatCardDesc}>Practice Spanish with an AI tutor</Text>
+            </View>
+          </View>
+          <Text style={styles.chatCardArrow}>→</Text>
+        </TouchableOpacity>
+
         <Text style={styles.sectionTitle}>Your Lessons</Text>
         <UnitMap
           completedLessons={progress.completedLessons}
@@ -131,6 +146,25 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'right',
   },
+  chatCard: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  chatCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  chatCardEmoji: { fontSize: 32 },
+  chatCardTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  chatCardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  chatCardArrow: { fontSize: 20, color: 'rgba(255,255,255,0.7)' },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',

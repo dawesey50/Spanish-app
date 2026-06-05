@@ -239,7 +239,7 @@ export default function SettingsScreen() {
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
-          <Row label="Version" value="1.0.0 (Phase 5)" />
+          <Row label="Version" value="1.0.0 (Phase 6)" />
           <Row label="Progress stored" value="On-device (SQLite)" />
           <Row label="AI conversation" value="Groq → Gemini → HuggingFace" />
         </View>
