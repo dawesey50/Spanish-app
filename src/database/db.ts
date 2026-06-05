@@ -163,6 +163,25 @@ export async function updateNotificationSettings(
   );
 }
 
+export async function getWeakWordsWithCounts(): Promise<{ wordId: string; wrongCount: number }[]> {
+  const rows = await getDb().getAllAsync<{ word_id: string; wrong_count: number }>(
+    'SELECT word_id, wrong_count FROM weak_words ORDER BY wrong_count DESC LIMIT 20'
+  );
+  return rows.map((r) => ({ wordId: r.word_id, wrongCount: r.wrong_count }));
+}
+
+export async function markWordReviewed(wordId: string): Promise<void> {
+  const database = getDb();
+  await database.runAsync(
+    'UPDATE weak_words SET wrong_count = MAX(0, wrong_count - 1) WHERE word_id = ?',
+    [wordId]
+  );
+  await database.runAsync(
+    'DELETE FROM weak_words WHERE word_id = ? AND wrong_count = 0',
+    [wordId]
+  );
+}
+
 export async function awardXP(amount: number): Promise<void> {
   const database = getDb();
   const today = new Date().toISOString().split('T')[0];

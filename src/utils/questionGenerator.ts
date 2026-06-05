@@ -145,3 +145,45 @@ export function buildQuestions(lessonId: string): Question[] {
 
   return [...mustInclude, ...rest].slice(0, Math.max(words.length, 10));
 }
+
+export function buildReviewQuestions(wordIds: string[]): Question[] {
+  const words = wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean);
+  return words
+    .map((word) => {
+      const esDistractors = getDistractors(word.id, 'spanish', word.topic);
+      const enDistractors = getDistractors(word.id, 'english', word.topic);
+      const candidates: Question[] = [
+        {
+          id: `rev_mc_${word.id}`,
+          type: 'multipleChoice',
+          wordId: word.id,
+          prompt: `What does "${word.spanish}" mean?`,
+          correctAnswer: word.english,
+          options: [...new Set([...enDistractors, word.english])]
+            .slice(0, 4)
+            .sort(() => Math.random() - 0.5),
+        },
+        {
+          id: `rev_type_${word.id}`,
+          type: 'typing',
+          wordId: word.id,
+          prompt: `Type the Spanish for: "${word.english}"`,
+          correctAnswer: word.spanish,
+        },
+        {
+          id: `rev_listen_${word.id}`,
+          type: 'listening',
+          wordId: word.id,
+          prompt: 'Listen and select what you hear:',
+          correctAnswer: word.spanish,
+          audioText: word.spanish,
+          options: [...new Set([...esDistractors, word.spanish])]
+            .slice(0, 4)
+            .sort(() => Math.random() - 0.5),
+        },
+      ];
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    })
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 15);
+}
