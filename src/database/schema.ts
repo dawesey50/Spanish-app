@@ -26,6 +26,11 @@ export const CREATE_TABLES_SQL = `
     wrong_count INTEGER NOT NULL DEFAULT 1,
     last_wrong_date TEXT NOT NULL DEFAULT ''
   );
+
+  CREATE TABLE IF NOT EXISTS achievements (
+    badge_id TEXT PRIMARY KEY,
+    unlocked_at TEXT NOT NULL
+  );
 `;
 
 export const DEFAULT_PROGRESS_SQL = `

@@ -15,7 +15,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
-import { awardXP } from '../database/db';
+import { awardXP, getUnlockedAchievements, unlockAchievement } from '../database/db';
+import { checkAchievements } from '../data/achievements';
+import { fireAchievementToast } from '../utils/achievementEvents';
 import { GROQ_API_KEY, GROQ_MODEL } from '../config';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -229,6 +231,13 @@ export default function ConversationScreen() {
         onPress: async () => {
           setPhase('summary');
           await awardXP(CONVERSATION_XP);
+          const alreadyUnlocked = await getUnlockedAchievements();
+          const newBadges = checkAchievements(
+            { type: 'conversation' },
+            alreadyUnlocked.map((b) => b.badgeId)
+          );
+          await Promise.all(newBadges.map((id) => unlockAchievement(id)));
+          if (newBadges.length > 0) fireAchievementToast(newBadges);
           if (GROQ_API_KEY && scenario) {
             setLoadingFeedback(true);
             try {

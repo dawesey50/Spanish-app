@@ -8,8 +8,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { getUserProgress, getXPHistory } from '../database/db';
+import { getUserProgress, getXPHistory, getUnlockedAchievements } from '../database/db';
 import { LESSONS, LESSONS_BY_ID } from '../data/units';
+import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID } from '../data/achievements';
 import type { UserProgress } from '../types';
 
 const BAR_MAX_H = 72;
@@ -27,13 +28,19 @@ export default function ProgressScreen() {
   const navigation = useNavigation<any>();
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [xpHistory, setXpHistory] = useState<{ date: string; xp: number }[]>([]);
+  const [unlockedBadges, setUnlockedBadges] = useState<Record<string, string>>({});
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([getUserProgress(), getXPHistory(CHART_DAYS)]).then(([p, xp]) => {
-        setProgress(p);
-        setXpHistory(xp);
-      });
+      Promise.all([getUserProgress(), getXPHistory(CHART_DAYS), getUnlockedAchievements()]).then(
+        ([p, xp, badges]) => {
+          setProgress(p);
+          setXpHistory(xp);
+          const map: Record<string, string> = {};
+          badges.forEach((b) => { map[b.badgeId] = b.unlockedAt; });
+          setUnlockedBadges(map);
+        }
+      );
     }, [])
   );
 
@@ -207,6 +214,28 @@ export default function ProgressScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Achievements preview */}
+        <TouchableOpacity
+          style={styles.achievementsCard}
+          onPress={() => navigation.navigate('Achievements' as never)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.achievementsLeft}>
+            <Text style={styles.achievementsTitle}>Achievements</Text>
+            <Text style={styles.achievementsCount}>
+              {Object.keys(unlockedBadges).length} / {ACHIEVEMENTS.length} unlocked
+            </Text>
+          </View>
+          <View style={styles.badgeRow}>
+            {ACHIEVEMENTS.filter((a) => unlockedBadges[a.id]).slice(0, 4).map((a) => (
+              <Text key={a.id} style={styles.badgeEmoji}>{a.emoji}</Text>
+            ))}
+            {Object.keys(unlockedBadges).length === 0 && (
+              <Text style={styles.noBadgesText}>Complete lessons to earn badges →</Text>
+            )}
+          </View>
+        </TouchableOpacity>
+
         {/* Lesson history */}
         <Text style={styles.sectionTitle}>Lesson History</Text>
         {progress.history.length === 0 ? (
@@ -379,6 +408,23 @@ const styles = StyleSheet.create({
   },
   reviewBannerTitle: { fontSize: 14, fontWeight: '700', color: '#92400E' },
   reviewBannerSub: { fontSize: 12, color: '#A16207', marginTop: 3 },
+
+  // Achievements card
+  achievementsCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#FCD34D',
+    gap: 10,
+  },
+  achievementsLeft: {},
+  achievementsTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  achievementsCount: { fontSize: 12, color: '#D97706', fontWeight: '600', marginTop: 2 },
+  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' },
+  badgeEmoji: { fontSize: 26 },
+  noBadgesText: { fontSize: 12, color: '#A16207', fontStyle: 'italic' },
 
   // History
   sectionTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 12 },

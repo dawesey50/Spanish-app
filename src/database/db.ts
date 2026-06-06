@@ -16,6 +16,7 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE user_progress ADD COLUMN developer_mode INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE user_progress ADD COLUMN longest_streak INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE lesson_history ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE user_progress ADD COLUMN words_mastered INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -183,10 +184,15 @@ export async function markWordReviewed(wordId: string): Promise<void> {
     'UPDATE weak_words SET wrong_count = MAX(0, wrong_count - 1) WHERE word_id = ?',
     [wordId]
   );
-  await database.runAsync(
+  const result = await database.runAsync(
     'DELETE FROM weak_words WHERE word_id = ? AND wrong_count = 0',
     [wordId]
   );
+  if (result.changes > 0) {
+    await database.runAsync(
+      'UPDATE user_progress SET words_mastered = words_mastered + 1 WHERE id = 1'
+    );
+  }
 }
 
 export async function awardXP(amount: number): Promise<void> {
@@ -218,6 +224,28 @@ export async function updateDeveloperMode(enabled: boolean): Promise<void> {
   );
 }
 
+export async function unlockAchievement(badgeId: string): Promise<void> {
+  const today = new Date().toISOString().split('T')[0];
+  await getDb().runAsync(
+    'INSERT OR IGNORE INTO achievements (badge_id, unlocked_at) VALUES (?, ?)',
+    [badgeId, today]
+  );
+}
+
+export async function getUnlockedAchievements(): Promise<{ badgeId: string; unlockedAt: string }[]> {
+  const rows = await getDb().getAllAsync<{ badge_id: string; unlocked_at: string }>(
+    'SELECT badge_id, unlocked_at FROM achievements'
+  );
+  return rows.map((r) => ({ badgeId: r.badge_id, unlockedAt: r.unlocked_at }));
+}
+
+export async function getWordsMastered(): Promise<number> {
+  const row = await getDb().getFirstAsync<{ words_mastered: number }>(
+    'SELECT words_mastered FROM user_progress WHERE id = 1'
+  );
+  return row?.words_mastered ?? 0;
+}
+
 export async function getXPHistory(days: number): Promise<{ date: string; xp: number }[]> {
   const database = getDb();
   const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().split('T')[0];
@@ -244,9 +272,11 @@ export async function clearAllProgress(): Promise<void> {
   const database = getDb();
   await database.runAsync(
     `UPDATE user_progress SET streak = 0, last_active_date = '', xp = 0,
-     daily_xp_today = 0, has_completed_onboarding = 0, starting_unit_id = 'unit_01' WHERE id = 1`
+     daily_xp_today = 0, has_completed_onboarding = 0, starting_unit_id = 'unit_01',
+     longest_streak = 0, words_mastered = 0 WHERE id = 1`
   );
   await database.runAsync('DELETE FROM completed_lessons');
   await database.runAsync('DELETE FROM lesson_history');
   await database.runAsync('DELETE FROM weak_words');
+  await database.runAsync('DELETE FROM achievements');
 }

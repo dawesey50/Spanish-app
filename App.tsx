@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 import { initDatabase, getUserProgress } from './src/database/db';
 import { setupNotificationChannel } from './src/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
+import AchievementToast from './src/components/AchievementToast';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -41,6 +42,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <AppNavigator hasCompletedOnboarding={onboarded} />
+      <AchievementToast />
     </SafeAreaProvider>
   );
 }

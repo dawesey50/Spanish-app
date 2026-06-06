@@ -19,7 +19,12 @@ import {
   markWordReviewed,
   awardXP,
   getUserProgress,
+  getUnlockedAchievements,
+  unlockAchievement,
+  getWordsMastered,
 } from '../database/db';
+import { checkAchievements } from '../data/achievements';
+import { fireAchievementToast } from '../utils/achievementEvents';
 import { buildReviewQuestions, isCorrect } from '../utils/questionGenerator';
 import AudioButton from '../components/AudioButton';
 import type { Question } from '../types';
@@ -119,6 +124,16 @@ export default function ReviewScreen() {
         await awardXP(correctOnes.length * XP_PER_CORRECT);
         await Promise.all(correctOnes.map((r) => markWordReviewed(r.wordId)));
       }
+      const [totalWordsMastered, alreadyUnlocked] = await Promise.all([
+        getWordsMastered(),
+        getUnlockedAchievements(),
+      ]);
+      const newBadges = checkAchievements(
+        { type: 'review', totalWordsMastered },
+        alreadyUnlocked.map((b) => b.badgeId)
+      );
+      await Promise.all(newBadges.map((id) => unlockAchievement(id)));
+      if (newBadges.length > 0) fireAchievementToast(newBadges);
       const fresh = await getWeakWordsWithCounts();
       setWeakWords(fresh);
       setResults(finalResults);

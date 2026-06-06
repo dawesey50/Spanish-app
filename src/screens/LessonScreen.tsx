@@ -18,8 +18,10 @@ import * as Haptics from 'expo-haptics';
 import type { RootStackParamList, Correction } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
-import { completeLesson, recordWrongAnswer, getUserProgress } from '../database/db';
+import { completeLesson, recordWrongAnswer, getUserProgress, getUnlockedAchievements, unlockAchievement } from '../database/db';
 import { buildQuestions, isCorrect } from '../utils/questionGenerator';
+import { checkAchievements } from '../data/achievements';
+import { fireAchievementToast } from '../utils/achievementEvents';
 import HeartsDisplay from '../components/HeartsDisplay';
 import AudioButton from '../components/AudioButton';
 import SpeakingQuestion from '../components/SpeakingQuestion';
@@ -127,6 +129,16 @@ export default function LessonScreen() {
       const score = Math.round((correctCount / questions.length) * 100);
       const xpEarned = correctCount * XP_PER_CORRECT + XP_LESSON_BONUS + hearts * XP_HEART_BONUS;
       await completeLesson(lessonId, score, xpEarned);
+      const [updatedProgress, alreadyUnlocked] = await Promise.all([
+        getUserProgress(),
+        getUnlockedAchievements(),
+      ]);
+      const newBadges = checkAchievements(
+        { type: 'lesson', score, streak: updatedProgress.streak, totalXP: updatedProgress.xp, completedLessons: updatedProgress.completedLessons },
+        alreadyUnlocked.map((b) => b.badgeId)
+      );
+      await Promise.all(newBadges.map((id) => unlockAchievement(id)));
+      if (newBadges.length > 0) fireAchievementToast(newBadges);
       navigation.replace('Results', { lessonId, score, xpEarned, corrections });
     } else {
       setIndex((i) => i + 1);

@@ -55,6 +55,7 @@ export type RootStackParamList = {
   Lesson: { lessonId: string };
   Conversation: { scenario?: string };
   Results: { lessonId: string; score: number; xpEarned: number; corrections: Correction[] };
+  Achievements: undefined;
 };
 
 export type MainTabParamList = {
