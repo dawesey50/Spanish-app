@@ -46,6 +46,7 @@ export interface UserProgress {
   notificationsEnabled: boolean;
   notificationHour: number;
   developerMode: boolean;
+  longestStreak: number;
 }
 
 export type RootStackParamList = {

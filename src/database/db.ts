@@ -14,6 +14,8 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE user_progress ADD COLUMN notifications_enabled INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE user_progress ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 20',
     'ALTER TABLE user_progress ADD COLUMN developer_mode INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE user_progress ADD COLUMN longest_streak INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE lesson_history ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -40,6 +42,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     notifications_enabled: number;
     notification_hour: number;
     developer_mode: number;
+    longest_streak: number;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -88,6 +91,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     notificationsEnabled: (row?.notifications_enabled ?? 0) === 1,
     notificationHour: row?.notification_hour ?? 20,
     developerMode: (row?.developer_mode ?? 0) === 1,
+    longestStreak: row?.longest_streak ?? 0,
   };
 }
 
@@ -104,7 +108,8 @@ export async function completeLesson(
     streak: number;
     last_active_date: string;
     daily_xp_today: number;
-  }>('SELECT xp, streak, last_active_date, daily_xp_today FROM user_progress WHERE id = 1');
+    longest_streak: number;
+  }>('SELECT xp, streak, last_active_date, daily_xp_today, longest_streak FROM user_progress WHERE id = 1');
 
   const lastActive = row?.last_active_date ?? '';
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
@@ -115,9 +120,11 @@ export async function completeLesson(
     newStreak = lastActive === yesterday ? newStreak + 1 : 1;
   }
 
+  const newLongestStreak = Math.max(row?.longest_streak ?? 0, newStreak);
+
   await database.runAsync(
-    `UPDATE user_progress SET xp = ?, streak = ?, last_active_date = ?, daily_xp_today = ? WHERE id = 1`,
-    [(row?.xp ?? 0) + xpEarned, newStreak, today, newDailyXP]
+    `UPDATE user_progress SET xp = ?, streak = ?, last_active_date = ?, daily_xp_today = ?, longest_streak = ? WHERE id = 1`,
+    [(row?.xp ?? 0) + xpEarned, newStreak, today, newDailyXP, newLongestStreak]
   );
 
   await database.runAsync(
@@ -126,8 +133,8 @@ export async function completeLesson(
   );
 
   await database.runAsync(
-    'INSERT INTO lesson_history (lesson_id, score, date) VALUES (?, ?, ?)',
-    [lessonId, score, today]
+    'INSERT INTO lesson_history (lesson_id, score, xp_earned, date) VALUES (?, ?, ?, ?)',
+    [lessonId, score, xpEarned, today]
   );
 }
 
@@ -209,6 +216,21 @@ export async function updateDeveloperMode(enabled: boolean): Promise<void> {
     'UPDATE user_progress SET developer_mode = ? WHERE id = 1',
     [enabled ? 1 : 0]
   );
+}
+
+export async function getXPHistory(days: number): Promise<{ date: string; xp: number }[]> {
+  const database = getDb();
+  const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().split('T')[0];
+  const rows = await database.getAllAsync<{ date: string; xp: number }>(
+    'SELECT date, SUM(xp_earned) as xp FROM lesson_history WHERE date >= ? GROUP BY date',
+    [cutoff]
+  );
+  const map = Object.fromEntries(rows.map((r) => [r.date, r.xp]));
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(Date.now() - (days - 1 - i) * 86400000);
+    const date = d.toISOString().split('T')[0];
+    return { date, xp: map[date] ?? 0 };
+  });
 }
 
 export async function setOnboardingComplete(startingUnitId: string): Promise<void> {
