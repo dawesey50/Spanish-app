@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   RefreshControl,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
