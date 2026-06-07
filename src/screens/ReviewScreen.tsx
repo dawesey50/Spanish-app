@@ -10,7 +10,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Image,
 } from 'react-native';
+
+const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
+  multipleChoice: require('../../assets/badges/multiple_chioice.png'),
+  typing: require('../../assets/badges/typing.png'),
+  listening: require('../../assets/badges/listening.png'),
+};
+const TICK_ICON = require('../../assets/icons/green_tick.png');
+const CROSS_ICON = require('../../assets/icons/red_cross.png');
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
@@ -310,13 +319,20 @@ export default function ReviewScreen() {
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
             {/* Type badge */}
             <View style={styles.typeBadgeRow}>
-              <Text style={styles.typeBadge}>
-                {current.type === 'multipleChoice'
-                  ? '🔤 Multiple Choice'
-                  : current.type === 'typing'
-                  ? '⌨️ Type the Answer'
-                  : '🔊 Listening'}
-              </Text>
+              <View style={styles.typeBadgeInner}>
+                <Image
+                  source={TYPE_BADGE_ICONS[current.type]}
+                  style={styles.typeBadgeIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.typeBadge}>
+                  {current.type === 'multipleChoice'
+                    ? 'Multiple Choice'
+                    : current.type === 'typing'
+                    ? 'Type the Answer'
+                    : 'Listening'}
+                </Text>
+              </View>
               <Text style={styles.reviewPill}>Review</Text>
             </View>
 
@@ -358,8 +374,8 @@ export default function ReviewScreen() {
                         activeOpacity={0.75}
                       >
                         <Text style={styles.optionText}>{opt}</Text>
-                        {revealed && isRight && <Text style={styles.markGreen}>✓</Text>}
-                        {revealed && isSelected && !isRight && <Text style={styles.markRed}>✗</Text>}
+                        {revealed && isRight && <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />}
+                        {revealed && isSelected && !isRight && <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />}
                       </TouchableOpacity>
                     );
                   })}
@@ -568,14 +584,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  typeBadgeInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  typeBadgeIcon: { width: 16, height: 16 },
   typeBadge: {
     fontSize: 13,
     color: '#4F46E5',
     fontWeight: '600',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
   },
   reviewPill: {
     fontSize: 11,
@@ -602,8 +624,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
-  markGreen: { fontSize: 18, color: '#059669', fontWeight: '700' },
-  markRed: { fontSize: 18, color: '#DC2626', fontWeight: '700' },
+  optionMark: { width: 20, height: 20 },
 
   typingArea: { gap: 8 },
   input: {

@@ -8,7 +8,10 @@ import {
   Switch,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
+
+const RED_LOCK_ICON = require('../../assets/icons/red_lock.png');
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getUserProgress,
@@ -228,9 +231,10 @@ export default function SettingsScreen() {
         </View>
         {progress.developerMode && (
           <View style={styles.devWarning}>
-            <Text style={styles.devWarningText}>
-              🔓 All lessons unlocked for testing. Turn off when done.
-            </Text>
+            <View style={styles.devWarningRow}>
+              <Image source={RED_LOCK_ICON} style={styles.devLockIcon} resizeMode="contain" />
+              <Text style={styles.devWarningText}>All lessons unlocked for testing. Turn off when done.</Text>
+            </View>
           </View>
         )}
 
@@ -355,7 +359,9 @@ const styles = StyleSheet.create({
     borderColor: '#FCA5A5',
     marginTop: 4,
   },
-  devWarningText: { fontSize: 13, color: '#DC2626', fontWeight: '600' },
+  devWarningRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  devLockIcon: { width: 18, height: 18 },
+  devWarningText: { fontSize: 13, color: '#DC2626', fontWeight: '600', flex: 1 },
   dangerBtn: {
     borderWidth: 2,
     borderColor: '#DC2626',

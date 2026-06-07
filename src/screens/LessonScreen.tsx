@@ -11,7 +11,17 @@ import {
   Animated,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
+
+const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
+  multipleChoice: require('../../assets/badges/multiple_chioice.png'),
+  typing: require('../../assets/badges/typing.png'),
+  listening: require('../../assets/badges/listening.png'),
+  speaking: require('../../assets/badges/speaking.png'),
+};
+const TICK_ICON = require('../../assets/icons/green_tick.png');
+const CROSS_ICON = require('../../assets/icons/red_cross.png');
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
@@ -306,15 +316,22 @@ export default function LessonScreen() {
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
             {/* Type badge + counter */}
             <View style={styles.typeBadge}>
-              <Text style={styles.typeText}>
-                {current.type === 'multipleChoice'
-                  ? '🔤 Multiple Choice'
-                  : current.type === 'typing'
-                  ? '⌨️ Type the Answer'
-                  : current.type === 'speaking'
-                  ? '🎤 Speaking'
-                  : '🔊 Listening'}
-              </Text>
+              <View style={styles.typeBadgeInner}>
+                <Image
+                  source={TYPE_BADGE_ICONS[current.type]}
+                  style={styles.typeBadgeIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.typeText}>
+                  {current.type === 'multipleChoice'
+                    ? 'Multiple Choice'
+                    : current.type === 'typing'
+                    ? 'Type the Answer'
+                    : current.type === 'speaking'
+                    ? 'Speaking'
+                    : 'Listening'}
+                </Text>
+              </View>
               <Text style={styles.counterBadge}>
                 {index + 1}/{questions.length}
               </Text>
@@ -362,10 +379,10 @@ export default function LessonScreen() {
                       >
                         <Text style={styles.optionText}>{opt}</Text>
                         {revealed && isRight && (
-                          <Text style={styles.optionMarkGood}>✓</Text>
+                          <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />
                         )}
                         {revealed && isSelected && !isRight && (
-                          <Text style={styles.optionMarkBad}>✗</Text>
+                          <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />
                         )}
                       </TouchableOpacity>
                     );
@@ -551,14 +568,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  typeBadgeInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  typeBadgeIcon: { width: 16, height: 16 },
   typeText: {
     fontSize: 13,
     color: '#4F46E5',
     fontWeight: '600',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
   },
   counterBadge: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
   prompt: {
@@ -589,8 +612,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
-  optionMarkGood: { fontSize: 18, color: '#059669', fontWeight: '700' },
-  optionMarkBad: { fontSize: 18, color: '#DC2626', fontWeight: '700' },
+  optionMark: { width: 20, height: 20 },
 
   // Typing
   typingArea: { gap: 8 },

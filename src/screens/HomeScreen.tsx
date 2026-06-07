@@ -7,7 +7,10 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
+
+const CHAT_ICON = require('../../assets/icons/white_message_icon.png');
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, UserProgress } from '../types';
@@ -76,7 +79,7 @@ export default function HomeScreen() {
           activeOpacity={0.82}
         >
           <View style={styles.chatCardLeft}>
-            <Text style={styles.chatCardEmoji}>💬</Text>
+            <Image source={CHAT_ICON} style={styles.chatCardEmoji} resizeMode="contain" />
             <View>
               <Text style={styles.chatCardTitle}>AI Conversation</Text>
               <Text style={styles.chatCardDesc}>Practice Spanish with an AI tutor</Text>
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   chatCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  chatCardEmoji: { fontSize: 32 },
+  chatCardEmoji: { width: 36, height: 36 },
   chatCardTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
   chatCardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   chatCardArrow: { fontSize: 20, color: 'rgba(255,255,255,0.7)' },

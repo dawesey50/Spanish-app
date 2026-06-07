@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
+
+const RED_HEART = require('../../assets/icons/red_heart.png');
+const EMPTY_HEART = require('../../assets/icons/empty_heart.png');
 
 interface Props {
   count: number;
@@ -10,9 +13,12 @@ export default function HeartsDisplay({ count, max = 3 }: Props) {
   return (
     <View style={styles.container}>
       {Array.from({ length: max }).map((_, i) => (
-        <Text key={i} style={[styles.heart, i >= count && styles.empty]}>
-          {i < count ? '❤️' : '🖤'}
-        </Text>
+        <Image
+          key={i}
+          source={i < count ? RED_HEART : EMPTY_HEART}
+          style={[styles.heart, i >= count && styles.empty]}
+          resizeMode="contain"
+        />
       ))}
     </View>
   );
@@ -25,7 +31,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heart: {
-    fontSize: 18,
+    width: 22,
+    height: 22,
   },
   empty: {
     opacity: 0.35,

@@ -1,6 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { UNITS, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/units';
+
+const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
+  unit_01: require('../../assets/units/Greetings.png'),
+  unit_02: require('../../assets/units/Food.png'),
+  unit_03: require('../../assets/units/travel.png'),
+  unit_04: require('../../assets/units/People.png'),
+};
+const LOCK_ICON = require('../../assets/icons/grey_lock.png');
+const CHECK_ICON = require('../../assets/icons/green_tick.png');
 
 interface Props {
   completedLessons: string[];
@@ -18,7 +27,11 @@ export default function UnitMap({ completedLessons, onLessonPress, unlockAll = f
         return (
           <View key={unit.id} style={styles.unitBlock}>
             <View style={[styles.unitHeader, !unlocked && styles.unitHeaderLocked]}>
-              <Text style={styles.unitIcon}>{unlocked ? unit.icon : '🔒'}</Text>
+              <Image
+                source={unlocked ? (UNIT_IMAGES[unit.id] ?? LOCK_ICON) : LOCK_ICON}
+                style={styles.unitIcon}
+                resizeMode="contain"
+              />
               <View style={styles.unitHeaderText}>
                 <Text style={[styles.unitTitle, !unlocked && styles.lockedText]}>
                   {unit.title}
@@ -27,7 +40,7 @@ export default function UnitMap({ completedLessons, onLessonPress, unlockAll = f
                   {unlocked ? unit.description : 'Complete the previous unit to unlock'}
                 </Text>
               </View>
-              {allDone && <Text style={styles.completeBadge}>✓</Text>}
+              {allDone && <Image source={CHECK_ICON} style={styles.completeBadge} resizeMode="contain" />}
             </View>
 
             <View style={styles.lessonList}>
@@ -61,7 +74,7 @@ export default function UnitMap({ completedLessons, onLessonPress, unlockAll = f
                         {lesson?.wordIds.length ?? 0} words
                       </Text>
                     </View>
-                    {!lessonUnlocked && <Text style={styles.lockIcon}>🔒</Text>}
+                    {!lessonUnlocked && <Image source={LOCK_ICON} style={styles.lockIcon} resizeMode="contain" />}
                   </TouchableOpacity>
                 );
               })}
@@ -96,7 +109,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#9CA3AF',
   },
   unitIcon: {
-    fontSize: 32,
+    width: 38,
+    height: 38,
   },
   unitHeaderText: {
     flex: 1,
@@ -115,8 +129,8 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.6)',
   },
   completeBadge: {
-    fontSize: 20,
-    color: '#A7F3D0',
+    width: 24,
+    height: 24,
   },
   lessonList: {
     paddingVertical: 4,
@@ -166,7 +180,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   lockIcon: {
-    fontSize: 14,
-    color: '#9CA3AF',
+    width: 16,
+    height: 16,
   },
 });

@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TouchableOpacity, StyleSheet, Animated, ViewStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, Animated, ViewStyle, Image } from 'react-native';
+
+const SPEAKER_ON = require('../../assets/icons/blue_speaker.png');
+const SPEAKER_OFF = require('../../assets/icons/grey_speaker.png');
 import * as Speech from 'expo-speech';
 
 interface Props {
@@ -104,9 +107,11 @@ export default function AudioButton({
         onPress={play}
         activeOpacity={0.85}
       >
-        <Animated.Text style={{ fontSize, lineHeight: fontSize + 4 }}>
-          {playing ? '🔊' : '🔈'}
-        </Animated.Text>
+        <Image
+          source={playing ? SPEAKER_ON : SPEAKER_OFF}
+          style={{ width: fontSize, height: fontSize }}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
     </Animated.View>
   );

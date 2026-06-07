@@ -4,7 +4,13 @@
     "slug": "spanish-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/app/app_icon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/app/splash_icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,

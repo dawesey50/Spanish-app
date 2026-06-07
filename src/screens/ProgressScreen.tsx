@@ -6,7 +6,15 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
+
+const FIRE_ICON = require('../../assets/icons/fire.png');
+const STAR_ICON = require('../../assets/icons/star.png');
+const BOOK_ICON = require('../../assets/icons/blue_icon_book.png');
+const TARGET_ICON = require('../../assets/icons/blue_target.png');
+const WARNING_ICON = require('../../assets/icons/warning_sign.png');
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getUserProgress, getXPHistory, getUnlockedAchievements } from '../database/db';
 import { LESSONS, LESSONS_BY_ID } from '../data/units';
@@ -172,26 +180,26 @@ export default function ProgressScreen() {
         {/* Stats grid */}
         <View style={styles.statsGrid}>
           <StatCard
-            emoji="🔥"
+            icon={FIRE_ICON}
             value={String(progress.streak)}
             label="Current Streak"
             sub={`Best: ${Math.max(progress.longestStreak, progress.streak)} days`}
             color="#D97706"
           />
           <StatCard
-            emoji="⭐"
+            icon={STAR_ICON}
             value={String(progress.xp)}
             label="Total XP"
             color="#4F46E5"
           />
           <StatCard
-            emoji="📖"
+            icon={BOOK_ICON}
             value={`${completedCount}/${totalLessons}`}
             label="Lessons Done"
             color="#059669"
           />
           <StatCard
-            emoji="🎯"
+            icon={TARGET_ICON}
             value={accuracy !== null ? `${accuracy}%` : '—'}
             label="Avg. Accuracy"
             color="#0EA5E9"
@@ -206,9 +214,12 @@ export default function ProgressScreen() {
             activeOpacity={0.8}
           >
             <View>
-              <Text style={styles.reviewBannerTitle}>
-                ⚠️{' '}{progress.weakWords.length} word{progress.weakWords.length !== 1 ? 's' : ''} need practice
-              </Text>
+              <View style={styles.reviewBannerRow}>
+                <Image source={WARNING_ICON} style={styles.warningIcon} resizeMode="contain" />
+                <Text style={styles.reviewBannerTitle}>
+                  {progress.weakWords.length} word{progress.weakWords.length !== 1 ? 's' : ''} need practice
+                </Text>
+              </View>
               <Text style={styles.reviewBannerSub}>Tap to start a review session →</Text>
             </View>
           </TouchableOpacity>
@@ -266,13 +277,13 @@ export default function ProgressScreen() {
 }
 
 function StatCard({
-  emoji,
+  icon,
   value,
   label,
   sub,
   color,
 }: {
-  emoji: string;
+  icon: ImageSourcePropType;
   value: string;
   label: string;
   sub?: string;
@@ -280,7 +291,7 @@ function StatCard({
 }) {
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statEmoji}>{emoji}</Text>
+      <Image source={icon} style={styles.statIcon} resizeMode="contain" />
       <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
       {sub ? <Text style={styles.statSub}>{sub}</Text> : null}
@@ -389,7 +400,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 2,
   },
-  statEmoji: { fontSize: 26, marginBottom: 4 },
+  statIcon: { width: 30, height: 30, marginBottom: 4 },
   statValue: { fontSize: 26, fontWeight: '800' },
   statLabel: { fontSize: 12, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
   statSub: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 2 },
@@ -406,6 +417,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  reviewBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  warningIcon: { width: 18, height: 18 },
   reviewBannerTitle: { fontSize: 14, fontWeight: '700', color: '#92400E' },
   reviewBannerSub: { fontSize: 12, color: '#A16207', marginTop: 3 },
 

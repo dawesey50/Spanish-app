@@ -11,7 +11,16 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
+
+const SCENARIO_IMAGES: Record<string, ReturnType<typeof require>> = {
+  food: require('../../assets/scenarios/ordering_food.png'),
+  directions: require('../../assets/scenarios/directions.png'),
+  meeting: require('../../assets/scenarios/meeting.png'),
+  shopping: require('../../assets/scenarios/shopping.png'),
+  freeform: require('../../assets/scenarios/freeform.png'),
+};
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
@@ -296,7 +305,7 @@ export default function ConversationScreen() {
               onPress={() => startScenario(s)}
               activeOpacity={0.8}
             >
-              <Text style={styles.scenarioEmoji}>{s.emoji}</Text>
+              <Image source={SCENARIO_IMAGES[s.id]} style={styles.scenarioEmoji} resizeMode="contain" />
               <View style={styles.scenarioText}>
                 <Text style={styles.scenarioLabel}>{s.label}</Text>
                 <Text style={styles.scenarioDesc}>{s.description}</Text>
@@ -316,7 +325,7 @@ export default function ConversationScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.summaryScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.summaryEmoji}>{scenario?.emoji}</Text>
+          {scenario && <Image source={SCENARIO_IMAGES[scenario.id]} style={styles.summaryEmoji} resizeMode="contain" />}
           <Text style={styles.summaryTitle}>Conversation Complete!</Text>
           <Text style={styles.summaryMeta}>{scenario?.label}</Text>
 
@@ -367,9 +376,10 @@ export default function ConversationScreen() {
           <Text style={styles.backBtnText}>←</Text>
         </TouchableOpacity>
         <View style={styles.chatHeaderCenter}>
-          <Text style={styles.chatHeaderTitle}>
-            {scenario?.emoji} {scenario?.label}
-          </Text>
+          <View style={styles.chatHeaderTitleRow}>
+            {scenario && <Image source={SCENARIO_IMAGES[scenario.id]} style={styles.chatHeaderIcon} resizeMode="contain" />}
+            <Text style={styles.chatHeaderTitle}>{scenario?.label}</Text>
+          </View>
           <Text style={styles.chatHeaderSub}>with {scenario?.aiName}</Text>
         </View>
         <TouchableOpacity onPress={endConversation} style={styles.endBtn}>
@@ -499,7 +509,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  scenarioEmoji: { fontSize: 32 },
+  scenarioEmoji: { width: 40, height: 40 },
   scenarioText: { flex: 1 },
   scenarioLabel: { fontSize: 15, fontWeight: '700', color: '#111827' },
   scenarioDesc: { fontSize: 13, color: '#6B7280', marginTop: 2 },
@@ -517,6 +527,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chatHeaderCenter: { flex: 1, alignItems: 'center' },
+  chatHeaderTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  chatHeaderIcon: { width: 18, height: 18 },
   chatHeaderTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
   chatHeaderSub: { fontSize: 11, color: '#6B7280', marginTop: 1 },
   endBtn: {
@@ -603,7 +615,7 @@ const styles = StyleSheet.create({
 
   // ─── Summary ──────────────────────────────────────────────────────────────
   summaryScroll: { padding: 24, alignItems: 'center', paddingBottom: 48 },
-  summaryEmoji: { fontSize: 72, marginBottom: 12 },
+  summaryEmoji: { width: 80, height: 80, marginBottom: 12 },
   summaryTitle: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 4 },
   summaryMeta: { fontSize: 14, color: '#6B7280', marginBottom: 20 },
 

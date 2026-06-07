@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Image } from 'react-native';
 
 import type { RootStackParamList, MainTabParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
@@ -18,8 +18,33 @@ import AchievementsScreen from '../screens/AchievementsScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
-  return <Text style={{ fontSize: focused ? 24 : 20, opacity: focused ? 1 : 0.6 }}>{icon}</Text>;
+const TAB_ICONS = {
+  Home: {
+    active: require('../../assets/tabs/learning_active.png'),
+    inactive: require('../../assets/tabs/learning_inactive.png'),
+  },
+  Review: {
+    active: require('../../assets/tabs/review_active.png'),
+    inactive: require('../../assets/tabs/review_inactive.png'),
+  },
+  Progress: {
+    active: require('../../assets/tabs/progress_active.png'),
+    inactive: require('../../assets/tabs/progress_inactive.png'),
+  },
+  Settings: {
+    active: require('../../assets/tabs/settings_active.png'),
+    inactive: require('../../assets/tabs/settings_inacitve.png'),
+  },
+} as const;
+
+function TabIcon({ name, focused }: { name: keyof typeof TAB_ICONS; focused: boolean }) {
+  return (
+    <Image
+      source={TAB_ICONS[name][focused ? 'active' : 'inactive']}
+      style={{ width: 24, height: 24, opacity: focused ? 1 : 0.65 }}
+      resizeMode="contain"
+    />
+  );
 }
 
 function MainTabs() {
@@ -43,7 +68,7 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Learn',
-          tabBarIcon: ({ focused }) => <TabIcon icon="📚" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="Home" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -51,7 +76,7 @@ function MainTabs() {
         component={ReviewScreen}
         options={{
           tabBarLabel: 'Review',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🔄" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="Review" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -59,7 +84,7 @@ function MainTabs() {
         component={ProgressScreen}
         options={{
           tabBarLabel: 'Progress',
-          tabBarIcon: ({ focused }) => <TabIcon icon="📊" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="Progress" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -67,7 +92,7 @@ function MainTabs() {
         component={SettingsScreen}
         options={{
           tabBarLabel: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="Settings" focused={focused} />,
         }}
       />
     </Tab.Navigator>

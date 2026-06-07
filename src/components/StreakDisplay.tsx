@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+
+const FIRE_ICON = require('../../assets/icons/fire.png');
 
 interface Props {
   streak: number;
@@ -8,7 +10,7 @@ interface Props {
 export default function StreakDisplay({ streak }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.flame}>🔥</Text>
+      <Image source={FIRE_ICON} style={styles.flame} resizeMode="contain" />
       <Text style={styles.count}>{streak}</Text>
       <Text style={styles.label}>{streak === 1 ? 'day streak' : 'day streak'}</Text>
     </View>
@@ -26,7 +28,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   flame: {
-    fontSize: 20,
+    width: 24,
+    height: 24,
   },
   count: {
     fontSize: 18,

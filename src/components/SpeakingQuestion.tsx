@@ -6,7 +6,13 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
+  Image,
 } from 'react-native';
+
+const MIC_IDLE = require('../../assets/icons/blue_microphone.png');
+const MIC_RECORDING = require('../../assets/icons/red_microphone.png');
+const TICK_ICON = require('../../assets/icons/green_tick.png');
+const CROSS_ICON = require('../../assets/icons/red_cross.png');
 import { isCorrect } from '../utils/questionGenerator';
 import { WORDS_BY_ID } from '../data/words';
 import AudioButton from './AudioButton';
@@ -103,7 +109,7 @@ export default function SpeakingQuestion({
   if (!Voice) {
     return (
       <View style={styles.fallbackBox}>
-        <Text style={styles.fallbackIcon}>🎤</Text>
+        <Image source={MIC_IDLE} style={styles.fallbackIcon} resizeMode="contain" />
         <Text style={styles.fallbackTitle}>Dev Build Required</Text>
         <Text style={styles.fallbackBody}>
           Speaking questions use native speech recognition, which isn't available in Expo Go.
@@ -133,14 +139,14 @@ export default function SpeakingQuestion({
       ? '#059669'
       : '#DC2626';
 
-  const micLabel =
+  const micIcon =
     recState === 'idle'
-      ? '🎤'
+      ? MIC_IDLE
       : recState === 'recording'
-      ? '⏹'
+      ? MIC_RECORDING
       : wasCorrect
-      ? '✓'
-      : '✗';
+      ? TICK_ICON
+      : CROSS_ICON;
 
   const hintText =
     recState === 'idle'
@@ -173,7 +179,7 @@ export default function SpeakingQuestion({
             disabled={recState === 'done'}
             activeOpacity={0.82}
           >
-            <Text style={styles.micIcon}>{micLabel}</Text>
+            <Image source={micIcon} style={styles.micIcon} resizeMode="contain" />
           </TouchableOpacity>
         </Animated.View>
         <Text style={styles.micHint}>{hintText}</Text>
@@ -226,7 +232,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  micIcon: { fontSize: 38 },
+  micIcon: { width: 42, height: 42 },
   micHint: { fontSize: 15, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
 
   // Skip
@@ -243,7 +249,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  fallbackIcon: { fontSize: 44 },
+  fallbackIcon: { width: 52, height: 52 },
   fallbackTitle: { fontSize: 17, fontWeight: '700', color: '#92400E' },
   fallbackBody: { fontSize: 14, color: '#78350F', textAlign: 'center', lineHeight: 20 },
   codeBox: {
