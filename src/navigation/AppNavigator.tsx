@@ -15,6 +15,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
 import VocabScreen from '../screens/VocabScreen';
+import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -144,6 +145,11 @@ export default function AppNavigator({ hasCompletedOnboarding }: Props) {
           name="Achievements"
           component={AchievementsScreen}
           options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="DailyChallenge"
+          component={DailyChallengeScreen}
+          options={{ animation: 'slide_from_bottom' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

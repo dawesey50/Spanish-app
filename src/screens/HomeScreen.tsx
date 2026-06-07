@@ -18,6 +18,7 @@ import { getUserProgress } from '../database/db';
 import StreakDisplay from '../components/StreakDisplay';
 import XPBar from '../components/XPBar';
 import UnitMap from '../components/UnitMap';
+import DailyChallengeCard from '../components/DailyChallengeCard';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -72,6 +73,12 @@ export default function HomeScreen() {
           <XPBar current={progress.dailyXPToday} goal={progress.dailyGoalXP} />
           <Text style={styles.totalXP}>{progress.xp} total XP</Text>
         </View>
+
+        <DailyChallengeCard
+          completedLessons={progress.completedLessons}
+          completedToday={progress.lastChallengeDate === new Date().toISOString().split('T')[0]}
+          onStart={() => navigation.navigate('DailyChallenge')}
+        />
 
         <TouchableOpacity
           style={styles.chatCard}

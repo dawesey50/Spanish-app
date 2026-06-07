@@ -173,6 +173,86 @@ function buildSentenceQuestions(lessonId: string): Question[] {
   });
 }
 
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = Math.imul(s ^ (s >>> 15), s | 1);
+    s ^= s + Math.imul(s ^ (s >>> 7), s | 61);
+    return ((s ^ (s >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const result = [...arr];
+  const rng = seededRandom(seed);
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+export function buildDailyChallenge(dateStr: string, completedLessonIds: string[]): Question[] {
+  if (completedLessonIds.length === 0) return [];
+
+  const wordIdSet = new Set<string>();
+  completedLessonIds.forEach((lessonId) => {
+    const lesson = LESSONS_BY_ID[lessonId];
+    if (lesson) lesson.wordIds.forEach((wid) => wordIdSet.add(wid));
+  });
+
+  const allWords = Array.from(wordIdSet).map((id) => WORDS_BY_ID[id]).filter(Boolean);
+  if (allWords.length === 0) return [];
+
+  const seed = dateStr.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const shuffled = seededShuffle(allWords, seed);
+  const picked = shuffled.slice(0, Math.min(5, shuffled.length));
+
+  const QTYPES: Array<[Question['type'], 'es_en' | 'en_es']> = [
+    ['multipleChoice', 'es_en'],
+    ['typing', 'en_es'],
+    ['multipleChoice', 'en_es'],
+    ['typing', 'en_es'],
+    ['multipleChoice', 'es_en'],
+  ];
+
+  return picked.map((word, i) => {
+    const [qtype, dir] = QTYPES[i % QTYPES.length];
+    const esDistractors = getDistractors(word.id, 'spanish', word.topic);
+    const enDistractors = getDistractors(word.id, 'english', word.topic);
+
+    if (qtype === 'typing') {
+      return {
+        id: `dc_${dateStr}_${i}`,
+        type: 'typing' as const,
+        wordId: word.id,
+        prompt: `Type the Spanish for: "${word.english}"`,
+        correctAnswer: word.spanish,
+      };
+    }
+
+    if (dir === 'es_en') {
+      return {
+        id: `dc_${dateStr}_${i}`,
+        type: 'multipleChoice' as const,
+        wordId: word.id,
+        prompt: `What does "${word.spanish}" mean?`,
+        correctAnswer: word.english,
+        options: [...new Set([...enDistractors, word.english])].slice(0, 4).sort(() => Math.random() - 0.5),
+      };
+    }
+
+    return {
+      id: `dc_${dateStr}_${i}`,
+      type: 'multipleChoice' as const,
+      wordId: word.id,
+      prompt: `How do you say "${word.english}" in Spanish?`,
+      correctAnswer: word.spanish,
+      options: [...new Set([...esDistractors, word.spanish])].slice(0, 4).sort(() => Math.random() - 0.5),
+    };
+  });
+}
+
 export function buildReviewQuestions(wordIds: string[]): Question[] {
   const words = wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean);
   return words

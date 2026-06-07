@@ -17,6 +17,7 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE user_progress ADD COLUMN longest_streak INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE lesson_history ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE user_progress ADD COLUMN words_mastered INTEGER NOT NULL DEFAULT 0',
+    "ALTER TABLE user_progress ADD COLUMN last_challenge_date TEXT NOT NULL DEFAULT ''",
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -44,6 +45,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     notification_hour: number;
     developer_mode: number;
     longest_streak: number;
+    last_challenge_date: string;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -93,6 +95,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     notificationHour: row?.notification_hour ?? 20,
     developerMode: (row?.developer_mode ?? 0) === 1,
     longestStreak: row?.longest_streak ?? 0,
+    lastChallengeDate: row?.last_challenge_date ?? '',
   };
 }
 
@@ -290,12 +293,21 @@ export async function toggleFavourite(wordId: string): Promise<boolean> {
   }
 }
 
+export async function completeDailyChallenge(): Promise<void> {
+  const today = new Date().toISOString().split('T')[0];
+  await getDb().runAsync(
+    'UPDATE user_progress SET last_challenge_date = ? WHERE id = 1',
+    [today]
+  );
+  await awardXP(25);
+}
+
 export async function clearAllProgress(): Promise<void> {
   const database = getDb();
   await database.runAsync(
     `UPDATE user_progress SET streak = 0, last_active_date = '', xp = 0,
      daily_xp_today = 0, has_completed_onboarding = 0, starting_unit_id = 'unit_01',
-     longest_streak = 0, words_mastered = 0 WHERE id = 1`
+     longest_streak = 0, words_mastered = 0, last_challenge_date = '' WHERE id = 1`
   );
   await database.runAsync('DELETE FROM completed_lessons');
   await database.runAsync('DELETE FROM lesson_history');

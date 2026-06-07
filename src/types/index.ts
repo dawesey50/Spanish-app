@@ -47,6 +47,7 @@ export interface UserProgress {
   notificationHour: number;
   developerMode: boolean;
   longestStreak: number;
+  lastChallengeDate: string;
 }
 
 export type RootStackParamList = {
@@ -56,6 +57,7 @@ export type RootStackParamList = {
   Conversation: { scenario?: string };
   Results: { lessonId: string; score: number; xpEarned: number; corrections: Correction[] };
   Achievements: undefined;
+  DailyChallenge: undefined;
 };
 
 export type MainTabParamList = {
