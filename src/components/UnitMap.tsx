@@ -27,11 +27,13 @@ export default function UnitMap({ completedLessons, onLessonPress, unlockAll = f
         return (
           <View key={unit.id} style={styles.unitBlock}>
             <View style={[styles.unitHeader, !unlocked && styles.unitHeaderLocked]}>
-              <Image
-                source={unlocked ? (UNIT_IMAGES[unit.id] ?? LOCK_ICON) : LOCK_ICON}
-                style={styles.unitIcon}
-                resizeMode="contain"
-              />
+              {!unlocked ? (
+                <Image source={LOCK_ICON} style={styles.unitIcon} resizeMode="contain" />
+              ) : UNIT_IMAGES[unit.id] ? (
+                <Image source={UNIT_IMAGES[unit.id]} style={styles.unitIcon} resizeMode="contain" />
+              ) : (
+                <Text style={styles.unitIconEmoji}>{unit.icon}</Text>
+              )}
               <View style={styles.unitHeaderText}>
                 <Text style={[styles.unitTitle, !unlocked && styles.lockedText]}>
                   {unit.title}
@@ -111,6 +113,9 @@ const styles = StyleSheet.create({
   unitIcon: {
     width: 38,
     height: 38,
+  },
+  unitIconEmoji: {
+    fontSize: 32,
   },
   unitHeaderText: {
     flex: 1,

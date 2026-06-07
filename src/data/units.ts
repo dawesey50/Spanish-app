@@ -99,6 +99,105 @@ export const LESSONS: Lesson[] = [
     questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
     wordIds: ['w079', 'w080', 'w081', 'w082', 'w083', 'w084', 'w085', 'w086'],
   },
+
+  // Unit 5
+  {
+    id: 'lesson_14',
+    unitId: 'unit_05',
+    title: 'At the Shop',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w087', 'w088', 'w089', 'w090', 'w091', 'w092'],
+  },
+  {
+    id: 'lesson_15',
+    unitId: 'unit_05',
+    title: 'Paying & Money',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w093', 'w094', 'w095', 'w096', 'w097', 'w098', 'w099'],
+  },
+  {
+    id: 'lesson_16',
+    unitId: 'unit_05',
+    title: 'Clothes',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w100', 'w101', 'w102', 'w103', 'w104', 'w105', 'w106'],
+  },
+
+  // Unit 6
+  {
+    id: 'lesson_17',
+    unitId: 'unit_06',
+    title: 'Weather Conditions',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w107', 'w108', 'w109', 'w110', 'w111', 'w112', 'w113'],
+  },
+  {
+    id: 'lesson_18',
+    unitId: 'unit_06',
+    title: 'Seasons',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w114', 'w115', 'w116', 'w117', 'w118', 'w119', 'w120'],
+  },
+  {
+    id: 'lesson_19',
+    unitId: 'unit_06',
+    title: 'Nature & Places',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w121', 'w122', 'w123', 'w124', 'w125', 'w126'],
+  },
+
+  // Unit 7
+  {
+    id: 'lesson_20',
+    unitId: 'unit_07',
+    title: 'Body Parts',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w127', 'w128', 'w129', 'w130', 'w131', 'w132', 'w133'],
+  },
+  {
+    id: 'lesson_21',
+    unitId: 'unit_07',
+    title: 'Feeling Ill',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w134', 'w135', 'w136', 'w137', 'w138', 'w139', 'w140'],
+  },
+  {
+    id: 'lesson_22',
+    unitId: 'unit_07',
+    title: 'At the Doctor',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w141', 'w142', 'w143', 'w144', 'w145', 'w146'],
+  },
+
+  // Unit 8
+  {
+    id: 'lesson_23',
+    unitId: 'unit_08',
+    title: 'Sports',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w147', 'w148', 'w149', 'w150', 'w151', 'w152'],
+  },
+  {
+    id: 'lesson_24',
+    unitId: 'unit_08',
+    title: 'Music & Arts',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w153', 'w154', 'w155', 'w156', 'w157', 'w158'],
+  },
+  {
+    id: 'lesson_25',
+    unitId: 'unit_08',
+    title: 'Reading & Learning',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w159', 'w160', 'w161', 'w162', 'w163', 'w164'],
+  },
+  {
+    id: 'lesson_26',
+    unitId: 'unit_08',
+    title: 'Weekend Activities',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking'],
+    wordIds: ['w165', 'w166', 'w167', 'w168', 'w169', 'w170', 'w171'],
+  },
 ];
 
 export const UNITS: Unit[] = [
@@ -129,6 +228,34 @@ export const UNITS: Unit[] = [
     description: 'Talk about your family, describe people and things using adjectives and colors.',
     lessonIds: ['lesson_10', 'lesson_11', 'lesson_12', 'lesson_13'],
     icon: '👨‍👩‍👧‍👦',
+  },
+  {
+    id: 'unit_05',
+    title: 'Shopping & Money',
+    description: 'Buy clothes and goods, ask prices, and handle payments in Spanish.',
+    lessonIds: ['lesson_14', 'lesson_15', 'lesson_16'],
+    icon: '🛍️',
+  },
+  {
+    id: 'unit_06',
+    title: 'Weather & Nature',
+    description: 'Talk about the weather, seasons, and the natural world around you.',
+    lessonIds: ['lesson_17', 'lesson_18', 'lesson_19'],
+    icon: '☀️',
+  },
+  {
+    id: 'unit_07',
+    title: 'Health & Body',
+    description: 'Describe body parts, talk about illness, and visit a doctor or pharmacy.',
+    lessonIds: ['lesson_20', 'lesson_21', 'lesson_22'],
+    icon: '💊',
+  },
+  {
+    id: 'unit_08',
+    title: 'Hobbies & Free Time',
+    description: 'Chat about sports, music, reading, and what you do at the weekend.',
+    lessonIds: ['lesson_23', 'lesson_24', 'lesson_25', 'lesson_26'],
+    icon: '🎯',
   },
 ];
 
