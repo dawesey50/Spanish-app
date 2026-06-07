@@ -35,6 +35,7 @@ import { fireAchievementToast } from '../utils/achievementEvents';
 import HeartsDisplay from '../components/HeartsDisplay';
 import AudioButton from '../components/AudioButton';
 import SpeakingQuestion from '../components/SpeakingQuestion';
+import SentenceBuilder from '../components/SentenceBuilder';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Lesson'>;
@@ -113,7 +114,7 @@ export default function LessonScreen() {
       shake();
       pulseHeart();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      recordWrongAnswer(current.wordId);
+      if (current.wordId) recordWrongAnswer(current.wordId);
       const newHearts = hearts - 1;
       setHearts(newHearts);
       setCorrections((prev) => [
@@ -174,6 +175,31 @@ export default function LessonScreen() {
     ]);
   };
 
+  const handleSentenceResult = (correct: boolean, assembled: string) => {
+    if (correct) {
+      setCorrectCount((n) => n + 1);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSelected(current?.correctAnswer ?? '');
+    } else {
+      shake();
+      pulseHeart();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const newHearts = hearts - 1;
+      setHearts(newHearts);
+      setCorrections((prev) => [
+        ...prev,
+        {
+          original: assembled,
+          corrected: current?.correctAnswer ?? '',
+          explanation: `You built: "${assembled}". The correct sentence is "${current?.correctAnswer}".`,
+        },
+      ]);
+      if (newHearts <= 0) setTimeout(() => setPhase('no_hearts'), 900);
+      setSelected(assembled);
+    }
+    setRevealed(true);
+  };
+
   const handleSpeakingResult = (correct: boolean, recognized: string) => {
     if (correct) {
       setCorrectCount((n) => n + 1);
@@ -183,7 +209,7 @@ export default function LessonScreen() {
       shake();
       pulseHeart();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      recordWrongAnswer(current.wordId);
+      if (current.wordId) recordWrongAnswer(current.wordId);
       const newHearts = hearts - 1;
       setHearts(newHearts);
       const displayText = recognized || '(no speech)';
@@ -275,6 +301,8 @@ export default function LessonScreen() {
     revealed &&
     (current.type === 'typing'
       ? isCorrect(typedAnswer, current.correctAnswer)
+      : current.type === 'sentenceBuilder' || current.type === 'speaking'
+      ? selected === current.correctAnswer
       : selected === current.correctAnswer);
 
   return (
@@ -317,11 +345,13 @@ export default function LessonScreen() {
             {/* Type badge + counter */}
             <View style={styles.typeBadge}>
               <View style={styles.typeBadgeInner}>
-                <Image
-                  source={TYPE_BADGE_ICONS[current.type]}
-                  style={styles.typeBadgeIcon}
-                  resizeMode="contain"
-                />
+                {TYPE_BADGE_ICONS[current.type] ? (
+                  <Image
+                    source={TYPE_BADGE_ICONS[current.type]}
+                    style={styles.typeBadgeIcon}
+                    resizeMode="contain"
+                  />
+                ) : null}
                 <Text style={styles.typeText}>
                   {current.type === 'multipleChoice'
                     ? 'Multiple Choice'
@@ -329,6 +359,8 @@ export default function LessonScreen() {
                     ? 'Type the Answer'
                     : current.type === 'speaking'
                     ? 'Speaking'
+                    : current.type === 'sentenceBuilder'
+                    ? 'Build the Sentence'
                     : 'Listening'}
                 </Text>
               </View>
@@ -337,7 +369,7 @@ export default function LessonScreen() {
               </Text>
             </View>
 
-            {current.type !== 'speaking' && (
+            {current.type !== 'speaking' && current.type !== 'sentenceBuilder' && (
               <Text style={styles.prompt}>{current.prompt}</Text>
             )}
 
@@ -394,11 +426,22 @@ export default function LessonScreen() {
             {current.type === 'speaking' && !revealed && (
               <SpeakingQuestion
                 key={current.id}
-                wordId={current.wordId}
+                wordId={current.wordId ?? ''}
                 correctAnswer={current.correctAnswer}
                 ttsRate={ttsRate}
                 onResult={handleSpeakingResult}
                 onSkip={next}
+              />
+            )}
+
+            {/* Sentence builder */}
+            {current.type === 'sentenceBuilder' && !revealed && (
+              <SentenceBuilder
+                key={current.id}
+                english={current.prompt}
+                correctAnswer={current.correctAnswer}
+                tokens={current.tokens ?? []}
+                onResult={handleSentenceResult}
               />
             )}
 

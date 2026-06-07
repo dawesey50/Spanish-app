@@ -1,4 +1,4 @@
-export type QuestionType = 'multipleChoice' | 'typing' | 'listening' | 'speaking';
+export type QuestionType = 'multipleChoice' | 'typing' | 'listening' | 'speaking' | 'sentenceBuilder';
 
 export interface Word {
   id: string;
@@ -74,9 +74,19 @@ export interface Correction {
 export interface Question {
   id: string;
   type: QuestionType;
-  wordId: string;
+  wordId?: string;
   prompt: string;
   correctAnswer: string;
   options?: string[];
   audioText?: string;
+  tokens?: string[];
+}
+
+export interface Sentence {
+  id: string;
+  lessonId: string;
+  english: string;
+  spanish: string;
+  tokens: string[];
+  distractors: string[];
 }

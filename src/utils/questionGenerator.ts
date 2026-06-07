@@ -1,6 +1,7 @@
 import type { Question } from '../types';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID, WORDS } from '../data/words';
+import { SENTENCES_BY_LESSON } from '../data/sentences';
 
 function isVoiceAvailable(): boolean {
   try {
@@ -133,7 +134,7 @@ export function buildQuestions(lessonId: string): Question[] {
     }
   });
 
-  // Ensure every word appears at least once, then fill to 12 with randoms
+  // Ensure every word appears at least once, then fill to target length with randoms
   const mustInclude = words.map((w) => {
     const forWord = pool.filter((q) => q.wordId === w.id);
     return forWord[Math.floor(Math.random() * forWord.length)];
@@ -143,7 +144,33 @@ export function buildQuestions(lessonId: string): Question[] {
     .filter((q) => !mustInclude.find((m) => m.id === q.id))
     .sort(() => Math.random() - 0.5);
 
-  return [...mustInclude, ...rest].slice(0, Math.max(words.length, 10));
+  const wordQuestions = [...mustInclude, ...rest].slice(0, Math.max(words.length, 10));
+
+  // Add sentence builder questions (1 per sentence, shuffled position)
+  const sentenceQuestions = buildSentenceQuestions(lessonId);
+  if (sentenceQuestions.length === 0) return wordQuestions;
+
+  const result = [...wordQuestions];
+  sentenceQuestions.forEach((sq) => {
+    const pos = Math.floor(Math.random() * (result.length + 1));
+    result.splice(pos, 0, sq);
+  });
+  return result;
+}
+
+function buildSentenceQuestions(lessonId: string): Question[] {
+  const sentences = SENTENCES_BY_LESSON[lessonId];
+  if (!sentences?.length) return [];
+  return sentences.map((s) => {
+    const shuffled = [...s.tokens, ...s.distractors].sort(() => Math.random() - 0.5);
+    return {
+      id: `sb_${s.id}`,
+      type: 'sentenceBuilder' as const,
+      prompt: s.english,
+      correctAnswer: s.spanish,
+      tokens: shuffled,
+    };
+  });
 }
 
 export function buildReviewQuestions(wordIds: string[]): Question[] {
