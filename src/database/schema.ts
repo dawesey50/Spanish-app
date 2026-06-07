@@ -31,6 +31,10 @@ export const CREATE_TABLES_SQL = `
     badge_id TEXT PRIMARY KEY,
     unlocked_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS favourite_words (
+    word_id TEXT PRIMARY KEY
+  );
 `;
 
 export const DEFAULT_PROGRESS_SQL = `

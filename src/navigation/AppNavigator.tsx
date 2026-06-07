@@ -14,6 +14,7 @@ import ProgressScreen from '../screens/ProgressScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
+import VocabScreen from '../screens/VocabScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -26,6 +27,10 @@ const TAB_ICONS = {
   Review: {
     active: require('../../assets/tabs/review_active.png'),
     inactive: require('../../assets/tabs/review_inactive.png'),
+  },
+  Vocab: {
+    active: require('../../assets/icons/blue_icon_book.png'),
+    inactive: require('../../assets/icons/blue_icon_book.png'),
   },
   Progress: {
     active: require('../../assets/tabs/progress_active.png'),
@@ -77,6 +82,14 @@ function MainTabs() {
         options={{
           tabBarLabel: 'Review',
           tabBarIcon: ({ focused }) => <TabIcon name="Review" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="Vocab"
+        component={VocabScreen}
+        options={{
+          tabBarLabel: 'Vocab',
+          tabBarIcon: ({ focused }) => <TabIcon name="Vocab" focused={focused} />,
         }}
       />
       <Tab.Screen

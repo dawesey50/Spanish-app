@@ -268,6 +268,28 @@ export async function setOnboardingComplete(startingUnitId: string): Promise<voi
   );
 }
 
+export async function getFavourites(): Promise<string[]> {
+  const rows = await getDb().getAllAsync<{ word_id: string }>(
+    'SELECT word_id FROM favourite_words'
+  );
+  return rows.map((r) => r.word_id);
+}
+
+export async function toggleFavourite(wordId: string): Promise<boolean> {
+  const database = getDb();
+  const existing = await database.getFirstAsync(
+    'SELECT 1 FROM favourite_words WHERE word_id = ?',
+    [wordId]
+  );
+  if (existing) {
+    await database.runAsync('DELETE FROM favourite_words WHERE word_id = ?', [wordId]);
+    return false;
+  } else {
+    await database.runAsync('INSERT INTO favourite_words (word_id) VALUES (?)', [wordId]);
+    return true;
+  }
+}
+
 export async function clearAllProgress(): Promise<void> {
   const database = getDb();
   await database.runAsync(
@@ -279,4 +301,5 @@ export async function clearAllProgress(): Promise<void> {
   await database.runAsync('DELETE FROM lesson_history');
   await database.runAsync('DELETE FROM weak_words');
   await database.runAsync('DELETE FROM achievements');
+  await database.runAsync('DELETE FROM favourite_words');
 }
