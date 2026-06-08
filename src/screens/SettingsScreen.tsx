@@ -38,10 +38,10 @@ const TTS_SPEEDS: { label: string; value: number; desc: string }[] = [
 ];
 
 const REMINDER_TIMES: { label: string; hour: number }[] = [
-  { label: 'Morning  8am', hour: 8 },
-  { label: 'Midday  12pm', hour: 12 },
-  { label: 'Evening  6pm', hour: 18 },
-  { label: 'Night  9pm', hour: 21 },
+  { label: 'Morning 8am', hour: 8 },
+  { label: 'Midday 12pm', hour: 12 },
+  { label: 'Evening 6pm', hour: 18 },
+  { label: 'Night 9pm', hour: 21 },
 ];
 
 const DEMO_WORD = 'Buenos días';

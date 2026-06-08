@@ -100,6 +100,10 @@ export default function HomeScreen() {
           completedLessons={progress.completedLessons}
           onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
           unlockAll={progress.developerMode}
+          lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
+            acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
+            return acc;
+          }, {})}
         />
       </ScrollView>
     </SafeAreaView>

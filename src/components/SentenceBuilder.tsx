@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { normalize } from '../utils/questionGenerator';
 
 interface TokenItem {
   key: string;
@@ -11,15 +12,6 @@ interface Props {
   correctAnswer: string;
   tokens: string[];
   onResult: (correct: boolean, assembled: string) => void;
-}
-
-function normalize(s: string) {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[¿¡.,!?]/g, '')
-    .trim();
 }
 
 export default function SentenceBuilder({ english, correctAnswer, tokens, onResult }: Props) {

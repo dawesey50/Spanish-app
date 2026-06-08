@@ -64,6 +64,8 @@ export default function LessonScreen() {
   const [correctCount, setCorrectCount] = useState(0);
   const [hearts, setHearts] = useState(MAX_HEARTS);
   const [corrections, setCorrections] = useState<Correction[]>([]);
+  const [wordResults, setWordResults] = useState<{ wordId: string; correct: boolean }[]>([]);
+  const [hintUsed, setHintUsed] = useState(false);
   const [ttsRate, setTtsRate] = useState(0.8);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -101,11 +103,20 @@ export default function LessonScreen() {
     ]).start();
   };
 
+  const useHint = () => {
+    if (hintUsed || revealed) return;
+    setHintUsed(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const checkAnswer = (answer: string) => {
     if (revealed || !current) return;
     const correct = isCorrect(answer, current.correctAnswer);
     setSelected(answer);
     setRevealed(true);
+    if (current.wordId) {
+      setWordResults((prev) => [...prev, { wordId: current.wordId!, correct }]);
+    }
 
     if (correct) {
       setCorrectCount((n) => n + 1);
@@ -135,6 +146,7 @@ export default function LessonScreen() {
     setSelected(null);
     setTypedAnswer('');
     setRevealed(false);
+    setHintUsed(false);
 
     if (index + 1 >= questions.length) {
       const score = Math.round((correctCount / questions.length) * 100);
@@ -150,7 +162,7 @@ export default function LessonScreen() {
       );
       await Promise.all(newBadges.map((id) => unlockAchievement(id)));
       if (newBadges.length > 0) fireAchievementToast(newBadges);
-      navigation.replace('Results', { lessonId, score, xpEarned, corrections });
+      navigation.replace('Results', { lessonId, score, xpEarned, corrections, wordResults });
     } else {
       setIndex((i) => i + 1);
     }
@@ -165,6 +177,8 @@ export default function LessonScreen() {
     setCorrectCount(0);
     setHearts(MAX_HEARTS);
     setCorrections([]);
+    setWordResults([]);
+    setHintUsed(false);
     setPhase('quiz');
   };
 
@@ -201,6 +215,9 @@ export default function LessonScreen() {
   };
 
   const handleSpeakingResult = (correct: boolean, recognized: string) => {
+    if (current.wordId) {
+      setWordResults((prev) => [...prev, { wordId: current.wordId!, correct }]);
+    }
     if (correct) {
       setCorrectCount((n) => n + 1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -277,7 +294,7 @@ export default function LessonScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.noHeartsContainer}>
-          <Text style={styles.noHeartsEmoji}>💔</Text>
+          <Image source={require('../../assets/icons/empty_heart.png')} style={styles.noHeartsIcon} resizeMode="contain" />
           <Text style={styles.noHeartsTitle}>No Hearts Left</Text>
           <Text style={styles.noHeartsDesc}>
             You ran out of lives. Review the words and try again!
@@ -466,6 +483,17 @@ export default function LessonScreen() {
                     if (!revealed && typedAnswer.trim()) checkAnswer(typedAnswer.trim());
                   }}
                 />
+                {!revealed && !hintUsed && (
+                  <TouchableOpacity style={styles.hintBtn} onPress={useHint} activeOpacity={0.7}>
+                    <Text style={styles.hintBtnText}>Show hint</Text>
+                  </TouchableOpacity>
+                )}
+                {!revealed && hintUsed && (
+                  <View style={styles.hintBox}>
+                    <Text style={styles.hintLabel}>First letter: </Text>
+                    <Text style={styles.hintChar}>"{current.correctAnswer[0]}"</Text>
+                  </View>
+                )}
                 {revealed && !isCorrect(typedAnswer, current.correctAnswer) && (
                   <Text style={styles.correctionText}>✓ {current.correctAnswer}</Text>
                 )}
@@ -489,8 +517,13 @@ export default function LessonScreen() {
           {revealed && (
             <View style={styles.revealedFooter}>
               <View style={[styles.resultBanner, wasCorrect ? styles.bannerCorrect : styles.bannerWrong]}>
+                <Image
+                  source={wasCorrect ? TICK_ICON : CROSS_ICON}
+                  style={styles.bannerIcon}
+                  resizeMode="contain"
+                />
                 <Text style={styles.resultBannerText}>
-                  {wasCorrect ? '🎉 Correct!' : `💡 Answer: ${current.correctAnswer}`}
+                  {wasCorrect ? 'Correct!' : `Answer: ${current.correctAnswer}`}
                 </Text>
               </View>
               <TouchableOpacity style={[styles.actionBtn, styles.nextBtn]} onPress={next}>
@@ -566,7 +599,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 32,
   },
-  noHeartsEmoji: { fontSize: 72, marginBottom: 20 },
+  noHeartsIcon: { width: 72, height: 72, marginBottom: 20, opacity: 0.5 },
   noHeartsTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 10 },
   noHeartsDesc: {
     fontSize: 16,
@@ -671,11 +704,17 @@ const styles = StyleSheet.create({
   inputCorrect: { borderColor: '#059669', backgroundColor: '#D1FAE5' },
   inputWrong: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
   correctionText: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
+  hintBtn: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 2 },
+  hintBtnText: { fontSize: 13, color: '#9CA3AF', textDecorationLine: 'underline' },
+  hintBox: { flexDirection: 'row', alignItems: 'center', paddingLeft: 2 },
+  hintLabel: { fontSize: 13, color: '#6B7280' },
+  hintChar: { fontSize: 15, fontWeight: '700', color: '#4F46E5' },
 
   // Footer
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   revealedFooter: { gap: 12 },
-  resultBanner: { borderRadius: 12, padding: 14, alignItems: 'center' },
+  resultBanner: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  bannerIcon: { width: 20, height: 20 },
   bannerCorrect: { backgroundColor: '#D1FAE5' },
   bannerWrong: { backgroundColor: '#FEE2E2' },
   resultBannerText: { fontSize: 16, fontWeight: '700', color: '#111827' },

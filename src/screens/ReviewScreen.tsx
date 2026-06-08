@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  ActivityIndicator,
   Image,
 } from 'react-native';
 
@@ -20,6 +21,7 @@ const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
 };
 const TICK_ICON = require('../../assets/icons/green_tick.png');
 const CROSS_ICON = require('../../assets/icons/red_cross.png');
+const STAR_ICON = require('../../assets/icons/star.png');
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
@@ -128,10 +130,10 @@ export default function ReviewScreen() {
 
     if (isLast) {
       const finalResults = resultsRef.current;
-      const correctOnes = finalResults.filter((r) => r.correct);
+      const correctOnes = finalResults.filter((r) => r.correct && r.wordId);
       if (correctOnes.length > 0) {
         await awardXP(correctOnes.length * XP_PER_CORRECT);
-        await Promise.all(correctOnes.map((r) => markWordReviewed(r.wordId)));
+        await Promise.all(correctOnes.map((r) => markWordReviewed(r.wordId!)));
       }
       const [totalWordsMastered, alreadyUnlocked] = await Promise.all([
         getWordsMastered(),
@@ -169,7 +171,7 @@ export default function ReviewScreen() {
 
           {weakWords.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🌟</Text>
+              <Image source={STAR_ICON} style={styles.emptyStarIcon} resizeMode="contain" />
               <Text style={styles.emptyTitle}>Nothing to review!</Text>
               <Text style={styles.emptyDesc}>
                 Complete lessons — any words you find difficult will appear here for extra practice.
@@ -452,7 +454,7 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 20 },
 
   emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
+  emptyStarIcon: { width: 64, height: 64, marginBottom: 16, opacity: 0.6 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
   emptyDesc: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 21 },
 

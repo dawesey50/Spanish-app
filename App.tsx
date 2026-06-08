@@ -7,6 +7,7 @@ import { initDatabase, getUserProgress } from './src/database/db';
 import { setupNotificationChannel } from './src/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import AchievementToast from './src/components/AchievementToast';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -39,11 +40,13 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <AppNavigator hasCompletedOnboarding={onboarded} />
-      <AchievementToast />
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <AppNavigator hasCompletedOnboarding={onboarded} />
+        <AchievementToast />
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,21 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
-import { LESSONS_BY_ID } from '../data/units';
+import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
+import { getUserProgress } from '../database/db';
 import AudioButton from '../components/AudioButton';
+
+const STAR_ICON = require('../../assets/icons/star.png');
+const TICK_ICON = require('../../assets/icons/green_tick.png');
+const TARGET_ICON = require('../../assets/icons/blue_target.png');
+const BOOK_ICON = require('../../assets/icons/blue_icon_book.png');
+const CROSS_ICON = require('../../assets/icons/red_cross.png');
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'Results'>;
@@ -20,23 +28,66 @@ type Route = RouteProp<RootStackParamList, 'Results'>;
 export default function ResultsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { lessonId, score, xpEarned, corrections } = route.params;
+  const { lessonId, score, xpEarned, corrections, wordResults } = route.params;
+
   const lesson = LESSONS_BY_ID[lessonId];
+  const unit = lesson ? UNITS_BY_ID[lesson.unitId] : undefined;
   const lessonWords = (lesson?.wordIds ?? [])
     .map((id) => WORDS_BY_ID[id])
     .filter(Boolean);
 
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  useEffect(() => {
+    getUserProgress().then((p) => setCompletedLessons(p.completedLessons));
+  }, []);
+
+  const unitLessons = unit?.lessonIds ?? [];
+  const lessonIdx = unitLessons.indexOf(lessonId);
+  const nextLessonId = lessonIdx >= 0 && lessonIdx + 1 < unitLessons.length
+    ? unitLessons[lessonIdx + 1]
+    : null;
+  const nextLesson = nextLessonId ? LESSONS_BY_ID[nextLessonId] : null;
+  const isUnitComplete = unitLessons.length > 0 &&
+    unitLessons.every((id) => completedLessons.includes(id));
+
   const grade =
-    score >= 90 ? { label: 'Excellent!', color: '#059669', emoji: '🌟' }
-    : score >= 70 ? { label: 'Good job!', color: '#4F46E5', emoji: '👍' }
-    : score >= 50 ? { label: 'Keep practicing!', color: '#D97706', emoji: '💪' }
-    : { label: 'Keep at it!', color: '#DC2626', emoji: '📚' };
+    score >= 90 ? { label: 'Excellent!', color: '#059669', icon: STAR_ICON }
+    : score >= 70 ? { label: 'Good job!', color: '#4F46E5', icon: TICK_ICON }
+    : score >= 50 ? { label: 'Keep practicing!', color: '#D97706', icon: TARGET_ICON }
+    : { label: 'Keep at it!', color: '#DC2626', icon: BOOK_ICON };
+
+  // Build per-word performance map from wordResults
+  const wordPerformance: Record<string, boolean> = {};
+  if (wordResults) {
+    wordResults.forEach(({ wordId, correct }) => {
+      // If a word was answered multiple times, "ever wrong" = red
+      if (wordPerformance[wordId] === undefined) {
+        wordPerformance[wordId] = correct;
+      } else if (!correct) {
+        wordPerformance[wordId] = false;
+      }
+    });
+  }
+  const hasPerformance = wordResults && wordResults.length > 0;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Unit complete banner */}
+        {isUnitComplete && unit && (
+          <View style={styles.unitCompleteBanner}>
+            <Image source={STAR_ICON} style={styles.unitCompleteIcon} resizeMode="contain" />
+            <View>
+              <Text style={styles.unitCompleteTitle}>Unit Complete!</Text>
+              <Text style={styles.unitCompleteDesc}>{unit.title} — all lessons done</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Score card */}
         <View style={styles.scoreCard}>
-          <Text style={styles.emoji}>{grade.emoji}</Text>
+          <Image source={grade.icon} style={styles.gradeIcon} resizeMode="contain" />
           <Text style={[styles.gradeLabel, { color: grade.color }]}>{grade.label}</Text>
           <Text style={styles.lessonName}>{lesson?.title ?? lessonId}</Text>
           <View style={styles.statsRow}>
@@ -57,6 +108,7 @@ export default function ResultsScreen() {
           </View>
         </View>
 
+        {/* Corrections */}
         {corrections.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Corrections</Text>
@@ -70,30 +122,53 @@ export default function ResultsScreen() {
           </View>
         )}
 
+        {/* Words in lesson with performance indicators */}
         {lessonWords.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Words in This Lesson</Text>
             <View style={styles.wordList}>
-              {lessonWords.map((w) => (
-                <View key={w.id} style={styles.wordRow}>
-                  <AudioButton text={w.spanish} size="sm" />
-                  <View style={styles.wordLeft}>
-                    <Text style={styles.wordSpanish}>{w.spanish}</Text>
-                    <Text style={styles.wordExample} numberOfLines={1}>{w.example}</Text>
+              {lessonWords.map((w) => {
+                const perf = hasPerformance ? wordPerformance[w.id] : undefined;
+                return (
+                  <View key={w.id} style={styles.wordRow}>
+                    <AudioButton text={w.spanish} size="sm" />
+                    <View style={styles.wordLeft}>
+                      <Text style={styles.wordSpanish}>{w.spanish}</Text>
+                      <Text style={styles.wordExample} numberOfLines={1}>{w.example}</Text>
+                    </View>
+                    <Text style={styles.wordEnglish}>{w.english}</Text>
+                    {perf !== undefined && (
+                      <Image
+                        source={perf ? TICK_ICON : CROSS_ICON}
+                        style={styles.wordMark}
+                        resizeMode="contain"
+                      />
+                    )}
                   </View>
-                  <Text style={styles.wordEnglish}>{w.english}</Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         )}
 
+        {/* Action buttons */}
         <View style={styles.actions}>
+          {nextLesson && (
+            <TouchableOpacity
+              style={styles.nextLessonBtn}
+              onPress={() => navigation.replace('Lesson', { lessonId: nextLessonId! })}
+            >
+              <View style={styles.nextLessonContent}>
+                <Text style={styles.nextLessonLabel}>Up Next</Text>
+                <Text style={styles.nextLessonTitle}>{nextLesson.title} →</Text>
+              </View>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() => navigation.navigate('Main')}
           >
-            <Text style={styles.primaryBtnText}>Continue →</Text>
+            <Text style={styles.primaryBtnText}>Continue</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.secondaryBtn}
@@ -110,6 +185,22 @@ export default function ResultsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F9FAFB' },
   scroll: { padding: 20, paddingBottom: 40 },
+
+  unitCompleteBanner: {
+    backgroundColor: '#FEF9C3',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  unitCompleteIcon: { width: 32, height: 32 },
+  unitCompleteTitle: { fontSize: 15, fontWeight: '800', color: '#78350F' },
+  unitCompleteDesc: { fontSize: 12, color: '#92400E', marginTop: 1 },
+
   scoreCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
@@ -122,7 +213,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  emoji: { fontSize: 56, marginBottom: 8 },
+  gradeIcon: { width: 64, height: 64, marginBottom: 12 },
   gradeLabel: { fontSize: 26, fontWeight: '800', marginBottom: 4 },
   lessonName: { fontSize: 15, color: '#6B7280', marginBottom: 24 },
   statsRow: { flexDirection: 'row', gap: 0 },
@@ -130,6 +221,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 24, fontWeight: '800', color: '#111827' },
   statLabel: { fontSize: 12, color: '#6B7280', marginTop: 2 },
   divider: { width: 1, backgroundColor: '#E5E7EB', marginVertical: 4 },
+
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 12 },
   correctionCard: {
@@ -143,6 +235,7 @@ const styles = StyleSheet.create({
   wrongAnswer: { fontSize: 14, color: '#DC2626', fontWeight: '600', marginBottom: 4 },
   rightAnswer: { fontSize: 14, color: '#059669', fontWeight: '600', marginBottom: 4 },
   explanation: { fontSize: 13, color: '#6B7280' },
+
   wordList: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -162,16 +255,20 @@ const styles = StyleSheet.create({
   wordLeft: { flex: 1 },
   wordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827' },
   wordExample: { fontSize: 12, color: '#9CA3AF', marginTop: 1 },
-  wordEnglish: { fontSize: 13, color: '#4F46E5', fontWeight: '600', textAlign: 'right' },
+  wordEnglish: { fontSize: 13, color: '#4F46E5', fontWeight: '600' },
+  wordMark: { width: 18, height: 18 },
+
   actions: { gap: 12 },
-  primaryBtn: {
+  nextLessonBtn: {
     backgroundColor: '#4F46E5',
     borderRadius: 14,
     padding: 18,
     alignItems: 'center',
   },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  secondaryBtn: {
+  nextLessonContent: { alignItems: 'center', gap: 2 },
+  nextLessonLabel: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: 0.8, textTransform: 'uppercase' },
+  nextLessonTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
+  primaryBtn: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 18,
@@ -179,5 +276,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#E5E7EB',
   },
-  secondaryBtnText: { color: '#374151', fontSize: 17, fontWeight: '600' },
+  primaryBtnText: { color: '#374151', fontSize: 17, fontWeight: '600' },
+  secondaryBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+  },
+  secondaryBtnText: { color: '#9CA3AF', fontSize: 15, fontWeight: '600' },
 });

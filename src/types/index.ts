@@ -55,7 +55,13 @@ export type RootStackParamList = {
   Main: undefined;
   Lesson: { lessonId: string };
   Conversation: { scenario?: string };
-  Results: { lessonId: string; score: number; xpEarned: number; corrections: Correction[] };
+  Results: {
+    lessonId: string;
+    score: number;
+    xpEarned: number;
+    corrections: Correction[];
+    wordResults?: { wordId: string; correct: boolean }[];
+  };
   Achievements: undefined;
   DailyChallenge: undefined;
 };

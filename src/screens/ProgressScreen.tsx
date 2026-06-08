@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   ImageSourcePropType,
+  ActivityIndicator,
 } from 'react-native';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
@@ -52,7 +53,15 @@ export default function ProgressScreen() {
     }, [])
   );
 
-  if (!progress) return null;
+  if (!progress) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const today = new Date().toISOString().split('T')[0];
   const activeDates = new Set(progress.history.map((h) => h.date));

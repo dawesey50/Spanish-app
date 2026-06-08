@@ -184,15 +184,39 @@ export default function DailyChallengeScreen() {
     navigation.goBack();
   };
 
-  if (loading || !current) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <Text style={styles.loadingText}>Loading challenge…</Text>
+          <ActivityIndicator size="large" color="#4F46E5" />
         </View>
       </SafeAreaView>
     );
   }
+
+  if (questions.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centered}>
+          <Image source={TARGET_ICON} style={{ width: 64, height: 64, marginBottom: 16, opacity: 0.4 }} resizeMode="contain" />
+          <Text style={[styles.loadingText, { fontSize: 18, fontWeight: '700', color: '#374151' }]}>
+            Complete a lesson first
+          </Text>
+          <Text style={[styles.loadingText, { marginTop: 8 }]}>
+            Finish at least one lesson to unlock the daily challenge.
+          </Text>
+          <TouchableOpacity
+            style={[styles.footerBtn, { marginTop: 24, paddingHorizontal: 32 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.footerBtnText}>Back to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!current) return null;
 
   const isMCQ = current.type === 'multipleChoice';
   const optionStyle = (opt: string) => {

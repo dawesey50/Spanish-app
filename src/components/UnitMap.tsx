@@ -15,9 +15,10 @@ interface Props {
   completedLessons: string[];
   onLessonPress: (lessonId: string) => void;
   unlockAll?: boolean;
+  lessonScores?: Record<string, number>;
 }
 
-export default function UnitMap({ completedLessons, onLessonPress, unlockAll = false }: Props) {
+export default function UnitMap({ completedLessons, onLessonPress, unlockAll = false, lessonScores = {} }: Props) {
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       {UNITS.map((unit) => {
@@ -74,6 +75,9 @@ export default function UnitMap({ completedLessons, onLessonPress, unlockAll = f
                       </Text>
                       <Text style={[styles.lessonMeta, !lessonUnlocked && styles.lockedText]}>
                         {lesson?.wordIds.length ?? 0} words
+                        {lessonDone && lessonScores[lessonId] !== undefined
+                          ? ` · ${lessonScores[lessonId]}%`
+                          : ''}
                       </Text>
                     </View>
                     {!lessonUnlocked && <Image source={LOCK_ICON} style={styles.lockIcon} resizeMode="contain" />}
