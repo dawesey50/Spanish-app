@@ -16,24 +16,66 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Word } from '../types';
 import { WORDS } from '../data/words';
 import { LESSONS, LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
-import { getFavourites, toggleFavourite, getWeakWordsWithCounts, getUserProgress } from '../database/db';
+import {
+  getFavourites,
+  toggleFavourite,
+  getWeakWordsWithCounts,
+  getUserProgress,
+  markWordReviewed,
+} from '../database/db';
 import WordCard from '../components/WordCard';
 import AudioButton from '../components/AudioButton';
 
 const STAR_ICON = require('../../assets/icons/star.png');
 const WARNING_ICON = require('../../assets/icons/warning_sign.png');
+const TICK_ICON = require('../../assets/icons/green_tick.png');
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type FilterMode = 'all' | 'favourites' | 'weak';
+type SortMode = 'default' | 'az' | 'difficulty_asc' | 'difficulty_desc';
+type ListItem = { type: 'word'; word: Word } | { type: 'header'; letter: string };
 
 const WORD_TO_LESSON_ID: Record<string, string> = {};
 LESSONS.forEach((l) => l.wordIds.forEach((wid) => { WORD_TO_LESSON_ID[wid] = l.id; }));
+
+const TOPIC_LABELS: Record<string, string> = {
+  greetings: 'Greetings',
+  food: 'Food & Drink',
+  travel: 'Travel',
+  people: 'People',
+  shopping: 'Shopping',
+  weather: 'Weather',
+  health: 'Health',
+  hobbies: 'Hobbies',
+};
+
+// Stable ordered list of unique topics that appear in the word data
+const ALL_TOPICS = Object.keys(TOPIC_LABELS).filter(
+  (t) => WORDS.some((w) => w.topic === t)
+);
+
+const SORT_OPTIONS: { mode: SortMode; label: string; desc: string }[] = [
+  { mode: 'default', label: 'Default', desc: 'Lesson order' },
+  { mode: 'az', label: 'A → Z', desc: 'Alphabetical' },
+  { mode: 'difficulty_asc', label: 'Easiest first', desc: 'Beginner → Advanced' },
+  { mode: 'difficulty_desc', label: 'Hardest first', desc: 'Advanced → Beginner' },
+];
+
+const SORT_LABELS: Record<SortMode, string> = {
+  default: 'Sort',
+  az: 'A → Z',
+  difficulty_asc: 'Easiest',
+  difficulty_desc: 'Hardest',
+};
 
 export default function VocabScreen() {
   const navigation = useNavigation<Nav>();
 
   const [query, setQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>('default');
+  const [showSortModal, setShowSortModal] = useState(false);
   const [favourites, setFavourites] = useState<Set<string>>(new Set());
   const [weakWordIds, setWeakWordIds] = useState<Set<string>>(new Set());
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
@@ -54,18 +96,52 @@ export default function VocabScreen() {
     }, [])
   );
 
-  const filtered = useMemo(() => {
+  const listData = useMemo((): ListItem[] => {
     let list = WORDS;
+
+    // Status filter
     if (filterMode === 'favourites') list = list.filter((w) => favourites.has(w.id));
     else if (filterMode === 'weak') list = list.filter((w) => weakWordIds.has(w.id));
+
+    // Topic filter
+    if (topicFilter) list = list.filter((w) => w.topic === topicFilter);
+
+    // Search
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
         (w) => w.spanish.toLowerCase().includes(q) || w.english.toLowerCase().includes(q)
       );
     }
-    return list;
-  }, [query, filterMode, favourites, weakWordIds]);
+
+    // Sort + optional section headers
+    if (sortMode === 'az') {
+      const sorted = [...list].sort((a, b) =>
+        a.spanish.localeCompare(b.spanish, 'es', { sensitivity: 'base' })
+      );
+      const items: ListItem[] = [];
+      let lastLetter = '';
+      sorted.forEach((word) => {
+        const letter = word.spanish[0].toUpperCase();
+        if (letter !== lastLetter) {
+          items.push({ type: 'header', letter });
+          lastLetter = letter;
+        }
+        items.push({ type: 'word', word });
+      });
+      return items;
+    }
+
+    if (sortMode === 'difficulty_asc') {
+      list = [...list].sort((a, b) => a.difficulty - b.difficulty);
+    } else if (sortMode === 'difficulty_desc') {
+      list = [...list].sort((a, b) => b.difficulty - a.difficulty);
+    }
+
+    return list.map((word) => ({ type: 'word', word }));
+  }, [query, filterMode, topicFilter, sortMode, favourites, weakWordIds]);
+
+  const wordCount = listData.filter((i) => i.type === 'word').length;
 
   const handleToggleFavourite = useCallback(async (wordId: string) => {
     await toggleFavourite(wordId);
@@ -73,6 +149,15 @@ export default function VocabScreen() {
       const next = new Set(prev);
       if (next.has(wordId)) next.delete(wordId);
       else next.add(wordId);
+      return next;
+    });
+  }, []);
+
+  const handleMarkPractised = useCallback(async (wordId: string) => {
+    await markWordReviewed(wordId);
+    setWeakWordIds((prev) => {
+      const next = new Set(prev);
+      next.delete(wordId);
       return next;
     });
   }, []);
@@ -86,6 +171,14 @@ export default function VocabScreen() {
 
   const weakCount = weakWordIds.size;
   const favCount = favourites.size;
+  const sortActive = sortMode !== 'default';
+
+  const emptyMessage = () => {
+    if (filterMode === 'favourites') return 'No saved words yet — tap the star on any word card.';
+    if (filterMode === 'weak') return 'No weak words right now. Great work!';
+    if (topicFilter) return `No ${TOPIC_LABELS[topicFilter] ?? topicFilter} words match your search.`;
+    return 'No words match your search.';
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -109,51 +202,92 @@ export default function VocabScreen() {
         />
       </View>
 
-      {/* Filter chips */}
-      <View style={styles.chipRow}>
-        <FilterChip
-          label="All"
-          count={WORDS.length}
-          active={filterMode === 'all'}
-          onPress={() => setFilterMode('all')}
-        />
-        <FilterChip
-          label="★ Saved"
-          count={favCount}
-          active={filterMode === 'favourites'}
-          onPress={() => setFilterMode('favourites')}
-        />
-        <FilterChip
-          label="⚠ Weak"
-          count={weakCount}
-          active={filterMode === 'weak'}
-          onPress={() => setFilterMode('weak')}
-        />
+      {/* Filter chips + sort button */}
+      <View style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+          <FilterChip
+            label="All"
+            count={WORDS.length}
+            active={filterMode === 'all'}
+            onPress={() => setFilterMode('all')}
+          />
+          <FilterChip
+            label="Saved"
+            count={favCount}
+            active={filterMode === 'favourites'}
+            onPress={() => setFilterMode('favourites')}
+            icon={STAR_ICON}
+          />
+          <FilterChip
+            label="Weak"
+            count={weakCount}
+            active={filterMode === 'weak'}
+            onPress={() => setFilterMode('weak')}
+            icon={WARNING_ICON}
+          />
+        </ScrollView>
+        <TouchableOpacity
+          style={[styles.sortBtn, sortActive && styles.sortBtnActive]}
+          onPress={() => setShowSortModal(true)}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.sortBtnText, sortActive && styles.sortBtnTextActive]}>
+            {SORT_LABELS[sortMode]}
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Topic chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.topicChipScroll}
+        style={styles.topicChipRow}
+      >
+        <TopicChip
+          label="All Topics"
+          active={topicFilter === null}
+          onPress={() => setTopicFilter(null)}
+        />
+        {ALL_TOPICS.map((topic) => (
+          <TopicChip
+            key={topic}
+            label={TOPIC_LABELS[topic] ?? topic}
+            active={topicFilter === topic}
+            onPress={() => setTopicFilter(topicFilter === topic ? null : topic)}
+          />
+        ))}
+      </ScrollView>
 
       {/* Word list */}
       <FlatList
-        data={filtered}
-        keyExtractor={(w) => w.id}
-        renderItem={({ item }) => (
-          <WordCard
-            word={item}
-            isFavourite={favourites.has(item.id)}
-            isWeak={weakWordIds.has(item.id)}
-            onPress={() => setSelectedWord(item)}
-            onToggleFavourite={() => handleToggleFavourite(item.id)}
-          />
-        )}
+        data={listData}
+        keyExtractor={(item) =>
+          item.type === 'header' ? `hdr_${item.letter}` : item.word.id
+        }
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return <Text style={styles.sectionHeader}>{item.letter}</Text>;
+          }
+          return (
+            <WordCard
+              word={item.word}
+              isFavourite={favourites.has(item.word.id)}
+              isWeak={weakWordIds.has(item.word.id)}
+              onPress={() => setSelectedWord(item.word)}
+              onToggleFavourite={() => handleToggleFavourite(item.word.id)}
+            />
+          );
+        }}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          wordCount > 0 && (topicFilter || sortActive || query.trim()) ? (
+            <Text style={styles.resultCount}>{wordCount} word{wordCount !== 1 ? 's' : ''}</Text>
+          ) : null
+        }
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            {filterMode === 'favourites'
-              ? 'No saved words yet — tap the ★ on any word card.'
-              : filterMode === 'weak'
-              ? 'No weak words right now. Great work!'
-              : 'No words match your search.'}
-          </Text>
+          <Text style={styles.empty}>{emptyMessage()}</Text>
         }
       />
 
@@ -172,25 +306,63 @@ export default function VocabScreen() {
             ttsRate={ttsRate}
             lessonId={WORD_TO_LESSON_ID[selectedWord.id]}
             onToggleFavourite={() => handleToggleFavourite(selectedWord.id)}
+            onMarkPractised={
+              weakWordIds.has(selectedWord.id)
+                ? () => handleMarkPractised(selectedWord.id)
+                : undefined
+            }
             onGoToLesson={goToLesson}
             onClose={() => setSelectedWord(null)}
           />
         )}
       </Modal>
+
+      {/* Sort modal */}
+      <Modal
+        visible={showSortModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.sortModalBackdrop}
+          onPress={() => setShowSortModal(false)}
+          activeOpacity={1}
+        >
+          <View style={styles.sortModalSheet}>
+            <View style={styles.sortModalHandle} />
+            <Text style={styles.sortModalTitle}>Sort by</Text>
+            {SORT_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.mode}
+                style={[styles.sortOption, sortMode === opt.mode && styles.sortOptionActive]}
+                onPress={() => { setSortMode(opt.mode); setShowSortModal(false); }}
+                activeOpacity={0.75}
+              >
+                <View style={styles.sortOptionLeft}>
+                  <Text style={[styles.sortOptionLabel, sortMode === opt.mode && styles.sortOptionLabelActive]}>
+                    {opt.label}
+                  </Text>
+                  <Text style={styles.sortOptionDesc}>{opt.desc}</Text>
+                </View>
+                {sortMode === opt.mode && (
+                  <Image source={TICK_ICON} style={styles.sortOptionTick} resizeMode="contain" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
 
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
 function FilterChip({
-  label,
-  count,
-  active,
-  onPress,
+  label, count, active, onPress, icon,
 }: {
-  label: string;
-  count: number;
-  active: boolean;
-  onPress: () => void;
+  label: string; count: number; active: boolean; onPress: () => void; icon?: ReturnType<typeof require>;
 }) {
   return (
     <TouchableOpacity
@@ -198,27 +370,32 @@ function FilterChip({
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>
-        {label}
-      </Text>
+      {icon && (
+        <Image source={icon} style={[styles.chipIcon, active && styles.chipIconActive]} resizeMode="contain" />
+      )}
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
       <View style={[styles.chipBadge, active && styles.chipBadgeActive]}>
-        <Text style={[styles.chipBadgeText, active && styles.chipBadgeTextActive]}>
-          {count}
-        </Text>
+        <Text style={[styles.chipBadgeText, active && styles.chipBadgeTextActive]}>{count}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
+function TopicChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      style={[styles.topicChip, active && styles.topicChipActive]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <Text style={[styles.topicChipText, active && styles.topicChipTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 function WordDetailModal({
-  word,
-  isFavourite,
-  isWeak,
-  ttsRate,
-  lessonId,
-  onToggleFavourite,
-  onGoToLesson,
-  onClose,
+  word, isFavourite, isWeak, ttsRate, lessonId,
+  onToggleFavourite, onMarkPractised, onGoToLesson, onClose,
 }: {
   word: Word;
   isFavourite: boolean;
@@ -226,11 +403,13 @@ function WordDetailModal({
   ttsRate: number;
   lessonId: string | undefined;
   onToggleFavourite: () => void;
+  onMarkPractised?: () => void;
   onGoToLesson: () => void;
   onClose: () => void;
 }) {
   const lesson = lessonId ? LESSONS_BY_ID[lessonId] : undefined;
   const unit = lesson ? UNITS_BY_ID[lesson.unitId] : undefined;
+  const topicLabel = TOPIC_LABELS[word.topic] ?? word.topic;
 
   return (
     <SafeAreaView style={styles.modalSafe}>
@@ -249,6 +428,11 @@ function WordDetailModal({
           </TouchableOpacity>
         </View>
 
+        {/* Topic badge */}
+        <View style={styles.topicBadge}>
+          <Text style={styles.topicBadgeText}>{topicLabel}</Text>
+        </View>
+
         {/* Audio + Spanish */}
         <View style={styles.modalWordRow}>
           <AudioButton text={word.spanish} rate={ttsRate} size="md" />
@@ -261,10 +445,7 @@ function WordDetailModal({
         <View style={styles.diffRow}>
           <Text style={styles.diffLabel}>Difficulty:</Text>
           {[1, 2, 3].map((n) => (
-            <View
-              key={n}
-              style={[styles.modalDot, n <= word.difficulty && styles.modalDotFilled]}
-            />
+            <View key={n} style={[styles.modalDot, n <= word.difficulty && styles.modalDotFilled]} />
           ))}
           <Text style={styles.diffName}>
             {word.difficulty === 1 ? 'Beginner' : word.difficulty === 2 ? 'Intermediate' : 'Advanced'}
@@ -277,29 +458,35 @@ function WordDetailModal({
           <Text style={styles.exampleText}>{word.example}</Text>
         </View>
 
-        {/* Weak word warning */}
+        {/* Weak word warning + practised button */}
         {isWeak && (
-          <View style={styles.weakBanner}>
-            <Image source={WARNING_ICON} style={styles.weakBannerIcon} resizeMode="contain" />
-            <Text style={styles.weakBannerText}>
-              This word needs practice — it's appeared in your weak words list.
-            </Text>
+          <View style={styles.weakCard}>
+            <View style={styles.weakBanner}>
+              <Image source={WARNING_ICON} style={styles.weakBannerIcon} resizeMode="contain" />
+              <Text style={styles.weakBannerText}>
+                This word needs practice — it's appeared in your weak words list.
+              </Text>
+            </View>
+            {onMarkPractised && (
+              <TouchableOpacity style={styles.practisedBtn} onPress={onMarkPractised} activeOpacity={0.8}>
+                <Image source={TICK_ICON} style={styles.practisedBtnIcon} resizeMode="contain" />
+                <Text style={styles.practisedBtnText}>Mark as practised</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
         {/* Unit & Lesson info */}
         {unit && lesson && (
           <View style={styles.unitCard}>
-            <View>
-              <Text style={styles.unitCardLabel}>Unit</Text>
-              <Text style={styles.unitCardName}>{unit.title}</Text>
-              <Text style={styles.lessonCardName}>{lesson.title}</Text>
-            </View>
+            <Text style={styles.unitCardLabel}>Unit</Text>
+            <Text style={styles.unitCardName}>{unit.title}</Text>
+            <Text style={styles.lessonCardName}>{lesson.title}</Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Footer button */}
+      {/* Footer */}
       {lessonId && (
         <View style={styles.modalFooter}>
           <TouchableOpacity style={styles.goToLessonBtn} onPress={onGoToLesson} activeOpacity={0.85}>
@@ -310,6 +497,8 @@ function WordDetailModal({
     </SafeAreaView>
   );
 }
+
+// ─── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F9FAFB' },
@@ -325,7 +514,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: '#111827' },
   subtitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
 
-  searchRow: { paddingHorizontal: 20, marginBottom: 12 },
+  searchRow: { paddingHorizontal: 20, marginBottom: 10 },
   searchInput: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -337,17 +526,20 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
 
-  chipRow: {
+  // Filter row (chips + sort button)
+  filterRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginBottom: 8,
     gap: 8,
-    marginBottom: 12,
+    paddingRight: 20,
   },
+  chipScroll: { paddingLeft: 20, gap: 8, flexDirection: 'row' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
+    gap: 5,
+    paddingHorizontal: 11,
     paddingVertical: 7,
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
@@ -355,6 +547,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   chipActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
+  chipIcon: { width: 12, height: 12, opacity: 0.5 },
+  chipIconActive: { opacity: 1 },
   chipText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
   chipTextActive: { color: '#4F46E5' },
   chipBadge: {
@@ -367,6 +561,50 @@ const styles = StyleSheet.create({
   chipBadgeText: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
   chipBadgeTextActive: { color: '#4F46E5' },
 
+  sortBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    flexShrink: 0,
+  },
+  sortBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
+  sortBtnText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
+  sortBtnTextActive: { color: '#4F46E5' },
+
+  // Topic chips row
+  topicChipRow: { marginBottom: 10 },
+  topicChipScroll: { paddingHorizontal: 20, gap: 6, flexDirection: 'row' },
+  topicChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+  },
+  topicChipActive: { backgroundColor: '#111827' },
+  topicChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  topicChipTextActive: { color: '#FFFFFF' },
+
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#9CA3AF',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    paddingHorizontal: 4,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  resultCount: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '600',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+
   list: { paddingHorizontal: 20, paddingBottom: 40 },
   empty: {
     fontSize: 15,
@@ -377,6 +615,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 
+  // Sort modal
+  sortModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sortModalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 12,
+    gap: 4,
+  },
+  sortModalHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sortModalTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  sortOptionActive: { backgroundColor: '#EEF2FF' },
+  sortOptionLeft: { gap: 2 },
+  sortOptionLabel: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  sortOptionLabelActive: { color: '#4F46E5' },
+  sortOptionDesc: { fontSize: 12, color: '#9CA3AF' },
+  sortOptionTick: { width: 18, height: 18 },
+
   // Modal
   modalSafe: { flex: 1, backgroundColor: '#FFFFFF' },
   modalScroll: { padding: 24, paddingBottom: 16 },
@@ -384,13 +666,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   modalCloseBtn: { padding: 4 },
   modalCloseText: { fontSize: 18, color: '#9CA3AF' },
   modalStarBtn: { padding: 4 },
   modalStar: { width: 28, height: 28 },
   starInactive: { opacity: 0.2 },
+
+  topicBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 14,
+  },
+  topicBadgeText: { fontSize: 11, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   modalWordRow: {
     flexDirection: 'row',
@@ -408,12 +700,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   diffLabel: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
-  modalDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#E5E7EB',
-  },
+  modalDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#E5E7EB' },
   modalDotFilled: { backgroundColor: '#4F46E5' },
   diffName: { fontSize: 13, color: '#6B7280', marginLeft: 4 },
 
@@ -433,13 +720,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 6,
   },
-  exampleText: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-    fontStyle: 'italic',
-  },
+  exampleText: { fontSize: 16, color: '#374151', lineHeight: 24, fontStyle: 'italic' },
 
+  weakCard: { marginBottom: 16, gap: 8 },
   weakBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -447,12 +730,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
   weakBannerIcon: { width: 16, height: 16 },
   weakBannerText: { fontSize: 13, color: '#92400E', flex: 1, lineHeight: 18 },
+  practisedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  practisedBtnIcon: { width: 16, height: 16 },
+  practisedBtnText: { fontSize: 14, fontWeight: '700', color: '#065F46' },
 
   unitCard: {
     backgroundColor: '#EEF2FF',
