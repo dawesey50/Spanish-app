@@ -174,7 +174,7 @@ export default function SettingsScreen() {
 
         {/* Notifications */}
         <View style={styles.sectionHeaderRow}>
-          <View>
+          <View style={styles.sectionHeaderText}>
             <Text style={styles.sectionTitle}>Daily Reminders</Text>
             <Text style={styles.sectionDesc}>
               Get a notification if you haven't practised by the set time.
@@ -216,7 +216,7 @@ export default function SettingsScreen() {
 
         {/* Developer Options */}
         <View style={styles.sectionHeaderRow}>
-          <View>
+          <View style={styles.sectionHeaderText}>
             <Text style={styles.sectionTitle}>Developer Options</Text>
             <Text style={styles.sectionDesc}>
               Testing tools — unlock all lessons without completing prerequisites.
@@ -243,7 +243,7 @@ export default function SettingsScreen() {
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
-          <Row label="Version" value="1.0.0 (Phase 7)" />
+          <Row label="Version" value="1.0.0 (Phase 16)" />
           <Row label="Progress stored" value="On-device (SQLite)" />
           <Row label="AI conversation" value="Groq → Gemini → HuggingFace" />
         </View>
@@ -279,6 +279,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 16,
     marginBottom: 4,
+  },
+  sectionHeaderText: {
+    flex: 1,
   },
   chipRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   chipBtn: {

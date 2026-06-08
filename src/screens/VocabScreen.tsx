@@ -576,11 +576,11 @@ const styles = StyleSheet.create({
 
   // Topic chips row
   topicChipRow: { marginBottom: 10 },
-  topicChipScroll: { paddingHorizontal: 20, gap: 6, flexDirection: 'row' },
+  topicChipScroll: { paddingHorizontal: 20, paddingVertical: 4, gap: 8, flexDirection: 'row' },
   topicChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: '#F3F4F6',
   },
   topicChipActive: { backgroundColor: '#111827' },
