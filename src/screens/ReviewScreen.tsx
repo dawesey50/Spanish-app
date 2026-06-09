@@ -102,18 +102,20 @@ export default function ReviewScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const resultsRef = useRef<ReviewResult[]>([]);
 
-  const loadState = useCallback(async () => {
-    setLoading(true);
-    const [due, nextDate, progress] = await Promise.all([
-      getDueReviewWords(),
-      getNextScheduledReview(),
-      getUserProgress(),
-    ]);
-    setDueWords(due);
-    setNextScheduledDate(nextDate);
-    setTotalScheduled(due.length + (nextDate ? 1 : 0)); // rough indicator
-    setTtsRate(progress.ttsRate);
-    setLoading(false);
+  const loadState = useCallback(() => {
+    (async () => {
+      setLoading(true);
+      const [due, nextDate, progress] = await Promise.all([
+        getDueReviewWords(),
+        getNextScheduledReview(),
+        getUserProgress(),
+      ]);
+      setDueWords(due);
+      setNextScheduledDate(nextDate);
+      setTotalScheduled(due.length + (nextDate ? 1 : 0));
+      setTtsRate(progress.ttsRate);
+      setLoading(false);
+    })();
   }, []);
 
   useFocusEffect(loadState);

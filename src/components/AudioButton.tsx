@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TouchableOpacity, StyleSheet, Animated, ViewStyle, Image, Platform } from 'react-native';
+import { TouchableOpacity, StyleSheet, Animated, ViewStyle, Image } from 'react-native';
 
 const SPEAKER_ON = require('../../assets/icons/blue_speaker.png');
 const SPEAKER_OFF = require('../../assets/icons/grey_speaker.png');
@@ -20,7 +20,7 @@ const FONT = { sm: 16, md: 22, lg: 38 };
 
 export default function AudioButton({
   text,
-  language = 'es-ES',
+  language = 'es',
   rate = 0.8,
   size = 'md',
   style,
@@ -61,23 +61,6 @@ export default function AudioButton({
     };
   }, []);
 
-  const speak = (lang: string) => {
-    Speech.speak(text, {
-      language: lang,
-      rate,
-      onDone: () => setPlaying(false),
-      onStopped: () => setPlaying(false),
-      onError: () => {
-        // On Android the es-ES voice may not be installed; fall back to device default
-        if (lang !== 'es' && Platform.OS === 'android') {
-          speak('es');
-        } else {
-          setPlaying(false);
-        }
-      },
-    });
-  };
-
   const play = () => {
     if (playing) {
       Speech.stop();
@@ -91,7 +74,13 @@ export default function AudioButton({
     ]).start();
 
     setPlaying(true);
-    speak(language);
+    Speech.speak(text, {
+      language,
+      rate,
+      onDone: () => setPlaying(false),
+      onStopped: () => setPlaying(false),
+      onError: () => setPlaying(false),
+    });
   };
 
   const dim = SIZE[size];
