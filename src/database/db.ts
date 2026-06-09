@@ -18,6 +18,10 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE lesson_history ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE user_progress ADD COLUMN words_mastered INTEGER NOT NULL DEFAULT 0',
     "ALTER TABLE user_progress ADD COLUMN last_challenge_date TEXT NOT NULL DEFAULT ''",
+    // Phase 17: spaced repetition columns on weak_words
+    'ALTER TABLE weak_words ADD COLUMN interval INTEGER NOT NULL DEFAULT 1',
+    "ALTER TABLE weak_words ADD COLUMN next_review_date TEXT NOT NULL DEFAULT ''",
+    'ALTER TABLE weak_words ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5',
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -146,10 +150,15 @@ export async function recordWrongAnswer(wordId: string): Promise<void> {
   const database = getDb();
   const today = new Date().toISOString().split('T')[0];
   await database.runAsync(
-    `INSERT INTO weak_words (word_id, wrong_count, last_wrong_date)
-     VALUES (?, 1, ?)
-     ON CONFLICT(word_id) DO UPDATE SET wrong_count = wrong_count + 1, last_wrong_date = ?`,
-    [wordId, today, today]
+    `INSERT INTO weak_words (word_id, wrong_count, last_wrong_date, interval, next_review_date, ease_factor)
+     VALUES (?, 1, ?, 1, ?, 2.5)
+     ON CONFLICT(word_id) DO UPDATE SET
+       wrong_count = wrong_count + 1,
+       last_wrong_date = ?,
+       interval = 1,
+       next_review_date = ?,
+       ease_factor = MAX(1.3, ease_factor - 0.2)`,
+    [wordId, today, today, today, today]
   );
 }
 
@@ -181,14 +190,11 @@ export async function getWeakWordsWithCounts(): Promise<{ wordId: string; wrongC
   return rows.map((r) => ({ wordId: r.word_id, wrongCount: r.wrong_count }));
 }
 
+// Direct removal — used by VocabScreen "Mark as practised"
 export async function markWordReviewed(wordId: string): Promise<void> {
   const database = getDb();
-  await database.runAsync(
-    'UPDATE weak_words SET wrong_count = MAX(0, wrong_count - 1) WHERE word_id = ?',
-    [wordId]
-  );
   const result = await database.runAsync(
-    'DELETE FROM weak_words WHERE word_id = ? AND wrong_count = 0',
+    'DELETE FROM weak_words WHERE word_id = ?',
     [wordId]
   );
   if (result.changes > 0) {
@@ -196,6 +202,95 @@ export async function markWordReviewed(wordId: string): Promise<void> {
       'UPDATE user_progress SET words_mastered = words_mastered + 1 WHERE id = 1'
     );
   }
+}
+
+const MASTERY_INTERVAL = 21; // days — word is mastered when interval reaches this
+
+// SRS scheduling — used by ReviewScreen after each answer
+export async function scheduleWordReview(
+  wordId: string,
+  correct: boolean
+): Promise<{ mastered: boolean; newInterval: number }> {
+  const database = getDb();
+  const today = new Date().toISOString().split('T')[0];
+
+  if (!correct) {
+    await database.runAsync(
+      `UPDATE weak_words SET
+         wrong_count = wrong_count + 1,
+         last_wrong_date = ?,
+         interval = 1,
+         next_review_date = ?,
+         ease_factor = MAX(1.3, ease_factor - 0.2)
+       WHERE word_id = ?`,
+      [today, today, wordId]
+    );
+    return { mastered: false, newInterval: 1 };
+  }
+
+  const row = await database.getFirstAsync<{ interval: number; ease_factor: number }>(
+    'SELECT interval, ease_factor FROM weak_words WHERE word_id = ?',
+    [wordId]
+  );
+  if (!row) return { mastered: false, newInterval: 1 };
+
+  const newEase = Math.min(3.0, (row.ease_factor ?? 2.5) + 0.1);
+  const newInterval = Math.max(1, Math.round((row.interval ?? 1) * newEase));
+
+  if (newInterval >= MASTERY_INTERVAL) {
+    await database.runAsync('DELETE FROM weak_words WHERE word_id = ?', [wordId]);
+    await database.runAsync(
+      'UPDATE user_progress SET words_mastered = words_mastered + 1 WHERE id = 1'
+    );
+    return { mastered: true, newInterval: 0 };
+  }
+
+  const nextDate = new Date(Date.now() + newInterval * 86400000).toISOString().split('T')[0];
+  await database.runAsync(
+    'UPDATE weak_words SET interval = ?, next_review_date = ?, ease_factor = ? WHERE word_id = ?',
+    [newInterval, nextDate, newEase, wordId]
+  );
+  return { mastered: false, newInterval };
+}
+
+// Words due for review today (next_review_date <= today or never set)
+export async function getDueReviewWords(): Promise<{
+  wordId: string;
+  wrongCount: number;
+  interval: number;
+  nextReviewDate: string;
+}[]> {
+  const today = new Date().toISOString().split('T')[0];
+  const rows = await getDb().getAllAsync<{
+    word_id: string;
+    wrong_count: number;
+    interval: number;
+    next_review_date: string;
+  }>(
+    `SELECT word_id, wrong_count, interval, next_review_date
+     FROM weak_words
+     WHERE next_review_date <= ? OR next_review_date = ''
+     ORDER BY next_review_date ASC, wrong_count DESC`,
+    [today]
+  );
+  return rows.map((r) => ({
+    wordId: r.word_id,
+    wrongCount: r.wrong_count ?? 0,
+    interval: r.interval ?? 1,
+    nextReviewDate: r.next_review_date ?? '',
+  }));
+}
+
+// Earliest future review date (for "all caught up" state)
+export async function getNextScheduledReview(): Promise<string | null> {
+  const today = new Date().toISOString().split('T')[0];
+  const row = await getDb().getFirstAsync<{ next_review_date: string }>(
+    `SELECT next_review_date FROM weak_words
+     WHERE next_review_date > ?
+     ORDER BY next_review_date ASC LIMIT 1`,
+    [today]
+  );
+  return row?.next_review_date ?? null;
 }
 
 export async function awardXP(amount: number): Promise<void> {

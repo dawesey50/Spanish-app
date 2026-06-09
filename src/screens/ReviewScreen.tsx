@@ -22,12 +22,16 @@ const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
 const TICK_ICON = require('../../assets/icons/green_tick.png');
 const CROSS_ICON = require('../../assets/icons/red_cross.png');
 const STAR_ICON = require('../../assets/icons/star.png');
+const BOOK_ICON = require('../../assets/icons/blue_icon_book.png');
+const TARGET_ICON = require('../../assets/icons/blue_target.png');
+
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import {
-  getWeakWordsWithCounts,
-  markWordReviewed,
+  getDueReviewWords,
+  getNextScheduledReview,
+  scheduleWordReview,
   awardXP,
   getUserProgress,
   getUnlockedAchievements,
@@ -43,12 +47,49 @@ import type { Question } from '../types';
 const XP_PER_CORRECT = 5;
 
 type ReviewPhase = 'list' | 'session' | 'results';
-interface WeakWord { wordId: string; wrongCount: number; }
-interface ReviewResult { wordId: string; correct: boolean; }
+
+interface DueWord {
+  wordId: string;
+  wrongCount: number;
+  interval: number;
+  nextReviewDate: string;
+}
+
+interface ReviewResult {
+  wordId: string;
+  correct: boolean;
+  mastered: boolean;
+  newInterval: number;
+}
+
+function masteryLevel(interval: number): { label: string; bg: string; color: string } {
+  if (interval >= 8) return { label: 'Strong', bg: '#D1FAE5', color: '#065F46' };
+  if (interval >= 4) return { label: 'Familiar', bg: '#EEF2FF', color: '#4338CA' };
+  if (interval >= 2) return { label: 'Learning', bg: '#FEF3C7', color: '#92400E' };
+  return { label: 'Struggling', bg: '#FEE2E2', color: '#991B1B' };
+}
+
+function daysUntilLabel(dateStr: string): string {
+  if (!dateStr) return 'today';
+  const diff = Math.round(
+    (new Date(dateStr).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000
+  );
+  if (diff <= 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  return `in ${diff} days`;
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+}
 
 export default function ReviewScreen() {
   const [phase, setPhase] = useState<ReviewPhase>('list');
-  const [weakWords, setWeakWords] = useState<WeakWord[]>([]);
+  const [dueWords, setDueWords] = useState<DueWord[]>([]);
+  const [totalScheduled, setTotalScheduled] = useState(0);
+  const [nextScheduledDate, setNextScheduledDate] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -61,18 +102,21 @@ export default function ReviewScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const resultsRef = useRef<ReviewResult[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      (async () => {
-        const [words, progress] = await Promise.all([
-          getWeakWordsWithCounts(),
-          getUserProgress(),
-        ]);
-        setWeakWords(words);
-        setTtsRate(progress.ttsRate);
-      })();
-    }, [])
-  );
+  const loadState = useCallback(async () => {
+    setLoading(true);
+    const [due, nextDate, progress] = await Promise.all([
+      getDueReviewWords(),
+      getNextScheduledReview(),
+      getUserProgress(),
+    ]);
+    setDueWords(due);
+    setNextScheduledDate(nextDate);
+    setTotalScheduled(due.length + (nextDate ? 1 : 0)); // rough indicator
+    setTtsRate(progress.ttsRate);
+    setLoading(false);
+  }, []);
+
+  useFocusEffect(loadState);
 
   const shake = () => {
     Animated.sequence([
@@ -83,8 +127,8 @@ export default function ReviewScreen() {
     ]).start();
   };
 
-  const startSession = (wordList = weakWords) => {
-    const qs = buildReviewQuestions(wordList.map((w) => w.wordId));
+  const startSession = () => {
+    const qs = buildReviewQuestions(dueWords.map((w) => w.wordId));
     setQuestions(qs);
     setIndex(0);
     setSelected(null);
@@ -118,23 +162,27 @@ export default function ReviewScreen() {
   };
 
   const handleNext = async () => {
-    resultsRef.current = [
-      ...resultsRef.current,
-      { wordId: current.wordId, correct: wasCorrect },
-    ];
-
     const isLast = index + 1 >= questions.length;
     setSelected(null);
     setTypedAnswer('');
     setRevealed(false);
 
     if (isLast) {
-      const finalResults = resultsRef.current;
-      const correctOnes = finalResults.filter((r) => r.correct && r.wordId);
-      if (correctOnes.length > 0) {
-        await awardXP(correctOnes.length * XP_PER_CORRECT);
-        await Promise.all(correctOnes.map((r) => markWordReviewed(r.wordId!)));
-      }
+      const finalResults = [...resultsRef.current, { wordId: current.wordId ?? '', correct: wasCorrect, mastered: false, newInterval: 1 }];
+
+      const correctCount = finalResults.filter((r) => r.correct).length;
+      if (correctCount > 0) await awardXP(correctCount * XP_PER_CORRECT);
+
+      const scheduled = await Promise.all(
+        finalResults.map((r) => r.wordId ? scheduleWordReview(r.wordId, r.correct) : Promise.resolve({ mastered: false, newInterval: 1 }))
+      );
+
+      const enriched: ReviewResult[] = finalResults.map((r, i) => ({
+        ...r,
+        mastered: scheduled[i].mastered,
+        newInterval: scheduled[i].newInterval,
+      }));
+
       const [totalWordsMastered, alreadyUnlocked] = await Promise.all([
         getWordsMastered(),
         getUnlockedAchievements(),
@@ -145,11 +193,21 @@ export default function ReviewScreen() {
       );
       await Promise.all(newBadges.map((id) => unlockAchievement(id)));
       if (newBadges.length > 0) fireAchievementToast(newBadges);
-      const fresh = await getWeakWordsWithCounts();
-      setWeakWords(fresh);
-      setResults(finalResults);
+
+      const [freshDue, freshNext] = await Promise.all([
+        getDueReviewWords(),
+        getNextScheduledReview(),
+      ]);
+      setDueWords(freshDue);
+      setNextScheduledDate(freshNext);
+
+      setResults(enriched);
       setPhase('results');
     } else {
+      resultsRef.current = [
+        ...resultsRef.current,
+        { wordId: current.wordId ?? '', correct: wasCorrect, mastered: false, newInterval: 1 },
+      ];
       Animated.timing(progressAnim, {
         toValue: (index + 1) / questions.length,
         duration: 250,
@@ -161,55 +219,96 @@ export default function ReviewScreen() {
 
   // ─── List ─────────────────────────────────────────────────────────────────
   if (phase === 'list') {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView
-          contentContainerStyle={styles.listScroll}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.listTitle}>Review</Text>
+    if (loading) {
+      return (
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+          </View>
+        </SafeAreaView>
+      );
+    }
 
-          {weakWords.length === 0 ? (
+    // No weak words at all
+    if (dueWords.length === 0 && !nextScheduledDate) {
+      return (
+        <SafeAreaView style={styles.safe}>
+          <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.listTitle}>Review</Text>
             <View style={styles.emptyState}>
-              <Image source={STAR_ICON} style={styles.emptyStarIcon} resizeMode="contain" />
+              <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
               <Text style={styles.emptyTitle}>Nothing to review!</Text>
               <Text style={styles.emptyDesc}>
                 Complete lessons — any words you find difficult will appear here for extra practice.
               </Text>
             </View>
-          ) : (
-            <>
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryCount}>{weakWords.length}</Text>
-                <Text style={styles.summaryLabel}>
-                  {weakWords.length === 1 ? 'word needs practice' : 'words need practice'}
-                </Text>
-              </View>
+          </ScrollView>
+        </SafeAreaView>
+      );
+    }
 
-              <View style={styles.wordList}>
-                {weakWords.map((ww) => {
-                  const word = WORDS_BY_ID[ww.wordId];
-                  if (!word) return null;
-                  return (
-                    <View key={ww.wordId} style={styles.wordRow}>
-                      <AudioButton text={word.spanish} rate={ttsRate} size="sm" />
-                      <View style={styles.wordInfo}>
-                        <Text style={styles.wordSpanish}>{word.spanish}</Text>
-                        <Text style={styles.wordEnglish}>{word.english}</Text>
-                      </View>
-                      <View style={styles.wrongBadge}>
-                        <Text style={styles.wrongBadgeText}>✗ {ww.wrongCount}</Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
+    // All words scheduled for future — nothing due today
+    if (dueWords.length === 0 && nextScheduledDate) {
+      return (
+        <SafeAreaView style={styles.safe}>
+          <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.listTitle}>Review</Text>
+            <View style={styles.caughtUpCard}>
+              <Image source={TICK_ICON} style={styles.caughtUpIcon} resizeMode="contain" />
+              <Text style={styles.caughtUpTitle}>All caught up for today!</Text>
+              <Text style={styles.caughtUpDesc}>
+                Next review {daysUntilLabel(nextScheduledDate)} · {formatDate(nextScheduledDate)}
+              </Text>
+            </View>
+            <Text style={styles.caughtUpHint}>
+              Keep completing lessons to add more words to your review queue.
+            </Text>
+          </ScrollView>
+        </SafeAreaView>
+      );
+    }
 
-              <TouchableOpacity style={styles.startBtn} onPress={() => startSession()}>
-                <Text style={styles.startBtnText}>Start Review →</Text>
-              </TouchableOpacity>
-            </>
-          )}
+    // Words due today
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.listTitle}>Review</Text>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryCount}>{dueWords.length}</Text>
+            <Text style={styles.summaryLabel}>
+              {dueWords.length === 1 ? 'word due today' : 'words due today'}
+            </Text>
+            {nextScheduledDate && (
+              <Text style={styles.summaryNext}>
+                More coming {daysUntilLabel(nextScheduledDate)}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.wordList}>
+            {dueWords.map((dw) => {
+              const word = WORDS_BY_ID[dw.wordId];
+              if (!word) return null;
+              const level = masteryLevel(dw.interval);
+              return (
+                <View key={dw.wordId} style={styles.wordRow}>
+                  <AudioButton text={word.spanish} rate={ttsRate} size="sm" />
+                  <View style={styles.wordInfo}>
+                    <Text style={styles.wordSpanish}>{word.spanish}</Text>
+                    <Text style={styles.wordEnglish}>{word.english}</Text>
+                  </View>
+                  <View style={[styles.levelBadge, { backgroundColor: level.bg }]}>
+                    <Text style={[styles.levelBadgeText, { color: level.color }]}>{level.label}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity style={styles.startBtn} onPress={startSession}>
+            <Text style={styles.startBtnText}>Start Review →</Text>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     );
@@ -218,22 +317,27 @@ export default function ReviewScreen() {
   // ─── Results ──────────────────────────────────────────────────────────────
   if (phase === 'results') {
     const correctCount = results.filter((r) => r.correct).length;
+    const masteredCount = results.filter((r) => r.mastered).length;
     const xpEarned = correctCount * XP_PER_CORRECT;
     const allCorrect = correctCount === results.length;
 
+    const resultIcon = allCorrect ? STAR_ICON : correctCount > results.length / 2 ? TICK_ICON : BOOK_ICON;
+
     return (
       <SafeAreaView style={styles.safe}>
-        <ScrollView
-          contentContainerStyle={styles.resultsScroll}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.resultsEmoji}>
-            {allCorrect ? '🏆' : correctCount > results.length / 2 ? '⭐' : '📚'}
-          </Text>
+        <ScrollView contentContainerStyle={styles.resultsScroll} showsVerticalScrollIndicator={false}>
+          <Image source={resultIcon} style={styles.resultsIcon} resizeMode="contain" />
           <Text style={styles.resultsTitle}>Review Complete!</Text>
-          <Text style={styles.resultsScore}>
-            {correctCount} / {results.length} correct
-          </Text>
+          <Text style={styles.resultsScore}>{correctCount} / {results.length} correct</Text>
+
+          {masteredCount > 0 && (
+            <View style={styles.masteredBanner}>
+              <Image source={STAR_ICON} style={styles.masteredBannerIcon} resizeMode="contain" />
+              <Text style={styles.masteredBannerText}>
+                {masteredCount} word{masteredCount !== 1 ? 's' : ''} mastered!
+              </Text>
+            </View>
+          )}
 
           {xpEarned > 0 && (
             <View style={styles.xpBadge}>
@@ -245,7 +349,6 @@ export default function ReviewScreen() {
             {results.map((r) => {
               const word = WORDS_BY_ID[r.wordId];
               if (!word) return null;
-              const stillWeak = !!weakWords.find((w) => w.wordId === r.wordId);
               return (
                 <View
                   key={r.wordId}
@@ -254,27 +357,39 @@ export default function ReviewScreen() {
                     r.correct ? styles.resultRowCorrect : styles.resultRowWrong,
                   ]}
                 >
-                  <Text style={[styles.resultMark, r.correct ? styles.markGreen : styles.markRed]}>
-                    {r.correct ? '✓' : '✗'}
-                  </Text>
+                  <Image
+                    source={r.correct ? TICK_ICON : CROSS_ICON}
+                    style={styles.resultMark}
+                    resizeMode="contain"
+                  />
                   <View style={styles.resultWordInfo}>
                     <Text style={styles.resultSpanish}>{word.spanish}</Text>
                     <Text style={styles.resultEnglish}>{word.english}</Text>
                   </View>
-                  {r.correct && !stillWeak && (
-                    <Text style={styles.masteredTag}>mastered!</Text>
+                  {r.mastered ? (
+                    <View style={styles.masteredTag}>
+                      <Text style={styles.masteredTagText}>Mastered ✓</Text>
+                    </View>
+                  ) : r.correct ? (
+                    <View style={styles.intervalTag}>
+                      <Text style={styles.intervalTagText}>In {r.newInterval}d</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.dueAgainTag}>
+                      <Text style={styles.dueAgainTagText}>Due again</Text>
+                    </View>
                   )}
                 </View>
               );
             })}
           </View>
 
-          {weakWords.length > 0 && (
-            <TouchableOpacity style={styles.startBtn} onPress={() => startSession()}>
+          {dueWords.length > 0 && (
+            <TouchableOpacity style={styles.startBtn} onPress={startSession}>
               <Text style={styles.startBtnText}>Review Again</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.doneBtn} onPress={() => setPhase('list')}>
+          <TouchableOpacity style={styles.doneBtn} onPress={() => { setPhase('list'); loadState(); }}>
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -335,7 +450,10 @@ export default function ReviewScreen() {
                     : 'Listening'}
                 </Text>
               </View>
-              <Text style={styles.reviewPill}>Review</Text>
+              <View style={styles.reviewPillWrap}>
+                <Image source={TARGET_ICON} style={styles.reviewPillIcon} resizeMode="contain" />
+                <Text style={styles.reviewPill}>Review</Text>
+              </View>
             </View>
 
             <Text style={styles.prompt}>{current.prompt}</Text>
@@ -407,7 +525,10 @@ export default function ReviewScreen() {
                   }}
                 />
                 {revealed && !isCorrect(typedAnswer, current.correctAnswer) && (
-                  <Text style={styles.correctionText}>✓ {current.correctAnswer}</Text>
+                  <View style={styles.correctionBox}>
+                    <Text style={styles.correctionLabel}>Correct answer</Text>
+                    <Text style={styles.correctionText}>{current.correctAnswer}</Text>
+                  </View>
                 )}
               </View>
             )}
@@ -428,8 +549,9 @@ export default function ReviewScreen() {
           {revealed && (
             <View style={styles.revealedArea}>
               <View style={[styles.resultBanner, wasCorrect ? styles.bannerCorrect : styles.bannerWrong]}>
-                <Text style={styles.resultBannerText}>
-                  {wasCorrect ? '🎉 Correct!' : `💡 Answer: ${current.correctAnswer}`}
+                <Image source={wasCorrect ? TICK_ICON : CROSS_ICON} style={styles.bannerIcon} resizeMode="contain" />
+                <Text style={[styles.resultBannerText, wasCorrect ? styles.bannerTextCorrect : styles.bannerTextWrong]}>
+                  {wasCorrect ? 'Correct!' : `Answer: ${current.correctAnswer}`}
                 </Text>
               </View>
               <TouchableOpacity style={[styles.actionBtn, styles.continueBtn]} onPress={handleNext}>
@@ -448,15 +570,31 @@ export default function ReviewScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F9FAFB' },
   flex: { flex: 1 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // ─── List ─────────────────────────────────────────────────────────────────
   listScroll: { padding: 20, paddingBottom: 40 },
   listTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 20 },
 
   emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyStarIcon: { width: 64, height: 64, marginBottom: 16, opacity: 0.6 },
+  emptyIcon: { width: 64, height: 64, marginBottom: 16, opacity: 0.5 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
   emptyDesc: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 21 },
+
+  caughtUpCard: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 16,
+  },
+  caughtUpIcon: { width: 52, height: 52, marginBottom: 4 },
+  caughtUpTitle: { fontSize: 20, fontWeight: '800', color: '#065F46' },
+  caughtUpDesc: { fontSize: 14, color: '#059669', fontWeight: '600', textAlign: 'center' },
+  caughtUpHint: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
 
   summaryCard: {
     backgroundColor: '#EEF2FF',
@@ -466,9 +604,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#C7D2FE',
+    gap: 4,
   },
   summaryCount: { fontSize: 48, fontWeight: '800', color: '#4F46E5' },
-  summaryLabel: { fontSize: 15, color: '#4F46E5', fontWeight: '600', marginTop: 4 },
+  summaryLabel: { fontSize: 15, color: '#4F46E5', fontWeight: '600' },
+  summaryNext: { fontSize: 12, color: '#818CF8', marginTop: 2 },
 
   wordList: {
     backgroundColor: '#FFFFFF',
@@ -490,13 +630,12 @@ const styles = StyleSheet.create({
   wordInfo: { flex: 1 },
   wordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827' },
   wordEnglish: { fontSize: 13, color: '#6B7280', marginTop: 1 },
-  wrongBadge: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 8,
-    paddingHorizontal: 8,
+  levelBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 9,
     paddingVertical: 3,
   },
-  wrongBadgeText: { fontSize: 12, fontWeight: '700', color: '#DC2626' },
+  levelBadgeText: { fontSize: 11, fontWeight: '700' },
 
   startBtn: {
     backgroundColor: '#4F46E5',
@@ -508,9 +647,24 @@ const styles = StyleSheet.create({
 
   // ─── Results ──────────────────────────────────────────────────────────────
   resultsScroll: { padding: 24, alignItems: 'center', paddingBottom: 48 },
-  resultsEmoji: { fontSize: 72, marginBottom: 12 },
+  resultsIcon: { width: 72, height: 72, marginBottom: 12 },
   resultsTitle: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 4 },
   resultsScore: { fontSize: 15, color: '#6B7280', marginBottom: 16 },
+
+  masteredBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF9C3',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  masteredBannerIcon: { width: 20, height: 20 },
+  masteredBannerText: { fontSize: 14, fontWeight: '700', color: '#78350F' },
 
   xpBadge: {
     backgroundColor: '#D1FAE5',
@@ -541,19 +695,32 @@ const styles = StyleSheet.create({
   },
   resultRowCorrect: { backgroundColor: '#F0FDF4' },
   resultRowWrong: { backgroundColor: '#FFF5F5' },
-  resultMark: { fontSize: 16, fontWeight: '800', width: 20, textAlign: 'center' },
+  resultMark: { width: 18, height: 18 },
   resultWordInfo: { flex: 1 },
   resultSpanish: { fontSize: 14, fontWeight: '700', color: '#111827' },
   resultEnglish: { fontSize: 12, color: '#6B7280', marginTop: 1 },
+
   masteredTag: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#059669',
     backgroundColor: '#D1FAE5',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
     borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
+  masteredTagText: { fontSize: 11, fontWeight: '700', color: '#065F46' },
+  intervalTag: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  intervalTagText: { fontSize: 11, fontWeight: '700', color: '#4338CA' },
+  dueAgainTag: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  dueAgainTagText: { fontSize: 11, fontWeight: '700', color: '#991B1B' },
 
   doneBtn: { padding: 14 },
   doneBtnText: { fontSize: 14, color: '#6B7280', textDecorationLine: 'underline' },
@@ -596,20 +763,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   typeBadgeIcon: { width: 16, height: 16 },
-  typeBadge: {
-    fontSize: 13,
-    color: '#4F46E5',
-    fontWeight: '600',
-  },
-  reviewPill: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#D97706',
+  typeBadge: { fontSize: 13, color: '#4F46E5', fontWeight: '600' },
+  reviewPillWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
   },
+  reviewPillIcon: { width: 12, height: 12 },
+  reviewPill: { fontSize: 11, fontWeight: '700', color: '#D97706' },
 
   prompt: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 24, lineHeight: 30 },
 
@@ -640,14 +805,31 @@ const styles = StyleSheet.create({
   },
   inputCorrect: { borderColor: '#059669', backgroundColor: '#D1FAE5' },
   inputWrong: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
-  correctionText: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
+  correctionBox: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  correctionLabel: { fontSize: 11, fontWeight: '700', color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  correctionText: { fontSize: 16, fontWeight: '700', color: '#78350F' },
 
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   revealedArea: { gap: 12 },
-  resultBanner: { borderRadius: 12, padding: 14, alignItems: 'center' },
+  resultBanner: {
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   bannerCorrect: { backgroundColor: '#D1FAE5' },
   bannerWrong: { backgroundColor: '#FEE2E2' },
-  resultBannerText: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  bannerIcon: { width: 20, height: 20 },
+  resultBannerText: { fontSize: 16, fontWeight: '700', flex: 1 },
+  bannerTextCorrect: { color: '#065F46' },
+  bannerTextWrong: { color: '#991B1B' },
   actionBtn: { backgroundColor: '#4F46E5', borderRadius: 14, padding: 18, alignItems: 'center' },
   continueBtn: { backgroundColor: '#059669' },
   btnDisabled: { backgroundColor: '#C7D2FE' },
