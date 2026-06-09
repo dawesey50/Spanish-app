@@ -23,7 +23,8 @@ const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
 const TICK_ICON = require('../../assets/icons/green_tick.png');
 const CROSS_ICON = require('../../assets/icons/red_cross.png');
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import type { RootStackParamList, Correction } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
@@ -34,6 +35,7 @@ import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import HeartsDisplay from '../components/HeartsDisplay';
 import AudioButton from '../components/AudioButton';
+import { colors, radius, shadows } from '../theme';
 import SpeakingQuestion from '../components/SpeakingQuestion';
 import SentenceBuilder from '../components/SentenceBuilder';
 
@@ -572,10 +574,11 @@ const styles = StyleSheet.create({
   },
   previewWordList: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    ...shadows.card,
   },
   previewWordRow: {
     flexDirection: 'row',
@@ -589,7 +592,13 @@ const styles = StyleSheet.create({
   previewWordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827', flex: 1 },
   previewWordEnglish: { fontSize: 14, color: '#6B7280' },
   previewFooter: { padding: 20, paddingBottom: 32 },
-  startBtn: { backgroundColor: '#4F46E5', borderRadius: 14, padding: 18, alignItems: 'center' },
+  startBtn: {
+    backgroundColor: colors.indigo,
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    ...shadows.glow(colors.indigo),
+  },
   startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 
   // No hearts
@@ -610,10 +619,11 @@ const styles = StyleSheet.create({
   },
   retryBtn: {
     backgroundColor: '#4F46E5',
-    borderRadius: 14,
+    borderRadius: 16,
     paddingHorizontal: 48,
     paddingVertical: 16,
     marginBottom: 14,
+    ...shadows.glow(colors.indigo),
   },
   retryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
   quitLinkBtn: { padding: 12 },
@@ -681,11 +691,12 @@ const styles = StyleSheet.create({
   options: { gap: 10 },
   option: {
     borderWidth: 2,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    ...shadows.card,
   },
   optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
   optionMark: { width: 20, height: 20 },
@@ -695,7 +706,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 2,
     borderColor: '#E5E7EB',
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     fontSize: 18,
     color: '#111827',
@@ -718,9 +729,9 @@ const styles = StyleSheet.create({
   bannerCorrect: { backgroundColor: '#D1FAE5' },
   bannerWrong: { backgroundColor: '#FEE2E2' },
   resultBannerText: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  actionBtn: { borderRadius: 14, padding: 18, alignItems: 'center' },
-  checkBtn: { backgroundColor: '#4F46E5' },
-  nextBtn: { backgroundColor: '#059669' },
+  actionBtn: { borderRadius: 16, padding: 18, alignItems: 'center' },
+  checkBtn: { backgroundColor: '#4F46E5', ...shadows.glow(colors.indigo) },
+  nextBtn: { backgroundColor: '#059669', ...shadows.glow(colors.green) },
   btnDisabled: { backgroundColor: '#C7D2FE' },
   actionBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 });

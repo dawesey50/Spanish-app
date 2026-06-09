@@ -30,6 +30,7 @@ import { fireAchievementToast } from '../utils/achievementEvents';
 import { GROQ_API_KEY, GROQ_MODEL } from '../config';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
+import { colors, radius, shadows } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type ChatPhase = 'picker' | 'chat' | 'summary';
@@ -606,17 +607,13 @@ const styles = StyleSheet.create({
 
   scenarioCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: radius.lg,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.card,
   },
   scenarioEmoji: { width: 40, height: 40 },
   scenarioText: { flex: 1 },
@@ -741,23 +738,21 @@ const styles = StyleSheet.create({
   statBox: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: radius.md,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    ...shadows.card,
   },
   statNum: { fontSize: 30, fontWeight: '800', color: '#4F46E5' },
   statLabel: { fontSize: 12, color: '#6B7280', marginTop: 4 },
 
   feedbackCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     padding: 18,
     width: '100%',
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    ...shadows.card,
   },
   feedbackTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 10 },
   feedbackBody: { fontSize: 14, color: '#374151', lineHeight: 22 },
@@ -765,11 +760,12 @@ const styles = StyleSheet.create({
 
   primaryBtn: {
     backgroundColor: '#4F46E5',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 18,
     width: '100%',
     alignItems: 'center',
     marginBottom: 12,
+    ...shadows.glow(colors.indigo),
   },
   primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   ghostBtn: { padding: 12 },
@@ -781,15 +777,16 @@ const styles = StyleSheet.create({
   personaChip: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: '#E5E7EB',
-    gap: 4,
+    gap: 5,
+    ...shadows.card,
   },
   personaChipActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-  personaEmoji: { fontSize: 22 },
+  personaEmoji: { fontSize: 24 },
   personaLabel: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
   personaLabelActive: { color: '#4F46E5' },
 

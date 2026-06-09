@@ -10,7 +10,8 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';

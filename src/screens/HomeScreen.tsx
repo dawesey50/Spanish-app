@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   RefreshControl,
   ScrollView,
-  TouchableOpacity,
   Image,
 } from 'react-native';
 
@@ -22,6 +21,7 @@ import { getUserProgress } from '../database/db';
 import { getUserLevel } from '../utils/level';
 import UnitMap from '../components/UnitMap';
 import DailyChallengeCard from '../components/DailyChallengeCard';
+import PressableScale from '../components/PressableScale';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -121,6 +121,7 @@ export default function HomeScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
         >
           {/* Daily challenge */}
+          <Text style={styles.sectionTitle}>Today</Text>
           <DailyChallengeCard
             completedLessons={progress.completedLessons}
             completedToday={completedToday}
@@ -128,10 +129,9 @@ export default function HomeScreen() {
           />
 
           {/* AI Conversation button */}
-          <TouchableOpacity
+          <PressableScale
             style={styles.chatCard}
             onPress={() => navigation.navigate('Conversation', {})}
-            activeOpacity={0.85}
           >
             <View style={styles.chatLeft}>
               <View style={styles.chatIconWrap}>
@@ -143,7 +143,7 @@ export default function HomeScreen() {
               </View>
             </View>
             <Text style={styles.chatArrow}>›</Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           {/* Stats strip */}
           <View style={styles.statsStrip}>

@@ -12,8 +12,10 @@ import {
   Image,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Word } from '../types';
+import { colors, radius, shadows } from '../theme';
 import { WORDS } from '../data/words';
 import { LESSONS, LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import {
@@ -173,11 +175,45 @@ export default function VocabScreen() {
   const favCount = favourites.size;
   const sortActive = sortMode !== 'default';
 
-  const emptyMessage = () => {
-    if (filterMode === 'favourites') return 'No saved words yet — tap the star on any word card.';
-    if (filterMode === 'weak') return 'No weak words right now. Great work!';
-    if (topicFilter) return `No ${TOPIC_LABELS[topicFilter] ?? topicFilter} words match your search.`;
-    return 'No words match your search.';
+  const renderEmptyState = () => {
+    if (filterMode === 'favourites') {
+      return (
+        <EmptyState
+          ionicon="star-outline"
+          tint={colors.amber}
+          title="No saved words yet"
+          hint="Tap the star on any word to keep it here for quick access."
+          ctaLabel="Browse all words"
+          onCta={() => setFilterMode('all')}
+        />
+      );
+    }
+    if (filterMode === 'weak') {
+      return (
+        <EmptyState
+          ionicon="checkmark-circle-outline"
+          tint={colors.green}
+          title="No weak words — nice!"
+          hint="Words you miss in lessons land here for extra practice."
+          ctaLabel="Browse all words"
+          onCta={() => setFilterMode('all')}
+        />
+      );
+    }
+    return (
+      <EmptyState
+        ionicon="search-outline"
+        tint={colors.indigo}
+        title="No matches"
+        hint={
+          topicFilter
+            ? `Nothing in ${TOPIC_LABELS[topicFilter] ?? topicFilter} matches your search.`
+            : 'Try a different spelling or a shorter search.'
+        }
+        ctaLabel={topicFilter || query ? 'Clear filters' : undefined}
+        onCta={() => { setTopicFilter(null); setQuery(''); }}
+      />
+    );
   };
 
   return (
@@ -190,21 +226,34 @@ export default function VocabScreen() {
 
       {/* Search bar */}
       <View style={styles.searchRow}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search Spanish or English..."
-          placeholderTextColor="#9CA3AF"
-          value={query}
-          onChangeText={setQuery}
-          autoCorrect={false}
-          autoCapitalize="none"
-          clearButtonMode="while-editing"
-        />
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Spanish or English..."
+            placeholderTextColor="#9CA3AF"
+            value={query}
+            onChangeText={setQuery}
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Filter chips + sort button */}
       <View style={styles.filterRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipRowScroll}
+          contentContainerStyle={styles.chipScroll}
+        >
           <FilterChip
             label="All"
             count={WORDS.length}
@@ -274,6 +323,7 @@ export default function VocabScreen() {
               word={item.word}
               isFavourite={favourites.has(item.word.id)}
               isWeak={weakWordIds.has(item.word.id)}
+              topicLabel={TOPIC_LABELS[item.word.topic] ?? item.word.topic}
               onPress={() => setSelectedWord(item.word)}
               onToggleFavourite={() => handleToggleFavourite(item.word.id)}
             />
@@ -286,9 +336,7 @@ export default function VocabScreen() {
             <Text style={styles.resultCount}>{wordCount} word{wordCount !== 1 ? 's' : ''}</Text>
           ) : null
         }
-        ListEmptyComponent={
-          <Text style={styles.empty}>{emptyMessage()}</Text>
-        }
+        ListEmptyComponent={renderEmptyState()}
       />
 
       {/* Word detail modal */}
@@ -378,6 +426,32 @@ function FilterChip({
         <Text style={[styles.chipBadgeText, active && styles.chipBadgeTextActive]}>{count}</Text>
       </View>
     </TouchableOpacity>
+  );
+}
+
+function EmptyState({
+  ionicon, tint, title, hint, ctaLabel, onCta,
+}: {
+  ionicon: React.ComponentProps<typeof Ionicons>['name'];
+  tint: string;
+  title: string;
+  hint: string;
+  ctaLabel?: string;
+  onCta?: () => void;
+}) {
+  return (
+    <View style={styles.emptyWrap}>
+      <View style={[styles.emptyIconCircle, { backgroundColor: `${tint}1A` }]}>
+        <Ionicons name={ionicon} size={34} color={tint} />
+      </View>
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptyHint}>{hint}</Text>
+      {ctaLabel && onCta ? (
+        <TouchableOpacity style={styles.emptyCta} onPress={onCta} activeOpacity={0.85}>
+          <Text style={styles.emptyCtaText}>{ctaLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
   );
 }
 
@@ -514,16 +588,24 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: '#111827' },
   subtitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
 
-  searchRow: { paddingHorizontal: 20, marginBottom: 10 },
-  searchInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+  searchRow: { paddingHorizontal: 20, marginBottom: 12 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    height: 48,
+    ...shadows.card,
+  },
+  searchInput: {
+    flex: 1,
     fontSize: 15,
-    color: '#111827',
+    color: colors.text,
+    paddingVertical: 0,
   },
 
   // Filter row (chips + sort button)
@@ -534,7 +616,8 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingRight: 20,
   },
-  chipScroll: { paddingLeft: 20, gap: 8, flexDirection: 'row' },
+  chipRowScroll: { flexGrow: 0 },
+  chipScroll: { paddingLeft: 20, gap: 8, flexDirection: 'row', alignItems: 'center' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -574,18 +657,22 @@ const styles = StyleSheet.create({
   sortBtnText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
   sortBtnTextActive: { color: '#4F46E5' },
 
-  // Topic chips row
-  topicChipRow: { marginBottom: 10 },
-  topicChipScroll: { paddingHorizontal: 20, paddingVertical: 4, gap: 8, flexDirection: 'row' },
+  // Topic chips row — flexGrow: 0 stops the ScrollView collapsing the chips
+  topicChipRow: { flexGrow: 0, marginBottom: 12 },
+  topicChipScroll: { paddingHorizontal: 20, paddingVertical: 4, gap: 8, flexDirection: 'row', alignItems: 'center' },
   topicChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    height: 38,
+    paddingHorizontal: 16,
+    borderRadius: 19,
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  topicChipActive: { backgroundColor: '#111827' },
-  topicChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  topicChipTextActive: { color: '#FFFFFF' },
+  topicChipActive: { backgroundColor: colors.indigo, borderColor: colors.indigo, ...shadows.glow(colors.indigo) },
+  topicChipText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
+  topicChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   sectionHeader: {
     fontSize: 12,
@@ -605,15 +692,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 
-  list: { paddingHorizontal: 20, paddingBottom: 40 },
-  empty: {
-    fontSize: 15,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    marginTop: 40,
-    lineHeight: 22,
-    paddingHorizontal: 20,
+  list: { paddingHorizontal: 20, paddingBottom: 40, flexGrow: 1 },
+
+  // Empty states
+  emptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
   },
+  emptyIconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 6 },
+  emptyHint: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 20,
+  },
+  emptyCta: {
+    backgroundColor: colors.indigo,
+    borderRadius: radius.md,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    ...shadows.glow(colors.indigo),
+  },
+  emptyCtaText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 
   // Sort modal
   sortModalBackdrop: {

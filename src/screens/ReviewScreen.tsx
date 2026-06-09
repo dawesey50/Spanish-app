@@ -42,6 +42,7 @@ import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import { buildReviewQuestions, isCorrect } from '../utils/questionGenerator';
 import AudioButton from '../components/AudioButton';
+import { colors, radius, shadows } from '../theme';
 import type { Question } from '../types';
 
 const XP_PER_CORRECT = 5;
@@ -235,11 +236,16 @@ export default function ReviewScreen() {
     if (dueWords.length === 0 && !nextScheduledDate) {
       return (
         <SafeAreaView style={styles.safe}>
-          <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={[styles.listScroll, styles.listScrollGrow]}
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.listTitle}>Review</Text>
             <View style={styles.emptyState}>
-              <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
-              <Text style={styles.emptyTitle}>Nothing to review!</Text>
+              <View style={styles.emptyIconCircle}>
+                <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
+              </View>
+              <Text style={styles.emptyTitle}>Nothing to review yet</Text>
               <Text style={styles.emptyDesc}>
                 Complete lessons — any words you find difficult will appear here for extra practice.
               </Text>
@@ -288,6 +294,7 @@ export default function ReviewScreen() {
             )}
           </View>
 
+          <Text style={styles.dueSectionTitle}>Due for review</Text>
           <View style={styles.wordList}>
             {dueWords.map((dw) => {
               const word = WORDS_BY_ID[dw.wordId];
@@ -576,11 +583,21 @@ const styles = StyleSheet.create({
 
   // ─── List ─────────────────────────────────────────────────────────────────
   listScroll: { padding: 20, paddingBottom: 40 },
+  listScrollGrow: { flexGrow: 1 },
   listTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 20 },
 
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyIcon: { width: 64, height: 64, marginBottom: 16, opacity: 0.5 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60, paddingHorizontal: 12 },
+  emptyIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.indigoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  emptyIcon: { width: 44, height: 44 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8 },
   emptyDesc: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 21 },
 
   caughtUpCard: {
@@ -592,6 +609,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#BBF7D0',
     marginBottom: 16,
+    ...shadows.card,
   },
   caughtUpIcon: { width: 52, height: 52, marginBottom: 4 },
   caughtUpTitle: { fontSize: 20, fontWeight: '800', color: '#065F46' },
@@ -599,26 +617,28 @@ const styles = StyleSheet.create({
   caughtUpHint: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
 
   summaryCard: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: colors.indigo,
+    borderRadius: radius.lg,
+    padding: 24,
     alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-    gap: 4,
+    marginBottom: 20,
+    gap: 2,
+    ...shadows.glow(colors.indigo),
   },
-  summaryCount: { fontSize: 48, fontWeight: '800', color: '#4F46E5' },
-  summaryLabel: { fontSize: 15, color: '#4F46E5', fontWeight: '600' },
-  summaryNext: { fontSize: 12, color: '#818CF8', marginTop: 2 },
+  summaryCount: { fontSize: 50, fontWeight: '900', color: '#FFFFFF' },
+  summaryLabel: { fontSize: 15, color: 'rgba(255,255,255,0.92)', fontWeight: '600' },
+  summaryNext: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
+
+  dueSectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 10 },
 
   wordList: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: 20,
+    ...shadows.card,
   },
   wordRow: {
     flexDirection: 'row',
@@ -640,10 +660,11 @@ const styles = StyleSheet.create({
   levelBadgeText: { fontSize: 11, fontWeight: '700' },
 
   startBtn: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 14,
+    backgroundColor: colors.indigo,
+    borderRadius: 16,
     padding: 18,
     alignItems: 'center',
+    ...shadows.glow(colors.indigo),
   },
   startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 
@@ -786,11 +807,12 @@ const styles = StyleSheet.create({
   options: { gap: 10 },
   option: {
     borderWidth: 2,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    ...shadows.card,
   },
   optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
   optionMark: { width: 20, height: 20 },
@@ -799,7 +821,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 2,
     borderColor: '#E5E7EB',
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: 16,
     fontSize: 18,
     color: '#111827',
@@ -832,8 +854,14 @@ const styles = StyleSheet.create({
   resultBannerText: { fontSize: 16, fontWeight: '700', flex: 1 },
   bannerTextCorrect: { color: '#065F46' },
   bannerTextWrong: { color: '#991B1B' },
-  actionBtn: { backgroundColor: '#4F46E5', borderRadius: 14, padding: 18, alignItems: 'center' },
-  continueBtn: { backgroundColor: '#059669' },
+  actionBtn: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    ...shadows.glow(colors.indigo),
+  },
+  continueBtn: { backgroundColor: '#059669', ...shadows.glow(colors.green) },
   btnDisabled: { backgroundColor: '#C7D2FE' },
   actionBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 });

@@ -1,6 +1,8 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import type { Word } from '../types';
+import { colors, radius, shadows } from '../theme';
+import PressableScale from './PressableScale';
 
 const STAR_FILLED = require('../../assets/icons/star.png');
 const WARNING_ICON = require('../../assets/icons/warning_sign.png');
@@ -11,6 +13,7 @@ interface Props {
   isWeak: boolean;
   onPress: () => void;
   onToggleFavourite: () => void;
+  topicLabel?: string;
 }
 
 function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
@@ -23,9 +26,9 @@ function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
   );
 }
 
-function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite }: Props) {
+function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite, topicLabel }: Props) {
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
+    <PressableScale style={styles.card} onPress={onPress}>
       <View style={styles.left}>
         <View style={styles.wordRow}>
           {word.gender != null && (
@@ -39,7 +42,14 @@ function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite }: Pro
           )}
         </View>
         <Text style={styles.english}>{word.english}</Text>
-        <DifficultyDots level={word.difficulty} />
+        <View style={styles.metaRow}>
+          <DifficultyDots level={word.difficulty} />
+          {topicLabel ? (
+            <View style={styles.topicTag}>
+              <Text style={styles.topicTagText}>{topicLabel}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
       <TouchableOpacity
         style={styles.starBtn}
@@ -53,7 +63,7 @@ function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite }: Pro
           resizeMode="contain"
         />
       </TouchableOpacity>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -61,33 +71,37 @@ export default memo(WordCard);
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.card,
   },
   left: { flex: 1, gap: 3 },
   wordRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  spanish: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  english: { fontSize: 14, color: '#6B7280' },
+  spanish: { fontSize: 17, fontWeight: '700', color: colors.text },
+  english: { fontSize: 14, color: colors.textSecondary },
   weakIcon: { width: 14, height: 14 },
-  dots: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  dots: { flexDirection: 'row', gap: 4 },
   dot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
   },
-  dotFilled: { backgroundColor: '#4F46E5' },
+  dotFilled: { backgroundColor: colors.indigo },
+  topicTag: {
+    backgroundColor: colors.borderLight,
+    borderRadius: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  topicTagText: { fontSize: 10, fontWeight: '700', color: colors.textSecondary },
   genderBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
