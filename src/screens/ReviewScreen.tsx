@@ -98,10 +98,9 @@ export default function ReviewScreen() {
   const [results, setResults] = useState<ReviewResult[]>([]);
   const [ttsRate, setTtsRate] = useState(0.8);
 
-  const shakeAnim    = useRef(new Animated.Value(0)).current;
-  const flipAnim     = useRef(new Animated.Value(1)).current;  // 1=visible, 0=edge-on
+  const shakeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
-  const resultsRef   = useRef<ReviewResult[]>([]);
+  const resultsRef = useRef<ReviewResult[]>([]);
 
   const loadState = useCallback(() => {
     (async () => {
@@ -155,17 +154,13 @@ export default function ReviewScreen() {
   const checkAnswer = (answer: string) => {
     if (revealed || !current) return;
     setSelected(answer);
-    const correct = isCorrect(answer, current.correctAnswer);
-    Haptics.notificationAsync(
-      correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
-    );
-    // Fold card to edge, switch content, unfold
-    Animated.timing(flipAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
-      setRevealed(true);
-      Animated.timing(flipAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start(() => {
-        if (!correct) shake();
-      });
-    });
+    setRevealed(true);
+    if (isCorrect(answer, current.correctAnswer)) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      shake();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
   };
 
   const handleNext = async () => {
@@ -173,7 +168,6 @@ export default function ReviewScreen() {
     setSelected(null);
     setTypedAnswer('');
     setRevealed(false);
-    flipAnim.setValue(1);
 
     if (isLast) {
       const finalResults = [...resultsRef.current, { wordId: current.wordId ?? '', correct: wasCorrect, mastered: false, newInterval: 1 }];
@@ -441,7 +435,6 @@ export default function ReviewScreen() {
           keyboardShouldPersistTaps="handled"
           scrollEnabled={false}
         >
-          <Animated.View style={[styles.flipCard, { transform: [{ scaleX: flipAnim }] }]}>
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
             {/* Type badge */}
             <View style={styles.typeBadgeRow}>
@@ -541,7 +534,6 @@ export default function ReviewScreen() {
                 )}
               </View>
             )}
-          </Animated.View>
           </Animated.View>
         </Animated.ScrollView>
 
@@ -756,7 +748,6 @@ const styles = StyleSheet.create({
   sessionCounter: { fontSize: 13, color: '#9CA3AF', fontWeight: '600', width: 36, textAlign: 'right' },
 
   sessionContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
-  flipCard: { flex: 1 },
 
   typeBadgeRow: {
     flexDirection: 'row',
