@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import { registerToastCallback } from '../utils/achievementEvents';
-import { ACHIEVEMENTS_BY_ID } from '../data/achievements';
+import { ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
 
 export default function AchievementToast() {
   const [queue, setQueue] = useState<string[]>([]);
@@ -37,7 +37,7 @@ export default function AchievementToast() {
 
   return (
     <Animated.View style={[styles.toast, { transform: [{ translateY: slideAnim }] }]}>
-      <Text style={styles.emoji}>{badge.emoji}</Text>
+      <Image source={ACHIEVEMENT_ICONS[badge.id]} style={styles.icon} resizeMode="contain" />
       <View style={styles.textWrap}>
         <Text style={styles.label}>Achievement Unlocked!</Text>
         <Text style={styles.title}>{badge.title}</Text>
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     zIndex: 999,
   },
-  emoji: { fontSize: 36 },
+  icon: { width: 52, height: 52, borderRadius: 10 },
   textWrap: { flex: 1 },
   label: {
     fontSize: 10,

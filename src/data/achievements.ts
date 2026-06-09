@@ -116,6 +116,24 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
+export const ACHIEVEMENT_ICONS: Record<string, ReturnType<typeof require>> = {
+  first_steps:       require('../../assets/achievements/first_steps.png'),
+  on_a_roll:         require('../../assets/achievements/on_a_roll.png'),
+  committed:         require('../../assets/achievements/committed.png'),
+  streak_14:         require('../../assets/achievements/streak_14.png'),
+  dedicated:         require('../../assets/achievements/dedicated.png'),
+  century:           require('../../assets/achievements/century.png'),
+  high_scorer:       require('../../assets/achievements/high_scorer.png'),
+  xp_machine:        require('../../assets/achievements/xp_machine.png'),
+  xp_2000:           require('../../assets/achievements/xp_2000.png'),
+  perfect_lesson:    require('../../assets/achievements/perfect_lesson.png'),
+  unit_champion:     require('../../assets/achievements/unit_champion.png'),
+  conversationalist: require('../../assets/achievements/conversationalist.png'),
+  reviewer:          require('../../assets/achievements/reviewer.png'),
+  wordsmith:         require('../../assets/achievements/wordsmith.png'),
+  mastered_25:       require('../../assets/achievements/mastered_25.png'),
+};
+
 export const ACHIEVEMENTS_BY_ID: Record<string, Achievement> = Object.fromEntries(
   ACHIEVEMENTS.map((a) => [a.id, a])
 );
