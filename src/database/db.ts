@@ -24,6 +24,8 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE weak_words ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5',
     // Phase 18: profile name
     "ALTER TABLE user_progress ADD COLUMN profile_name TEXT NOT NULL DEFAULT ''",
+    // Phase 19: streak shield
+    "ALTER TABLE user_progress ADD COLUMN streak_shield_last_used TEXT NOT NULL DEFAULT ''",
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -54,6 +56,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     words_mastered: number;
     last_challenge_date: string;
     profile_name: string;
+    streak_shield_last_used: string;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -74,11 +77,25 @@ export async function getUserProgress(): Promise<UserProgress> {
   const lastActive = row?.last_active_date ?? '';
   let streak = row?.streak ?? 0;
   let dailyXPToday = row?.daily_xp_today ?? 0;
+  const shieldLastUsed = row?.streak_shield_last_used ?? '';
+  const shieldAvailable = !shieldLastUsed ||
+    (Date.now() - new Date(shieldLastUsed + 'T00:00:00').getTime()) >= 7 * 86400000;
+  let streakShieldAvailable = shieldAvailable;
 
   if (lastActive !== today) {
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     if (lastActive !== yesterday && lastActive !== '') {
-      streak = 0;
+      if (shieldAvailable) {
+        try {
+          await database.runAsync(
+            "UPDATE user_progress SET streak_shield_last_used = ? WHERE id = 1",
+            [today]
+          );
+        } catch {}
+        streakShieldAvailable = false;
+      } else {
+        streak = 0;
+      }
     }
     dailyXPToday = 0;
   }
@@ -106,6 +123,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     wordsMastered: row?.words_mastered ?? 0,
     lastChallengeDate: row?.last_challenge_date ?? '',
     profileName: row?.profile_name ?? '',
+    streakShieldAvailable,
   };
 }
 
@@ -123,22 +141,32 @@ export async function completeLesson(
     last_active_date: string;
     daily_xp_today: number;
     longest_streak: number;
-  }>('SELECT xp, streak, last_active_date, daily_xp_today, longest_streak FROM user_progress WHERE id = 1');
+    streak_shield_last_used: string;
+  }>('SELECT xp, streak, last_active_date, daily_xp_today, longest_streak, streak_shield_last_used FROM user_progress WHERE id = 1');
 
   const lastActive = row?.last_active_date ?? '';
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   let newStreak = row?.streak ?? 0;
-  let newDailyXP = lastActive === today ? (row?.daily_xp_today ?? 0) + xpEarned : xpEarned;
+  const shieldUsedToday = (row?.streak_shield_last_used ?? '') === today;
 
   if (lastActive !== today) {
-    newStreak = lastActive === yesterday ? newStreak + 1 : 1;
+    if (lastActive === yesterday || shieldUsedToday) {
+      newStreak = newStreak + 1;
+    } else {
+      newStreak = 1;
+    }
   }
 
   const newLongestStreak = Math.max(row?.longest_streak ?? 0, newStreak);
 
+  // 1.5× XP multiplier when streak ≥ 7
+  const xpMultiplier = newStreak >= 7 ? 1.5 : 1.0;
+  const effectiveXP = Math.round(xpEarned * xpMultiplier);
+  const newDailyXP = lastActive === today ? (row?.daily_xp_today ?? 0) + effectiveXP : effectiveXP;
+
   await database.runAsync(
     `UPDATE user_progress SET xp = ?, streak = ?, last_active_date = ?, daily_xp_today = ?, longest_streak = ? WHERE id = 1`,
-    [(row?.xp ?? 0) + xpEarned, newStreak, today, newDailyXP, newLongestStreak]
+    [(row?.xp ?? 0) + effectiveXP, newStreak, today, newDailyXP, newLongestStreak]
   );
 
   await database.runAsync(
@@ -148,7 +176,7 @@ export async function completeLesson(
 
   await database.runAsync(
     'INSERT INTO lesson_history (lesson_id, score, xp_earned, date) VALUES (?, ?, ?, ?)',
-    [lessonId, score, xpEarned, today]
+    [lessonId, score, effectiveXP, today]
   );
 }
 
@@ -427,7 +455,8 @@ export async function clearAllProgress(): Promise<void> {
   await database.runAsync(
     `UPDATE user_progress SET streak = 0, last_active_date = '', xp = 0,
      daily_xp_today = 0, has_completed_onboarding = 0, starting_unit_id = 'unit_01',
-     longest_streak = 0, words_mastered = 0, last_challenge_date = '' WHERE id = 1`
+     longest_streak = 0, words_mastered = 0, last_challenge_date = '',
+     streak_shield_last_used = '' WHERE id = 1`
   );
   await database.runAsync('DELETE FROM completed_lessons');
   await database.runAsync('DELETE FROM lesson_history');

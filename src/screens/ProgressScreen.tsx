@@ -19,6 +19,7 @@ const WARNING_ICON = require('../../assets/icons/warning_sign.png');
 const TICK_ICON = require('../../assets/icons/green_tick.png');
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getUserProgress, getXPHistory, getUnlockedAchievements } from '../database/db';
+import { getUserLevel } from '../utils/level';
 import { LESSONS, LESSONS_BY_ID } from '../data/units';
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID } from '../data/achievements';
 import type { UserProgress } from '../types';
@@ -240,6 +241,22 @@ export default function ProgressScreen() {
             sub="via spaced repetition"
             color="#7C3AED"
           />
+          {(() => {
+            const lvl = getUserLevel(progress.xp);
+            const nextXP = lvl.nextLevelXP;
+            const sub = nextXP
+              ? `${nextXP - progress.xp} XP to Lv.${lvl.level + 1}`
+              : 'Max level!';
+            return (
+              <StatCard
+                icon={STAR_ICON}
+                value={`Lv.${lvl.level}`}
+                label={lvl.name}
+                sub={sub}
+                color={lvl.color}
+              />
+            );
+          })()}
         </View>
 
         {/* Weak words shortcut */}

@@ -7,6 +7,7 @@ export interface Word {
   example: string;
   topic: string;
   difficulty: 1 | 2 | 3;
+  gender?: 'm' | 'f' | null;
 }
 
 export interface Lesson {
@@ -50,6 +51,7 @@ export interface UserProgress {
   wordsMastered: number;
   lastChallengeDate: string;
   profileName: string;
+  streakShieldAvailable: boolean;
 }
 
 export type RootStackParamList = {

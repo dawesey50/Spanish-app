@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,10 +24,12 @@ const SCENARIO_IMAGES: Record<string, ReturnType<typeof require>> = {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
-import { awardXP, getUnlockedAchievements, unlockAchievement } from '../database/db';
+import { awardXP, getUnlockedAchievements, unlockAchievement, getUserProgress } from '../database/db';
 import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import { GROQ_API_KEY, GROQ_MODEL } from '../config';
+import { LESSONS_BY_ID } from '../data/units';
+import { WORDS_BY_ID } from '../data/words';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type ChatPhase = 'picker' | 'chat' | 'summary';
@@ -126,6 +128,34 @@ const SCENARIOS: Scenario[] = [
 
 const CONVERSATION_XP = 30;
 
+interface Persona {
+  id: string;
+  emoji: string;
+  label: string;
+  modifier: string;
+}
+
+const PERSONAS: Persona[] = [
+  {
+    id: 'amigo',
+    emoji: '😎',
+    label: 'Amigo',
+    modifier: `\n\nTone: Be very casual and friendly. Use informal "tú". Speak like a fun friend — relaxed, encouraging, use some colloquial expressions. Only correct major errors.`,
+  },
+  {
+    id: 'profesor',
+    emoji: '📚',
+    label: 'Profesor',
+    modifier: `\n\nTone: Be a thorough language teacher. Correct ALL grammar and vocabulary errors. Briefly explain WHY something is wrong in parentheses. Be encouraging but precise and educational.`,
+  },
+  {
+    id: 'guia',
+    emoji: '✈️',
+    label: 'Guía',
+    modifier: `\n\nTone: Be an enthusiastic tourist guide. Focus on travel vocabulary, local landmarks, cultural tips, and practical tourist phrases. Weave in Spanish geography and culture naturally.`,
+  },
+];
+
 async function callGroq(systemPrompt: string, history: Message[]): Promise<string> {
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -174,14 +204,38 @@ export default function ConversationScreen() {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<string>('amigo');
+  const [recentVocab, setRecentVocab] = useState<string[]>([]);
 
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const progress = await getUserProgress();
+        const recentLessons = progress.completedLessons.slice(-3);
+        const wordIds = recentLessons.flatMap(id => LESSONS_BY_ID[id]?.wordIds ?? []);
+        const uniqueIds = [...new Set(wordIds)].slice(0, 12);
+        const words = uniqueIds.map(id => WORDS_BY_ID[id]).filter(Boolean);
+        setRecentVocab(words.map(w => `${w.spanish} (${w.english})`));
+      } catch {}
+    })();
+  }, []);
 
   const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
+  const buildSystemPrompt = (s: Scenario): string => {
+    const personaMod = PERSONAS.find(p => p.id === selectedPersona)?.modifier ?? '';
+    const vocabMod = recentVocab.length > 0
+      ? `\n\nVocabulary context: The learner recently studied these words: ${recentVocab.slice(0, 10).join(', ')}. Naturally weave some into conversation where appropriate.`
+      : '';
+    return s.systemPrompt + personaMod + vocabMod;
+  };
+
   const startScenario = (s: Scenario) => {
-    setScenario(s);
+    const enriched: Scenario = { ...s, systemPrompt: buildSystemPrompt(s) };
+    setScenario(enriched);
     setMessages([{ id: newId(), role: 'assistant', text: s.aiOpener }]);
     setPhase('chat');
     setInputText('');
@@ -284,8 +338,25 @@ export default function ConversationScreen() {
 
         <ScrollView contentContainerStyle={styles.pickerScroll} showsVerticalScrollIndicator={false}>
           <Text style={styles.pickerSubtitle}>
-            Choose a scenario and practice Spanish with your AI tutor. Mistakes are corrected inline — just keep talking!
+            Choose a persona and scenario, then practice Spanish with your AI tutor. Mistakes are corrected inline — just keep talking!
           </Text>
+
+          <Text style={styles.personaTitle}>AI Persona</Text>
+          <View style={styles.personaRow}>
+            {PERSONAS.map(p => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.personaChip, selectedPersona === p.id && styles.personaChipActive]}
+                onPress={() => setSelectedPersona(p.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.personaEmoji}>{p.emoji}</Text>
+                <Text style={[styles.personaLabel, selectedPersona === p.id && styles.personaLabelActive]}>
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           {!GROQ_API_KEY && (
             <View style={styles.noKeyBanner}>
@@ -322,6 +393,21 @@ export default function ConversationScreen() {
   if (phase === 'summary') {
     const userCount = messages.filter((m) => m.role === 'user').length;
     const aiCount = messages.filter((m) => m.role === 'assistant').length;
+    const corrections = messages.filter(m => m.role === 'assistant' && m.text.includes('(Corrección:')).length;
+    const rawScore = userCount > 0 ? Math.max(0, Math.round(100 - (corrections / userCount) * 100)) : null;
+    const scoreLabel =
+      rawScore === null ? null
+      : rawScore >= 90 ? '¡Excelente! 🌟'
+      : rawScore >= 70 ? '¡Muy bien! ✅'
+      : rawScore >= 50 ? '¡Bien! 👍'
+      : '¡Sigue practicando! 📖';
+
+    const conversationText = messages.map(m => m.text.toLowerCase()).join(' ');
+    const vocabUsed = recentVocab.filter(entry => {
+      const sp = entry.split(' (')[0].toLowerCase();
+      return sp.length > 2 && conversationText.includes(sp);
+    }).slice(0, 6);
+
     return (
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.summaryScroll} showsVerticalScrollIndicator={false}>
@@ -333,6 +419,16 @@ export default function ConversationScreen() {
             <Text style={styles.xpBadgeText}>+{CONVERSATION_XP} XP</Text>
           </View>
 
+          {rawScore !== null && (
+            <View style={styles.scoreBanner}>
+              <Text style={styles.scoreNum}>{rawScore}%</Text>
+              <Text style={styles.scoreLabel}>{scoreLabel}</Text>
+              {corrections > 0 && (
+                <Text style={styles.correctionCount}>{corrections} correction{corrections !== 1 ? 's' : ''} received</Text>
+              )}
+            </View>
+          )}
+
           <View style={styles.statRow}>
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{userCount}</Text>
@@ -343,6 +439,19 @@ export default function ConversationScreen() {
               <Text style={styles.statLabel}>AI responses</Text>
             </View>
           </View>
+
+          {vocabUsed.length > 0 && (
+            <View style={styles.vocabCard}>
+              <Text style={styles.vocabTitle}>Vocab in this conversation</Text>
+              <View style={styles.vocabChips}>
+                {vocabUsed.map((v, i) => (
+                  <View key={i} style={styles.vocabChip}>
+                    <Text style={styles.vocabChipText}>{v}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
           <View style={styles.feedbackCard}>
             <Text style={styles.feedbackTitle}>Teacher's Feedback</Text>
@@ -665,6 +774,60 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   ghostBtn: { padding: 12 },
   ghostBtnText: { fontSize: 14, color: '#6B7280', textDecorationLine: 'underline' },
+
+  // Persona picker
+  personaTitle: { fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  personaRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  personaChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  personaChipActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
+  personaEmoji: { fontSize: 22 },
+  personaLabel: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  personaLabelActive: { color: '#4F46E5' },
+
+  // Score banner
+  scoreBanner: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    gap: 4,
+  },
+  scoreNum: { fontSize: 36, fontWeight: '800', color: '#059669' },
+  scoreLabel: { fontSize: 15, fontWeight: '700', color: '#065F46' },
+  correctionCount: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+
+  // Vocab card
+  vocabCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 14,
+    width: '100%',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  vocabTitle: { fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 10 },
+  vocabChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  vocabChip: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  vocabChipText: { fontSize: 12, color: '#4F46E5', fontWeight: '600' },
 
   // Shared
   backBtn: { padding: 8, width: 40, alignItems: 'center' },

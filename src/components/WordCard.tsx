@@ -28,6 +28,11 @@ function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite }: Pro
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.left}>
         <View style={styles.wordRow}>
+          {word.gender != null && (
+            <View style={[styles.genderBadge, word.gender === 'f' ? styles.genderF : styles.genderM]}>
+              <Text style={styles.genderText}>{word.gender === 'f' ? 'la' : 'el'}</Text>
+            </View>
+          )}
           <Text style={styles.spanish}>{word.spanish}</Text>
           {isWeak && (
             <Image source={WARNING_ICON} style={styles.weakIcon} resizeMode="contain" />
@@ -83,6 +88,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   dotFilled: { backgroundColor: '#4F46E5' },
+  genderBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 2,
+  },
+  genderM: { backgroundColor: '#DBEAFE' },
+  genderF: { backgroundColor: '#FCE7F3' },
+  genderText: { fontSize: 11, fontWeight: '700' },
   starBtn: { paddingLeft: 12 },
   star: { width: 22, height: 22 },
   starInactive: { opacity: 0.2 },

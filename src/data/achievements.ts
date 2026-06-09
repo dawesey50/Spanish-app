@@ -93,6 +93,27 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Cleared 10 words from your weak list',
     hint: 'Clear 10 words from your weak words list',
   },
+  {
+    id: 'streak_14',
+    emoji: '🔥',
+    title: 'Fortnight Fire',
+    description: 'Reached a 14-day streak',
+    hint: 'Build a 14-day streak',
+  },
+  {
+    id: 'mastered_25',
+    emoji: '🎓',
+    title: 'Word Master',
+    description: 'Mastered 25 words via spaced repetition',
+    hint: 'Master 25 words through the review system',
+  },
+  {
+    id: 'xp_2000',
+    emoji: '💥',
+    title: 'XP Explosion',
+    description: 'Earned 2,000 XP',
+    hint: 'Earn 2,000 total XP',
+  },
 ];
 
 export const ACHIEVEMENTS_BY_ID: Record<string, Achievement> = Object.fromEntries(
@@ -120,10 +141,12 @@ export function checkAchievements(
     if (completedLessons.length >= 1) tryUnlock('first_steps');
     if (streak >= 3) tryUnlock('on_a_roll');
     if (streak >= 7) tryUnlock('committed');
+    if (streak >= 14) tryUnlock('streak_14');
     if (streak >= 30) tryUnlock('dedicated');
     if (totalXP >= 100) tryUnlock('century');
     if (totalXP >= 500) tryUnlock('high_scorer');
     if (totalXP >= 1000) tryUnlock('xp_machine');
+    if (totalXP >= 2000) tryUnlock('xp_2000');
     if (score === 100) tryUnlock('perfect_lesson');
     UNITS.forEach((unit) => {
       if (unit.lessonIds.every((id) => completedLessons.includes(id))) {
@@ -135,6 +158,7 @@ export function checkAchievements(
   if (event.type === 'review') {
     tryUnlock('reviewer');
     if (event.totalWordsMastered >= 10) tryUnlock('wordsmith');
+    if (event.totalWordsMastered >= 25) tryUnlock('mastered_25');
   }
 
   if (event.type === 'conversation') {

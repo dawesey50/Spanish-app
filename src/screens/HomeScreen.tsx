@@ -15,6 +15,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, UserProgress } from '../types';
 import { getUserProgress } from '../database/db';
+import { getUserLevel } from '../utils/level';
 import StreakDisplay from '../components/StreakDisplay';
 import XPBar from '../components/XPBar';
 import UnitMap from '../components/UnitMap';
@@ -73,7 +74,25 @@ export default function HomeScreen() {
 
         <View style={styles.xpCard}>
           <XPBar current={progress.dailyXPToday} goal={progress.dailyGoalXP} />
-          <Text style={styles.totalXP}>{progress.xp} total XP</Text>
+          <View style={styles.xpFooter}>
+            {(() => {
+              const lvl = getUserLevel(progress.xp);
+              return (
+                <View style={[styles.levelBadge, { backgroundColor: lvl.color + '22', borderColor: lvl.color + '66' }]}>
+                  <Text style={[styles.levelText, { color: lvl.color }]}>
+                    Lv.{lvl.level} {lvl.name}
+                  </Text>
+                </View>
+              );
+            })()}
+            <Text style={styles.totalXP}>{progress.xp} XP</Text>
+          </View>
+          {progress.streakShieldAvailable && (
+            <Text style={styles.shieldNote}>🛡️ Streak shield ready — one free miss per week</Text>
+          )}
+          {progress.streak >= 7 && (
+            <Text style={styles.multiplierNote}>🔥 ×1.5 XP streak bonus active</Text>
+          )}
         </View>
 
         <DailyChallengeCard
@@ -158,10 +177,35 @@ const styles = StyleSheet.create({
     elevation: 3,
     gap: 8,
   },
+  xpFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  levelBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  levelText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   totalXP: {
     fontSize: 12,
     color: '#9CA3AF',
-    textAlign: 'right',
+  },
+  shieldNote: {
+    fontSize: 11,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  multiplierNote: {
+    fontSize: 11,
+    color: '#D97706',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   chatCard: {
     backgroundColor: '#4F46E5',
