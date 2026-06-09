@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  TextInput,
 } from 'react-native';
 
 const RED_LOCK_ICON = require('../../assets/icons/red_lock.png');
@@ -19,8 +20,12 @@ import {
   updateTTSRate,
   updateNotificationSettings,
   updateDeveloperMode,
+  updateProfileName,
+  resetUnit,
   clearAllProgress,
 } from '../database/db';
+import { UNITS, LESSONS_BY_ID } from '../data/units';
+import type { Unit } from '../types';
 import {
   requestNotificationPermission,
   scheduleDailyReminder,
@@ -48,12 +53,22 @@ const DEMO_WORD = 'Buenos días';
 
 export default function SettingsScreen() {
   const [progress, setProgress] = useState<UserProgress | null>(null);
+  const [nameInput, setNameInput] = useState('');
 
   useFocusEffect(
     useCallback(() => {
-      getUserProgress().then(setProgress);
+      getUserProgress().then((p) => {
+        setProgress(p);
+        setNameInput(p.profileName ?? '');
+      });
     }, [])
   );
+
+  const saveName = async () => {
+    const trimmed = nameInput.trim();
+    await updateProfileName(trimmed);
+    setProgress((p) => (p ? { ...p, profileName: trimmed } : p));
+  };
 
   const setGoal = async (goal: number) => {
     await updateDailyGoal(goal);
@@ -118,12 +133,57 @@ export default function SettingsScreen() {
     );
   };
 
+  const confirmResetUnit = (unit: Unit) => {
+    const doneCount = unit.lessonIds.filter((id) => progress?.completedLessons.includes(id)).length;
+    Alert.alert(
+      `Reset "${unit.title}"?`,
+      `This will mark all ${doneCount} completed lesson${doneCount !== 1 ? 's' : ''} as incomplete and remove associated review words. XP and streak are kept.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset Unit',
+          style: 'destructive',
+          onPress: async () => {
+            const wordIds = unit.lessonIds.flatMap(
+              (lid) => LESSONS_BY_ID[lid]?.wordIds ?? []
+            );
+            await resetUnit(unit.lessonIds, wordIds);
+            const fresh = await getUserProgress();
+            setProgress(fresh);
+            Alert.alert('Done', `"${unit.title}" progress has been reset.`);
+          },
+        },
+      ]
+    );
+  };
+
   if (!progress) return null;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Settings</Text>
+
+        {/* Profile */}
+        <Text style={styles.sectionTitle}>Profile</Text>
+        <View style={styles.nameCard}>
+          <Text style={styles.nameCardLabel}>Your name</Text>
+          <TextInput
+            style={styles.nameInput}
+            value={nameInput}
+            onChangeText={setNameInput}
+            onBlur={saveName}
+            onSubmitEditing={saveName}
+            placeholder="Add your name…"
+            placeholderTextColor="#9CA3AF"
+            returnKeyType="done"
+            autoCapitalize="words"
+            autoCorrect={false}
+            maxLength={30}
+          />
+        </View>
+
+        <View style={styles.divider} />
 
         {/* Daily Goal */}
         <Text style={styles.sectionTitle}>Daily XP Goal</Text>
@@ -250,6 +310,37 @@ export default function SettingsScreen() {
 
         <View style={styles.divider} />
 
+        {/* Per-unit reset */}
+        <Text style={styles.sectionTitle}>Reset Unit Progress</Text>
+        <Text style={styles.sectionDesc}>
+          Mark lessons as incomplete and clear review words for a single unit. XP and streak are kept.
+        </Text>
+        {UNITS.filter((u) => u.lessonIds.some((id) => progress.completedLessons.includes(id))).length === 0 ? (
+          <Text style={styles.noUnitsText}>Complete some lessons to reset them here.</Text>
+        ) : (
+          <View style={styles.unitResetList}>
+            {UNITS.filter((u) => u.lessonIds.some((id) => progress.completedLessons.includes(id))).map((unit) => {
+              const done = unit.lessonIds.filter((id) => progress.completedLessons.includes(id)).length;
+              return (
+                <TouchableOpacity
+                  key={unit.id}
+                  style={styles.unitResetRow}
+                  onPress={() => confirmResetUnit(unit)}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.unitResetLeft}>
+                    <Text style={styles.unitResetName}>{unit.title}</Text>
+                    <Text style={styles.unitResetMeta}>{done}/{unit.lessonIds.length} lessons done</Text>
+                  </View>
+                  <Text style={styles.unitResetBtn}>Reset →</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
         <TouchableOpacity style={styles.dangerBtn} onPress={confirmClear}>
           <Text style={styles.dangerBtnText}>Clear All Progress</Text>
         </TouchableOpacity>
@@ -365,6 +456,48 @@ const styles = StyleSheet.create({
   devWarningRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   devLockIcon: { width: 18, height: 18 },
   devWarningText: { fontSize: 13, color: '#DC2626', fontWeight: '600', flex: 1 },
+  // Profile name
+  nameCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  nameCardLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280', width: 72 },
+  nameInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#111827',
+    paddingVertical: 4,
+  },
+
+  // Per-unit reset
+  noUnitsText: { fontSize: 13, color: '#9CA3AF', fontStyle: 'italic', marginBottom: 4 },
+  unitResetList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  unitResetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#F3F4F6',
+  },
+  unitResetLeft: { flex: 1 },
+  unitResetName: { fontSize: 15, fontWeight: '600', color: '#111827' },
+  unitResetMeta: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
+  unitResetBtn: { fontSize: 13, fontWeight: '700', color: '#DC2626' },
+
   dangerBtn: {
     borderWidth: 2,
     borderColor: '#DC2626',

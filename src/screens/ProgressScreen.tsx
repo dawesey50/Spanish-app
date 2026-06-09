@@ -16,6 +16,7 @@ const STAR_ICON = require('../../assets/icons/star.png');
 const BOOK_ICON = require('../../assets/icons/blue_icon_book.png');
 const TARGET_ICON = require('../../assets/icons/blue_target.png');
 const WARNING_ICON = require('../../assets/icons/warning_sign.png');
+const TICK_ICON = require('../../assets/icons/green_tick.png');
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getUserProgress, getXPHistory, getUnlockedAchievements } from '../database/db';
 import { LESSONS, LESSONS_BY_ID } from '../data/units';
@@ -186,6 +187,25 @@ export default function ProgressScreen() {
           </View>
         </View>
 
+        {/* Streak milestone banner */}
+        {progress.streak >= 7 && (
+          <View style={styles.milestoneBanner}>
+            <Image source={FIRE_ICON} style={styles.milestoneIcon} resizeMode="contain" />
+            <View style={styles.milestoneTextWrap}>
+              <Text style={styles.milestoneTitle}>
+                {progress.streak >= 100
+                  ? 'Century Club!'
+                  : progress.streak >= 30
+                  ? 'Monthly Legend!'
+                  : progress.streak >= 14
+                  ? 'Two Weeks Strong!'
+                  : 'Week Warrior!'}
+              </Text>
+              <Text style={styles.milestoneSub}>{progress.streak}-day streak and counting</Text>
+            </View>
+          </View>
+        )}
+
         {/* Stats grid */}
         <View style={styles.statsGrid}>
           <StatCard
@@ -212,6 +232,13 @@ export default function ProgressScreen() {
             value={accuracy !== null ? `${accuracy}%` : '—'}
             label="Avg. Accuracy"
             color="#0EA5E9"
+          />
+          <StatCard
+            icon={TICK_ICON}
+            value={String(progress.wordsMastered)}
+            label="Words Mastered"
+            sub="via spaced repetition"
+            color="#7C3AED"
           />
         </View>
 
@@ -392,6 +419,23 @@ const styles = StyleSheet.create({
   chartBarToday: { backgroundColor: '#4F46E5' },
   chartDayLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
   chartDayToday: { color: '#4F46E5' },
+
+  // Streak milestone
+  milestoneBanner: {
+    backgroundColor: '#FFF7ED',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+  },
+  milestoneIcon: { width: 36, height: 36 },
+  milestoneTextWrap: { flex: 1 },
+  milestoneTitle: { fontSize: 15, fontWeight: '800', color: '#C2410C' },
+  milestoneSub: { fontSize: 12, color: '#EA580C', marginTop: 2 },
 
   // Stats grid
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 14 },

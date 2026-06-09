@@ -47,7 +47,9 @@ export interface UserProgress {
   notificationHour: number;
   developerMode: boolean;
   longestStreak: number;
+  wordsMastered: number;
   lastChallengeDate: string;
+  profileName: string;
 }
 
 export type RootStackParamList = {

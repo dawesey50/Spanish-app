@@ -22,6 +22,8 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE weak_words ADD COLUMN interval INTEGER NOT NULL DEFAULT 1',
     "ALTER TABLE weak_words ADD COLUMN next_review_date TEXT NOT NULL DEFAULT ''",
     'ALTER TABLE weak_words ADD COLUMN ease_factor REAL NOT NULL DEFAULT 2.5',
+    // Phase 18: profile name
+    "ALTER TABLE user_progress ADD COLUMN profile_name TEXT NOT NULL DEFAULT ''",
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -49,7 +51,9 @@ export async function getUserProgress(): Promise<UserProgress> {
     notification_hour: number;
     developer_mode: number;
     longest_streak: number;
+    words_mastered: number;
     last_challenge_date: string;
+    profile_name: string;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -99,7 +103,9 @@ export async function getUserProgress(): Promise<UserProgress> {
     notificationHour: row?.notification_hour ?? 20,
     developerMode: (row?.developer_mode ?? 0) === 1,
     longestStreak: row?.longest_streak ?? 0,
+    wordsMastered: row?.words_mastered ?? 0,
     lastChallengeDate: row?.last_challenge_date ?? '',
+    profileName: row?.profile_name ?? '',
   };
 }
 
@@ -320,6 +326,25 @@ export async function updateDeveloperMode(enabled: boolean): Promise<void> {
     'UPDATE user_progress SET developer_mode = ? WHERE id = 1',
     [enabled ? 1 : 0]
   );
+}
+
+export async function updateProfileName(name: string): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET profile_name = ? WHERE id = 1',
+    [name]
+  );
+}
+
+export async function resetUnit(lessonIds: string[], wordIds: string[]): Promise<void> {
+  const database = getDb();
+  if (lessonIds.length > 0) {
+    const ph = lessonIds.map(() => '?').join(',');
+    await database.runAsync(`DELETE FROM completed_lessons WHERE lesson_id IN (${ph})`, lessonIds);
+  }
+  if (wordIds.length > 0) {
+    const ph = wordIds.map(() => '?').join(',');
+    await database.runAsync(`DELETE FROM weak_words WHERE word_id IN (${ph})`, wordIds);
+  }
 }
 
 export async function unlockAchievement(badgeId: string): Promise<void> {

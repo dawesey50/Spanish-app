@@ -63,7 +63,9 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>¡Hola!</Text>
+            <Text style={styles.greeting}>
+              {progress.profileName ? `¡Hola, ${progress.profileName}!` : '¡Hola!'}
+            </Text>
             <Text style={styles.subtitle}>Ready to practice today?</Text>
           </View>
           <StreakDisplay streak={progress.streak} />
