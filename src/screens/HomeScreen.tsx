@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,16 @@ import {
   Image,
 } from 'react-native';
 
-const CHAT_ICON = require('../../assets/icons/white_message_icon.png');
+const FIRE_ICON   = require('../../assets/icons/fire.png');
+const CHAT_ICON   = require('../../assets/icons/white_message_icon.png');
+const TARGET_ICON = require('../../assets/icons/blue_target.png');
+const TICK_ICON   = require('../../assets/icons/green_tick.png');
+
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, UserProgress } from '../types';
 import { getUserProgress } from '../database/db';
 import { getUserLevel } from '../utils/level';
-import StreakDisplay from '../components/StreakDisplay';
-import XPBar from '../components/XPBar';
 import UnitMap from '../components/UnitMap';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 
@@ -28,185 +30,249 @@ export default function HomeScreen() {
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadProgress = async () => {
-    const p = await getUserProgress();
-    setProgress(p);
-  };
+  const load = useCallback(() => {
+    (async () => {
+      const p = await getUserProgress();
+      setProgress(p);
+    })();
+  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadProgress();
-    }, [])
-  );
+  useFocusEffect(load);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadProgress();
+    const p = await getUserProgress();
+    setProgress(p);
     setRefreshing(false);
   };
 
   if (!progress) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.loading}>
-          <Text style={styles.loadingText}>Loading...</Text>
+        <View style={styles.loadingBox}>
+          <Text style={styles.loadingText}>Cargando...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  const lvl = getUserLevel(progress.xp);
+  const levelProgress = lvl.nextLevelXP
+    ? Math.min((progress.xp - lvl.minXP) / (lvl.nextLevelXP - lvl.minXP), 1)
+    : 1;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const completedToday = progress.lastChallengeDate === todayStr;
+
+  const initials = progress.profileName
+    ? progress.profileName.slice(0, 2).toUpperCase()
+    : 'ES';
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>
-              {progress.profileName ? `¡Hola, ${progress.profileName}!` : '¡Hola!'}
-            </Text>
-            <Text style={styles.subtitle}>Ready to practice today?</Text>
-          </View>
-          <StreakDisplay streak={progress.streak} />
-        </View>
-
-        <View style={styles.xpCard}>
-          <XPBar current={progress.dailyXPToday} goal={progress.dailyGoalXP} />
-          <View style={styles.xpFooter}>
-            {(() => {
-              const lvl = getUserLevel(progress.xp);
-              return (
-                <View style={[styles.levelBadge, { backgroundColor: lvl.color + '22', borderColor: lvl.color + '66' }]}>
-                  <Text style={[styles.levelText, { color: lvl.color }]}>
-                    Lv.{lvl.level} {lvl.name}
-                  </Text>
-                </View>
-              );
-            })()}
-            <Text style={styles.totalXP}>{progress.xp} XP</Text>
-          </View>
-          {progress.streakShieldAvailable && (
-            <Text style={styles.shieldNote}>🛡️ Streak shield ready — one free miss per week</Text>
-          )}
-          {progress.streak >= 7 && (
-            <Text style={styles.multiplierNote}>🔥 ×1.5 XP streak bonus active</Text>
-          )}
-        </View>
-
-        <DailyChallengeCard
-          completedLessons={progress.completedLessons}
-          completedToday={progress.lastChallengeDate === new Date().toISOString().split('T')[0]}
-          onStart={() => navigation.navigate('DailyChallenge')}
-        />
-
-        <TouchableOpacity
-          style={styles.chatCard}
-          onPress={() => navigation.navigate('Conversation', {})}
-          activeOpacity={0.82}
-        >
-          <View style={styles.chatCardLeft}>
-            <Image source={CHAT_ICON} style={styles.chatCardEmoji} resizeMode="contain" />
+      {/* ─── Indigo header ─────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        {/* Row 1: avatar + greeting + streak */}
+        <View style={styles.headerTop}>
+          <View style={styles.avatarRow}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
             <View>
-              <Text style={styles.chatCardTitle}>AI Conversation</Text>
-              <Text style={styles.chatCardDesc}>Practice Spanish with an AI tutor</Text>
+              <Text style={styles.greeting}>
+                {progress.profileName ? `¡Hola, ${progress.profileName}!` : '¡Hola!'}
+              </Text>
+              <Text style={styles.subtitle}>Ready to practice today?</Text>
             </View>
           </View>
-          <Text style={styles.chatCardArrow}>→</Text>
-        </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Your Lessons</Text>
-        <UnitMap
-          completedLessons={progress.completedLessons}
-          onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
-          unlockAll={progress.developerMode}
-          lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
-            acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
-            return acc;
-          }, {})}
-        />
-      </ScrollView>
+          <View style={styles.streakPill}>
+            <Image source={FIRE_ICON} style={styles.streakFire} resizeMode="contain" />
+            <Text style={styles.streakCount}>{progress.streak}</Text>
+          </View>
+        </View>
+
+        {/* Row 2: level + XP */}
+        <View style={styles.xpRow}>
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelText}>Lv.{lvl.level} · {lvl.name}</Text>
+          </View>
+          <Text style={styles.xpText}>
+            {progress.xp}{lvl.nextLevelXP ? ` / ${lvl.nextLevelXP} XP` : ' XP'}
+          </Text>
+        </View>
+
+        {/* Progress bar */}
+        <View style={styles.xpTrack}>
+          <View style={[styles.xpFill, { width: `${levelProgress * 100}%` as any }]} />
+        </View>
+
+        {/* Multiplier hint */}
+        {progress.streak >= 7 && (
+          <Text style={styles.multiplierHint}>🔥 ×1.5 XP bonus active this streak</Text>
+        )}
+      </View>
+
+      {/* ─── White content area ────────────────────────────────────────── */}
+      <View style={styles.contentWrapper}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
+        >
+          {/* Daily challenge */}
+          <DailyChallengeCard
+            completedLessons={progress.completedLessons}
+            completedToday={completedToday}
+            onStart={() => navigation.navigate('DailyChallenge')}
+          />
+
+          {/* AI Conversation button */}
+          <TouchableOpacity
+            style={styles.chatCard}
+            onPress={() => navigation.navigate('Conversation', {})}
+            activeOpacity={0.85}
+          >
+            <View style={styles.chatLeft}>
+              <View style={styles.chatIconWrap}>
+                <Image source={CHAT_ICON} style={styles.chatIcon} resizeMode="contain" />
+              </View>
+              <View>
+                <Text style={styles.chatTitle}>AI Conversation</Text>
+                <Text style={styles.chatDesc}>Practice Spanish with an AI tutor</Text>
+              </View>
+            </View>
+            <Text style={styles.chatArrow}>›</Text>
+          </TouchableOpacity>
+
+          {/* Stats strip */}
+          <View style={styles.statsStrip}>
+            <View style={styles.stripStat}>
+              <Image source={TICK_ICON} style={styles.stripIcon} resizeMode="contain" />
+              <Text style={styles.stripValue}>{progress.completedLessons.length}</Text>
+              <Text style={styles.stripLabel}>Lessons</Text>
+            </View>
+            <View style={styles.stripDivider} />
+            <View style={styles.stripStat}>
+              <Image source={TARGET_ICON} style={styles.stripIcon} resizeMode="contain" />
+              <Text style={styles.stripValue}>{progress.wordsMastered}</Text>
+              <Text style={styles.stripLabel}>Mastered</Text>
+            </View>
+            <View style={styles.stripDivider} />
+            <View style={styles.stripStat}>
+              <Image source={FIRE_ICON} style={styles.stripIcon} resizeMode="contain" />
+              <Text style={styles.stripValue}>{Math.max(progress.streak, progress.longestStreak)}</Text>
+              <Text style={styles.stripLabel}>Best Streak</Text>
+            </View>
+          </View>
+
+          {/* Lessons */}
+          <Text style={styles.sectionTitle}>Your Lessons</Text>
+          <UnitMap
+            completedLessons={progress.completedLessons}
+            onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
+            unlockAll={progress.developerMode}
+            lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
+              acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
+              return acc;
+            }, {})}
+          />
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  scroll: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  safe: { flex: 1, backgroundColor: '#4F46E5' },
+
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8F9FC' },
+  loadingText: { fontSize: 16, color: '#6B7280' },
+
+  // ─── Header ───────────────────────────────────────────────────────────
   header: {
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 22,
+    gap: 14,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    alignItems: 'center',
   },
-  greeting: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#111827',
+  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
+  avatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  greeting: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 1 },
+
+  streakPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 22,
   },
-  xpCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-    gap: 8,
-  },
-  xpFooter: {
+  streakFire: { width: 18, height: 18 },
+  streakCount: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+
+  xpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   levelBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 10,
   },
-  levelText: {
-    fontSize: 12,
-    fontWeight: '700',
+  levelText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  xpText: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
+
+  xpTrack: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  totalXP: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  xpFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
   },
-  shieldNote: {
+
+  multiplierHint: {
+    color: 'rgba(255,255,255,0.75)',
     fontSize: 11,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  multiplierNote: {
-    fontSize: 11,
-    color: '#D97706',
-    textAlign: 'center',
     fontWeight: '600',
+    textAlign: 'center',
   },
+
+  // ─── Content ──────────────────────────────────────────────────────────
+  contentWrapper: {
+    flex: 1,
+    backgroundColor: '#F8F9FC',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    overflow: 'hidden',
+  },
+  scroll: { padding: 20, paddingBottom: 40 },
+
+  // AI chat card
   chatCard: {
     backgroundColor: '#4F46E5',
     borderRadius: 16,
@@ -214,18 +280,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
     shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  chatCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  chatCardEmoji: { width: 36, height: 36 },
-  chatCardTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  chatCardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  chatCardArrow: { fontSize: 20, color: 'rgba(255,255,255,0.7)' },
+  chatLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  chatIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatIcon: { width: 22, height: 22 },
+  chatTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  chatDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  chatArrow: { fontSize: 26, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
+
+  // Stats strip
+  statsStrip: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  stripStat: { flex: 1, alignItems: 'center', gap: 4 },
+  stripIcon: { width: 22, height: 22 },
+  stripValue: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  stripLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+  stripDivider: { width: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
