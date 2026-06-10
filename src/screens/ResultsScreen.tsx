@@ -17,6 +17,8 @@ import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
 import { getUserProgress } from '../database/db';
 import AudioButton from '../components/AudioButton';
+import CountUp from '../components/CountUp';
+import { fonts } from '../theme';
 
 const STAR_ICON  = require('../../assets/icons/star.png');
 const TICK_ICON  = require('../../assets/icons/green_tick.png');
@@ -152,7 +154,7 @@ export default function ResultsScreen() {
           {/* Stats strip */}
           <View style={styles.statsRow}>
             <Animated.View style={[styles.xpBadge, { transform: [{ scale: xpScale }] }]}>
-              <Text style={styles.xpValue}>+{xpEarned}</Text>
+              <CountUp value={xpEarned} style={styles.xpValue} format={(n) => `+${n}`} />
               <Text style={styles.statLabel}>XP Earned</Text>
             </Animated.View>
             <View style={styles.statDivider} />
@@ -266,7 +268,7 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingHorizontal: 24,
   },
-  gradeLabel:  { fontSize: 28, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 },
+  gradeLabel:  { fontSize: 28, fontFamily: fonts.display, color: '#FFFFFF', letterSpacing: -0.5 },
   gradeSub:    { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 4, marginBottom: 20 },
 
   circleOuter: {
@@ -325,7 +327,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   xpBadge:    { flex: 1, alignItems: 'center' },
-  xpValue:    { fontSize: 24, fontWeight: '900', color: '#4F46E5' },
+  xpValue:    { fontSize: 24, fontFamily: fonts.display, color: '#4F46E5' },
   statDivider: { width: 1, height: 36, backgroundColor: '#F3F4F6' },
   statItem:   { flex: 1, alignItems: 'center' },
   statValue:  { fontSize: 24, fontWeight: '800', color: '#111827' },

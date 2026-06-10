@@ -7,6 +7,8 @@ import {
   Image,
   Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { fonts, gradients } from '../theme';
 import { UNITS, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/units';
 
 const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
@@ -95,7 +97,12 @@ export default function UnitMap({
         return (
           <View key={unit.id} style={styles.unitSection}>
             {/* ── Unit banner ─────────────────────────────────────────── */}
-            <View style={[styles.unitBanner, !unitUnlocked && styles.unitBannerLocked]}>
+            <LinearGradient
+              colors={unitUnlocked ? gradients.hero : gradients.locked}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.unitBanner}
+            >
               {!unitUnlocked ? (
                 <Image source={LOCK_ICON} style={styles.bannerIcon} resizeMode="contain" />
               ) : UNIT_IMAGES[unit.id] ? (
@@ -114,7 +121,7 @@ export default function UnitMap({
               {allDone && (
                 <Image source={CHECK_ICON} style={styles.allDoneBadge} resizeMode="contain" />
               )}
-            </View>
+            </LinearGradient>
 
             {/* ── Winding path ────────────────────────────────────────── */}
             {containerWidth > 0 && (
@@ -218,17 +225,15 @@ const styles = StyleSheet.create({
   unitBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4F46E5',
     borderRadius: 16,
     padding: 14,
     gap: 12,
     marginBottom: 8,
   },
-  unitBannerLocked: { backgroundColor: '#9CA3AF' },
   bannerIcon: { width: 36, height: 36 },
   bannerEmoji: { fontSize: 28 },
   bannerText: { flex: 1 },
-  bannerTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 2 },
+  bannerTitle: { fontSize: 15, fontFamily: fonts.display, color: '#FFFFFF', marginBottom: 2 },
   bannerDesc:  { fontSize: 11, color: 'rgba(255,255,255,0.75)' },
   lockedText:  { color: 'rgba(255,255,255,0.55)' },
   allDoneBadge: { width: 24, height: 24 },
@@ -270,7 +275,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   nodeIcon: { width: 24, height: 24 },
-  nodeNum:  { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  nodeNum:  { fontSize: 20, fontFamily: fonts.display, color: '#FFFFFF' },
 
   // ── Pulse ring ───────────────────────────────────────────────────────────
   pulseRing: {

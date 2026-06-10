@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const FIRE_ICON   = require('../../assets/icons/fire.png');
 const CHAT_ICON   = require('../../assets/icons/white_message_icon.png');
@@ -22,6 +23,9 @@ import { getUserLevel } from '../utils/level';
 import UnitMap from '../components/UnitMap';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 import PressableScale from '../components/PressableScale';
+import PulseImage from '../components/PulseImage';
+import CountUp from '../components/CountUp';
+import { fonts, gradients } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -71,7 +75,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* ─── Indigo header ─────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={gradients.hero}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         {/* Row 1: avatar + greeting + streak */}
         <View style={styles.headerTop}>
           <View style={styles.avatarRow}>
@@ -91,7 +100,11 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.streakPill}>
-            <Image source={FIRE_ICON} style={styles.streakFire} resizeMode="contain" />
+            {progress.streak > 0 ? (
+              <PulseImage source={FIRE_ICON} style={styles.streakFire} />
+            ) : (
+              <Image source={FIRE_ICON} style={[styles.streakFire, { opacity: 0.5 }]} resizeMode="contain" />
+            )}
             <Text style={styles.streakCount}>{progress.streak}</Text>
           </View>
         </View>
@@ -115,7 +128,7 @@ export default function HomeScreen() {
         {progress.streak >= 7 && (
           <Text style={styles.multiplierHint}>🔥 ×1.5 XP bonus active this streak</Text>
         )}
-      </View>
+      </LinearGradient>
 
       {/* ─── White content area ────────────────────────────────────────── */}
       <View style={styles.contentWrapper}>
@@ -153,19 +166,19 @@ export default function HomeScreen() {
           <View style={styles.statsStrip}>
             <View style={styles.stripStat}>
               <Image source={TICK_ICON} style={styles.stripIcon} resizeMode="contain" />
-              <Text style={styles.stripValue}>{progress.completedLessons.length}</Text>
+              <CountUp value={progress.completedLessons.length} style={styles.stripValue} />
               <Text style={styles.stripLabel}>Lessons</Text>
             </View>
             <View style={styles.stripDivider} />
             <View style={styles.stripStat}>
               <Image source={TARGET_ICON} style={styles.stripIcon} resizeMode="contain" />
-              <Text style={styles.stripValue}>{progress.wordsMastered}</Text>
+              <CountUp value={progress.wordsMastered} style={styles.stripValue} />
               <Text style={styles.stripLabel}>Mastered</Text>
             </View>
             <View style={styles.stripDivider} />
             <View style={styles.stripStat}>
               <Image source={FIRE_ICON} style={styles.stripIcon} resizeMode="contain" />
-              <Text style={styles.stripValue}>{Math.max(progress.streak, progress.longestStreak)}</Text>
+              <CountUp value={Math.max(progress.streak, progress.longestStreak)} style={styles.stripValue} />
               <Text style={styles.stripLabel}>Best Streak</Text>
             </View>
           </View>
@@ -188,7 +201,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#4F46E5' },
+  safe: { flex: 1, backgroundColor: '#6366F1' },
 
   loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8F9FC' },
   loadingText: { fontSize: 16, color: '#6B7280' },
@@ -219,7 +232,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   avatarEmoji: { fontSize: 22 },
-  greeting: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  greeting: { fontSize: 20, fontFamily: fonts.display, color: '#FFFFFF' },
   subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 1 },
 
   streakPill: {
@@ -232,7 +245,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   streakFire: { width: 18, height: 18 },
-  streakCount: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  streakCount: { fontSize: 18, fontFamily: fonts.display, color: '#FFFFFF' },
 
   xpRow: {
     flexDirection: 'row',
@@ -302,7 +315,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chatIcon: { width: 22, height: 22 },
-  chatTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  chatTitle: { fontSize: 16, fontFamily: fonts.bold, color: '#FFFFFF' },
   chatDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   chatArrow: { fontSize: 26, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
 
@@ -321,7 +334,7 @@ const styles = StyleSheet.create({
   },
   stripStat: { flex: 1, alignItems: 'center', gap: 4 },
   stripIcon: { width: 22, height: 22 },
-  stripValue: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  stripValue: { fontSize: 20, fontFamily: fonts.display, color: '#111827' },
   stripLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
   stripDivider: { width: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
 

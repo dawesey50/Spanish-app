@@ -8,6 +8,7 @@ export const colors = {
   indigoDark: '#4338CA',
   indigoSoft: '#EEF2FF',
   indigoBorder: '#C7D2FE',
+  indigoLight: '#6366F1',
 
   // Status
   green: '#059669',
@@ -29,6 +30,22 @@ export const colors = {
   card: '#FFFFFF',
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
+} as const;
+
+// Gradient stops (top-left → bottom-right) for hero headers and buttons
+export const gradients = {
+  hero: ['#6366F1', '#4F46E5', '#4338CA'] as const,
+  button: ['#6366F1', '#4F46E5'] as const,
+  green: ['#10B981', '#059669'] as const,
+  amber: ['#F59E0B', '#D97706'] as const,
+  locked: ['#9CA3AF', '#6B7280'] as const,
+};
+
+// Nunito for display text (titles, stat numbers, buttons); system for body.
+// Loaded in App.tsx — these names are available once fonts resolve.
+export const fonts = {
+  display: 'Nunito_800ExtraBold',
+  bold: 'Nunito_700Bold',
 } as const;
 
 export const spacing = {
@@ -77,9 +94,9 @@ export const shadows = {
 };
 
 export const typography = {
-  display: { fontSize: 28, fontWeight: '800', color: colors.text, letterSpacing: -0.5 } as TextStyle,
-  title: { fontSize: 20, fontWeight: '700', color: colors.text } as TextStyle,
-  section: { fontSize: 17, fontWeight: '700', color: colors.text } as TextStyle,
+  display: { fontSize: 28, fontFamily: fonts.display, color: colors.text, letterSpacing: -0.5 } as TextStyle,
+  title: { fontSize: 20, fontFamily: fonts.display, color: colors.text } as TextStyle,
+  section: { fontSize: 17, fontFamily: fonts.bold, color: colors.text } as TextStyle,
   body: { fontSize: 15, color: colors.text } as TextStyle,
   bodyMuted: { fontSize: 14, color: colors.textSecondary } as TextStyle,
   caption: { fontSize: 12, fontWeight: '600', color: colors.textMuted } as TextStyle,

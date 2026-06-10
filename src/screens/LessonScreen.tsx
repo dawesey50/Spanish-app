@@ -26,6 +26,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
+import PrimaryButton from '../components/PrimaryButton';
 import type { RootStackParamList, Correction } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
@@ -283,9 +284,7 @@ export default function LessonScreen() {
         </ScrollView>
 
         <View style={styles.previewFooter}>
-          <TouchableOpacity style={styles.startBtn} onPress={() => setPhase('quiz')}>
-            <Text style={styles.startBtnText}>Start Lesson →</Text>
-          </TouchableOpacity>
+          <PrimaryButton label="Start Lesson →" onPress={() => setPhase('quiz')} />
         </View>
       </SafeAreaView>
     );
@@ -301,9 +300,7 @@ export default function LessonScreen() {
           <Text style={styles.noHeartsDesc}>
             You ran out of lives. Review the words and try again!
           </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={restartLesson}>
-            <Text style={styles.retryBtnText}>Try Again</Text>
-          </TouchableOpacity>
+          <PrimaryButton label="Try Again" onPress={restartLesson} style={{ alignSelf: 'stretch' }} />
           <TouchableOpacity style={styles.quitLinkBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.quitLinkText}>Back to Home</Text>
           </TouchableOpacity>
@@ -507,13 +504,11 @@ export default function LessonScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           {!revealed && current.type === 'typing' && (
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.checkBtn, !typedAnswer.trim() && styles.btnDisabled]}
+            <PrimaryButton
+              label="Check"
               onPress={() => checkAnswer(typedAnswer.trim())}
               disabled={!typedAnswer.trim()}
-            >
-              <Text style={styles.actionBtnText}>Check</Text>
-            </TouchableOpacity>
+            />
           )}
 
           {revealed && (
@@ -528,11 +523,11 @@ export default function LessonScreen() {
                   {wasCorrect ? 'Correct!' : `Answer: ${current.correctAnswer}`}
                 </Text>
               </View>
-              <TouchableOpacity style={[styles.actionBtn, styles.nextBtn]} onPress={next}>
-                <Text style={styles.actionBtnText}>
-                  {index + 1 >= questions.length ? 'Finish →' : 'Continue →'}
-                </Text>
-              </TouchableOpacity>
+              <PrimaryButton
+                label={index + 1 >= questions.length ? 'Finish →' : 'Continue →'}
+                onPress={next}
+                variant={wasCorrect ? 'green' : 'indigo'}
+              />
             </View>
           )}
         </View>

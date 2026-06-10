@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import { useFonts, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import { initDatabase, getUserProgress } from './src/database/db';
 import { setupNotificationChannel } from './src/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -20,6 +21,7 @@ Notifications.setNotificationHandler({
 export default function App() {
   const [ready, setReady] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
+  const [fontsLoaded] = useFonts({ Nunito_700Bold, Nunito_800ExtraBold });
 
   useEffect(() => {
     (async () => {
@@ -31,7 +33,7 @@ export default function App() {
     })();
   }, []);
 
-  if (!ready) {
+  if (!ready || !fontsLoaded) {
     return (
       <View style={styles.splash}>
         <ActivityIndicator size="large" color="#4F46E5" />

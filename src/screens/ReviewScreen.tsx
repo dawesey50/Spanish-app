@@ -27,6 +27,7 @@ const TARGET_ICON = require('../../assets/icons/blue_target.png');
 
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import PrimaryButton from '../components/PrimaryButton';
 import { WORDS_BY_ID } from '../data/words';
 import {
   getDueReviewWords,
@@ -315,9 +316,7 @@ export default function ReviewScreen() {
             })}
           </View>
 
-          <TouchableOpacity style={styles.startBtn} onPress={startSession}>
-            <Text style={styles.startBtnText}>Start Review →</Text>
-          </TouchableOpacity>
+          <PrimaryButton label="Start Review →" onPress={startSession} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -394,9 +393,7 @@ export default function ReviewScreen() {
           </View>
 
           {dueWords.length > 0 && (
-            <TouchableOpacity style={styles.startBtn} onPress={startSession}>
-              <Text style={styles.startBtnText}>Review Again</Text>
-            </TouchableOpacity>
+            <PrimaryButton label="Review Again" onPress={startSession} style={{ alignSelf: 'stretch' }} />
           )}
           <TouchableOpacity style={styles.doneBtn} onPress={() => { setPhase('list'); loadState(); }}>
             <Text style={styles.doneBtnText}>Done</Text>
@@ -547,13 +544,11 @@ export default function ReviewScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           {!revealed && current.type === 'typing' && (
-            <TouchableOpacity
-              style={[styles.actionBtn, !typedAnswer.trim() && styles.btnDisabled]}
+            <PrimaryButton
+              label="Check"
               onPress={() => checkAnswer(typedAnswer.trim())}
               disabled={!typedAnswer.trim()}
-            >
-              <Text style={styles.actionBtnText}>Check</Text>
-            </TouchableOpacity>
+            />
           )}
           {revealed && (
             <View style={styles.revealedArea}>
@@ -563,11 +558,11 @@ export default function ReviewScreen() {
                   {wasCorrect ? 'Correct!' : `Answer: ${current.correctAnswer}`}
                 </Text>
               </View>
-              <TouchableOpacity style={[styles.actionBtn, styles.continueBtn]} onPress={handleNext}>
-                <Text style={styles.actionBtnText}>
-                  {index + 1 >= questions.length ? 'Finish →' : 'Continue →'}
-                </Text>
-              </TouchableOpacity>
+              <PrimaryButton
+                label={index + 1 >= questions.length ? 'Finish →' : 'Continue →'}
+                onPress={handleNext}
+                variant={wasCorrect ? 'green' : 'indigo'}
+              />
             </View>
           )}
         </View>

@@ -18,7 +18,8 @@ import { getUserLevel } from '../utils/level';
 import { ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
 import AvatarPickerModal from '../components/AvatarPickerModal';
 import type { MainTabParamList, RootStackParamList, UserProgress } from '../types';
-import { colors, radius, shadows, spacing } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, fonts, gradients, radius, shadows, spacing } from '../theme';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
 
@@ -112,9 +113,14 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false} stickyHeaderIndices={[]}>
+      <ScrollView style={{ backgroundColor: colors.bg }} showsVerticalScrollIndicator={false}>
         {/* ─── Hero Header ─────────────────────────────────────── */}
-        <View style={styles.hero}>
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
           <TouchableOpacity
             style={styles.settingsBtn}
             onPress={() => navigation.navigate('Settings')}
@@ -163,7 +169,7 @@ export default function ProfileScreen() {
               <Text style={styles.streakText}>{progress.streak}-day streak</Text>
             </View>
           )}
-        </View>
+        </LinearGradient>
 
         <View style={styles.body}>
           {/* ─── Stats ───────────────────────────────────────────── */}
@@ -251,8 +257,8 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  safe: { flex: 1, backgroundColor: '#6366F1' },
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
   loadingText: { fontSize: 16, color: colors.textSecondary },
 
   hero: {
@@ -287,7 +293,7 @@ const styles = StyleSheet.create({
   },
   heroName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: fonts.display,
     color: '#FFFFFF',
     marginBottom: spacing.xs,
   },
@@ -342,7 +348,7 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   statIcon: { fontSize: 18, marginBottom: 2 },
-  statValue: { fontSize: 18, fontWeight: '800' },
+  statValue: { fontSize: 18, fontFamily: fonts.display },
   statLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '600', textAlign: 'center' },
 
   section: {
@@ -359,7 +365,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.display, color: colors.text },
   sectionLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   sectionLinkText: { fontSize: 13, fontWeight: '700', color: colors.indigo },
 

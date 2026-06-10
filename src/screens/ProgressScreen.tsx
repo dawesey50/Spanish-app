@@ -15,7 +15,10 @@ import { getUserProgress, getXPHistory } from '../database/db';
 import { getUserLevel } from '../utils/level';
 import { UNITS, LESSONS_BY_ID } from '../data/units';
 import type { UserProgress } from '../types';
-import { colors, radius, shadows, spacing } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import CountUp from '../components/CountUp';
+import PulseImage from '../components/PulseImage';
+import { colors, fonts, gradients, radius, shadows, spacing } from '../theme';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
 const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
@@ -61,7 +64,11 @@ function StatCard({ emoji, value, label, sub, tint }: {
       <View style={[styles.statIconCircle, { backgroundColor: tint + '22' }]}>
         <Text style={styles.statEmoji}>{emoji}</Text>
       </View>
-      <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
+      {/^[0-9,]+$/.test(value) ? (
+        <CountUp value={parseInt(value.replace(/,/g, ''), 10)} style={[styles.statValue, { color: tint }]} format={(n) => n.toLocaleString()} />
+      ) : (
+        <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
+      )}
       <Text style={styles.statLabel}>{label}</Text>
       {sub ? <Text style={styles.statSub}>{sub}</Text> : null}
     </View>
@@ -149,7 +156,7 @@ export default function ProgressScreen() {
   if (!progress) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
           <ActivityIndicator size="large" color={colors.indigo} />
         </View>
       </SafeAreaView>
@@ -179,10 +186,15 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ backgroundColor: colors.bg }} showsVerticalScrollIndicator={false}>
 
         {/* ─── Hero header ─────────────────────────────────────── */}
-        <View style={styles.hero}>
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
           {/* Medal badge */}
           <View style={[styles.medalRing, { borderColor: lvl.color + '66' }]}>
             <View style={[styles.medalCore, { borderColor: lvl.color }]}>
@@ -211,11 +223,11 @@ export default function ProgressScreen() {
 
           {progress.streak > 0 && (
             <View style={styles.heroStreak}>
-              <Image source={FIRE_ICON} style={styles.heroFireIcon} resizeMode="contain" />
+              <PulseImage source={FIRE_ICON} style={styles.heroFireIcon} />
               <Text style={styles.heroStreakText}>{progress.streak}-day streak</Text>
             </View>
           )}
-        </View>
+        </LinearGradient>
 
         <View style={styles.body}>
 
@@ -383,7 +395,7 @@ export default function ProgressScreen() {
 // ─── Styles ──────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: '#6366F1' },
 
   // Hero
   hero: {
@@ -414,9 +426,9 @@ const styles = StyleSheet.create({
   },
   medalNum: {
     fontSize: 34,
-    fontWeight: '900',
+    fontFamily: fonts.display,
   },
-  heroLevelName: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  heroLevelName: { fontSize: 20, fontFamily: fonts.display, color: '#FFFFFF' },
   heroXP: { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
   heroBarWrap: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   heroBarTrack: {
@@ -459,7 +471,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statEmoji: { fontSize: 18 },
-  statValue: { fontSize: 22, fontWeight: '800' },
+  statValue: { fontSize: 22, fontFamily: fonts.display },
   statLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', textAlign: 'center' },
   statSub: { fontSize: 10, color: colors.textMuted, textAlign: 'center' },
 
@@ -477,7 +489,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.display, color: colors.text },
   sectionSub: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
 
   // XP Chart

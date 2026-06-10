@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 
 export const AVATAR_EMOJIS = ['🦊', '🐸', '🦉', '🐱', '🦁', '🐯', '🐧', '🚀', '⚡', '🌈', '🌺', '🎯', '🎸', '🌮', '☀️', '🧑‍🎓'];
 export const AVATAR_COLORS = [
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: fonts.display,
     color: '#FFFFFF',
     letterSpacing: 0.3,
   },

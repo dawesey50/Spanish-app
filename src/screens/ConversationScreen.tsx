@@ -23,6 +23,7 @@ const SCENARIO_IMAGES: Record<string, ReturnType<typeof require>> = {
 };
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import PrimaryButton from '../components/PrimaryButton';
 import type { RootStackParamList } from '../types';
 import { awardXP, getUnlockedAchievements, unlockAchievement, getUserProgress } from '../database/db';
 import { checkAchievements } from '../data/achievements';
@@ -467,9 +468,7 @@ export default function ConversationScreen() {
             )}
           </View>
 
-          <TouchableOpacity style={styles.primaryBtn} onPress={newConversation}>
-            <Text style={styles.primaryBtnText}>New Scenario</Text>
-          </TouchableOpacity>
+          <PrimaryButton label="New Scenario" onPress={newConversation} style={{ alignSelf: 'stretch' }} />
           <TouchableOpacity style={styles.ghostBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.ghostBtnText}>Back to Home</Text>
           </TouchableOpacity>
