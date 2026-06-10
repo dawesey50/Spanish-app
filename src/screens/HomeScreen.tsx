@@ -25,6 +25,8 @@ import DailyChallengeCard from '../components/DailyChallengeCard';
 import PressableScale from '../components/PressableScale';
 import PulseImage from '../components/PulseImage';
 import CountUp from '../components/CountUp';
+import FadeSlideIn from '../components/FadeSlideIn';
+import { ScreenSkeleton } from '../components/Skeleton';
 import { fonts, gradients } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -52,10 +54,8 @@ export default function HomeScreen() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.loadingBox}>
-          <Text style={styles.loadingText}>Cargando...</Text>
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: '#F8F9FC' }]}>
+        <ScreenSkeleton />
       </SafeAreaView>
     );
   }
@@ -138,14 +138,17 @@ export default function HomeScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
         >
           {/* Daily challenge */}
-          <Text style={styles.sectionTitle}>Today</Text>
-          <DailyChallengeCard
-            completedLessons={progress.completedLessons}
-            completedToday={completedToday}
-            onStart={() => navigation.navigate('DailyChallenge')}
-          />
+          <FadeSlideIn index={0}>
+            <Text style={styles.sectionTitle}>Today</Text>
+            <DailyChallengeCard
+              completedLessons={progress.completedLessons}
+              completedToday={completedToday}
+              onStart={() => navigation.navigate('DailyChallenge')}
+            />
+          </FadeSlideIn>
 
           {/* AI Conversation button */}
+          <FadeSlideIn index={1}>
           <PressableScale
             style={styles.chatCard}
             onPress={() => navigation.navigate('Conversation', {})}
@@ -161,8 +164,10 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.chatArrow}>›</Text>
           </PressableScale>
+          </FadeSlideIn>
 
           {/* Stats strip */}
+          <FadeSlideIn index={2}>
           <View style={styles.statsStrip}>
             <View style={styles.stripStat}>
               <Image source={TICK_ICON} style={styles.stripIcon} resizeMode="contain" />
@@ -182,8 +187,10 @@ export default function HomeScreen() {
               <Text style={styles.stripLabel}>Best Streak</Text>
             </View>
           </View>
+          </FadeSlideIn>
 
           {/* Lessons */}
+          <FadeSlideIn index={3}>
           <Text style={styles.sectionTitle}>Your Lessons</Text>
           <UnitMap
             completedLessons={progress.completedLessons}
@@ -194,6 +201,7 @@ export default function HomeScreen() {
               return acc;
             }, {})}
           />
+          </FadeSlideIn>
         </ScrollView>
       </View>
     </SafeAreaView>

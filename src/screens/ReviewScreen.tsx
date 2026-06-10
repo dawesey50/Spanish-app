@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  ActivityIndicator,
   Image,
 } from 'react-native';
 
@@ -28,6 +27,8 @@ const TARGET_ICON = require('../../assets/icons/blue_target.png');
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import PrimaryButton from '../components/PrimaryButton';
+import FadeSlideIn from '../components/FadeSlideIn';
+import { ScreenSkeleton } from '../components/Skeleton';
 import { WORDS_BY_ID } from '../data/words';
 import {
   getDueReviewWords,
@@ -226,9 +227,7 @@ export default function ReviewScreen() {
     if (loading) {
       return (
         <SafeAreaView style={styles.safe}>
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#4F46E5" />
-          </View>
+          <ScreenSkeleton />
         </SafeAreaView>
       );
     }
@@ -283,6 +282,7 @@ export default function ReviewScreen() {
         <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
           <Text style={styles.listTitle}>Review</Text>
 
+          <FadeSlideIn index={0}>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryCount}>{dueWords.length}</Text>
             <Text style={styles.summaryLabel}>
@@ -294,7 +294,9 @@ export default function ReviewScreen() {
               </Text>
             )}
           </View>
+          </FadeSlideIn>
 
+          <FadeSlideIn index={1}>
           <Text style={styles.dueSectionTitle}>Due for review</Text>
           <View style={styles.wordList}>
             {dueWords.map((dw) => {
@@ -317,6 +319,7 @@ export default function ReviewScreen() {
           </View>
 
           <PrimaryButton label="Start Review →" onPress={startSession} />
+          </FadeSlideIn>
         </ScrollView>
       </SafeAreaView>
     );

@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getUserProgress, getXPHistory } from '../database/db';
@@ -17,6 +16,8 @@ import { UNITS, LESSONS_BY_ID } from '../data/units';
 import type { UserProgress } from '../types';
 import { LinearGradient } from 'expo-linear-gradient';
 import CountUp from '../components/CountUp';
+import FadeSlideIn from '../components/FadeSlideIn';
+import { ScreenSkeleton } from '../components/Skeleton';
 import PulseImage from '../components/PulseImage';
 import { colors, fonts, gradients, radius, shadows, spacing } from '../theme';
 
@@ -155,10 +156,8 @@ export default function ProgressScreen() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
-          <ActivityIndicator size="large" color={colors.indigo} />
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
+        <ScreenSkeleton />
       </SafeAreaView>
     );
   }
@@ -232,6 +231,7 @@ export default function ProgressScreen() {
         <View style={styles.body}>
 
           {/* ─── Stats grid ──────────────────────────────────────── */}
+          <FadeSlideIn index={0}>
           <View style={styles.statsGrid}>
             <StatCard emoji="🔥" value={String(progress.streak)} label="Streak"
               sub={`Best: ${Math.max(progress.longestStreak, progress.streak)}d`} tint="#EA580C" />
@@ -245,11 +245,15 @@ export default function ProgressScreen() {
               sub="spaced repetition" tint="#7C3AED" />
             <StatCard emoji="📅" value={String(activeDays)} label="Active Days" tint="#D97706" />
           </View>
+          </FadeSlideIn>
 
           {/* ─── XP chart ────────────────────────────────────────── */}
-          <XPChart data={weekXP} goalXP={progress.dailyGoalXP} />
+          <FadeSlideIn index={1}>
+            <XPChart data={weekXP} goalXP={progress.dailyGoalXP} />
+          </FadeSlideIn>
 
           {/* ─── 30-day calendar ─────────────────────────────────── */}
+          <FadeSlideIn index={2}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>30-Day Activity</Text>
@@ -305,7 +309,10 @@ export default function ProgressScreen() {
             )}
           </View>
 
+          </FadeSlideIn>
+
           {/* ─── Unit mastery ────────────────────────────────────── */}
+          <FadeSlideIn index={3}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Unit Mastery</Text>
@@ -337,7 +344,10 @@ export default function ProgressScreen() {
             })}
           </View>
 
+          </FadeSlideIn>
+
           {/* ─── Review shortcut ─────────────────────────────────── */}
+          <FadeSlideIn index={4}>
           {progress.weakWords.length > 0 && (
             <TouchableOpacity
               style={styles.reviewBanner}
@@ -354,8 +364,10 @@ export default function ProgressScreen() {
               <Text style={styles.reviewBannerArrow}>→</Text>
             </TouchableOpacity>
           )}
+          </FadeSlideIn>
 
           {/* ─── Lesson history ──────────────────────────────────── */}
+          <FadeSlideIn index={5}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Lesson History</Text>
@@ -385,6 +397,7 @@ export default function ProgressScreen() {
               ))
             )}
           </View>
+          </FadeSlideIn>
 
         </View>
       </ScrollView>

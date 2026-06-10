@@ -15,10 +15,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
-import { getUserProgress } from '../database/db';
+import { getUserProgress, getLastStreakCelebrated, setLastStreakCelebrated } from '../database/db';
+import { getUserLevel, type UserLevel } from '../utils/level';
 import AudioButton from '../components/AudioButton';
 import CountUp from '../components/CountUp';
+import LevelUpModal from '../components/LevelUpModal';
+import StreakMilestoneModal from '../components/StreakMilestoneModal';
 import { fonts } from '../theme';
+
+const STREAK_MILESTONES = [3, 7, 14, 30, 50, 100];
 
 const STAR_ICON  = require('../../assets/icons/star.png');
 const TICK_ICON  = require('../../assets/icons/green_tick.png');
@@ -45,6 +50,10 @@ export default function ResultsScreen() {
 
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [displayScore, setDisplayScore]         = useState(0);
+  const [levelUp, setLevelUp]                   = useState<UserLevel | null>(null);
+  const [streakMilestone, setStreakMilestone]   = useState<number | null>(null);
+  const [showLevelUp, setShowLevelUp]           = useState(false);
+  const [showStreak, setShowStreak]             = useState(false);
 
   const circleScale   = useRef(new Animated.Value(0.3)).current;
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -61,7 +70,35 @@ export default function ResultsScreen() {
   ).current;
 
   useEffect(() => {
-    getUserProgress().then((p) => setCompletedLessons(p.completedLessons));
+    getUserProgress().then(async (p) => {
+      setCompletedLessons(p.completedLessons);
+
+      // Level-up detection: XP was already awarded, so compare before/after
+      const before = getUserLevel(p.xp - xpEarned);
+      const after  = getUserLevel(p.xp);
+      let queuedLevelUp = false;
+      if (after.level > before.level) {
+        setLevelUp(after);
+        queuedLevelUp = true;
+      }
+
+      // Streak milestone: celebrate each milestone once
+      const celebrated = await getLastStreakCelebrated();
+      const milestone = [...STREAK_MILESTONES].reverse().find((m) => p.streak >= m) ?? 0;
+      let queuedStreak = false;
+      if (milestone > 0 && milestone !== celebrated) {
+        setStreakMilestone(milestone);
+        await setLastStreakCelebrated(milestone);
+        queuedStreak = true;
+      }
+
+      // Let the score animation play first, then take over
+      if (queuedLevelUp) {
+        setTimeout(() => setShowLevelUp(true), 1600);
+      } else if (queuedStreak) {
+        setTimeout(() => setShowStreak(true), 1600);
+      }
+    });
 
     const listenerId = scoreNum.addListener(({ value }) => setDisplayScore(Math.round(value)));
 
@@ -118,8 +155,24 @@ export default function ResultsScreen() {
   }
   const hasPerformance = wordResults && wordResults.length > 0;
 
+  const closeLevelUp = () => {
+    setShowLevelUp(false);
+    // Chain into the streak celebration if one is queued
+    if (streakMilestone !== null) setTimeout(() => setShowStreak(true), 350);
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: grade.bg }]}>
+      {levelUp && (
+        <LevelUpModal visible={showLevelUp} level={levelUp} onClose={closeLevelUp} />
+      )}
+      {streakMilestone !== null && (
+        <StreakMilestoneModal
+          visible={showStreak}
+          streak={streakMilestone}
+          onClose={() => setShowStreak(false)}
+        />
+      )}
       {/* ─── Grade header ─────────────────────────────────────────────── */}
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
         <Text style={styles.gradeLabel}>{grade.label}</Text>

@@ -29,6 +29,8 @@ export async function initDatabase(): Promise<void> {
     // Phase 25: profile character
     "ALTER TABLE user_progress ADD COLUMN profile_emoji TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE user_progress ADD COLUMN profile_color TEXT NOT NULL DEFAULT '#4F46E5'",
+    // Phase 29: streak milestone celebrations
+    'ALTER TABLE user_progress ADD COLUMN last_streak_celebrated INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -374,6 +376,20 @@ export async function setProfileCharacter(emoji: string, color: string): Promise
   await getDb().runAsync(
     'UPDATE user_progress SET profile_emoji = ?, profile_color = ? WHERE id = 1',
     [emoji, color]
+  );
+}
+
+export async function getLastStreakCelebrated(): Promise<number> {
+  const row = await getDb().getFirstAsync<{ last_streak_celebrated: number }>(
+    'SELECT last_streak_celebrated FROM user_progress WHERE id = 1'
+  );
+  return row?.last_streak_celebrated ?? 0;
+}
+
+export async function setLastStreakCelebrated(milestone: number): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET last_streak_celebrated = ? WHERE id = 1',
+    [milestone]
   );
 }
 

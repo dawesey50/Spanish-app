@@ -17,6 +17,8 @@ import { getUserProgress, getUnlockedAchievements, setProfileCharacter } from '.
 import { getUserLevel } from '../utils/level';
 import { ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
 import AvatarPickerModal from '../components/AvatarPickerModal';
+import FadeSlideIn from '../components/FadeSlideIn';
+import { ScreenSkeleton } from '../components/Skeleton';
 import type { MainTabParamList, RootStackParamList, UserProgress } from '../types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, gradients, radius, shadows, spacing } from '../theme';
@@ -92,10 +94,8 @@ export default function ProfileScreen() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.loadingBox}>
-          <Text style={styles.loadingText}>Cargando...</Text>
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
+        <ScreenSkeleton />
       </SafeAreaView>
     );
   }
@@ -173,14 +173,17 @@ export default function ProfileScreen() {
 
         <View style={styles.body}>
           {/* ─── Stats ───────────────────────────────────────────── */}
+          <FadeSlideIn index={0}>
           <View style={styles.statsGrid}>
             <StatCard icon="⚡" value={progress.xp} label="Total XP" tint={colors.indigo} />
             <StatCard icon="🔥" value={progress.streak} label="Streak" tint="#EA580C" />
             <StatCard icon="📚" value={progress.completedLessons.length} label="Lessons" tint={colors.green} />
             <StatCard icon="🧠" value={progress.wordsMastered} label="Mastered" tint="#7C3AED" />
           </View>
+          </FadeSlideIn>
 
           {/* ─── Achievements ────────────────────────────────────── */}
+          <FadeSlideIn index={1}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Achievements</Text>
@@ -235,13 +238,17 @@ export default function ProfileScreen() {
             )}
           </View>
 
+          </FadeSlideIn>
+
           {/* ─── Member since ────────────────────────────────────── */}
+          <FadeSlideIn index={2}>
           <View style={styles.memberCard}>
             <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
             <Text style={styles.memberText}>
               Learning since {formatJoinDate(progress.lastActiveDate || new Date().toISOString())}
             </Text>
           </View>
+          </FadeSlideIn>
         </View>
       </ScrollView>
 
