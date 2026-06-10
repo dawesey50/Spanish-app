@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { playSound } from '../utils/sounds';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Question } from '../types';
@@ -147,9 +148,11 @@ export default function DailyChallengeScreen() {
     setRevealed(true);
     if (correct) {
       setCorrectCount((c) => c + 1);
+      playSound('correct');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       shake();
+      playSound('wrong');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };

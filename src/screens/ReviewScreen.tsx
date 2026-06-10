@@ -26,6 +26,7 @@ const TARGET_ICON = require('../../assets/icons/blue_target.png');
 
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import { playSound } from '../utils/sounds';
 import PrimaryButton from '../components/PrimaryButton';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
@@ -159,9 +160,11 @@ export default function ReviewScreen() {
     setSelected(answer);
     setRevealed(true);
     if (isCorrect(answer, current.correctAnswer)) {
+      playSound('correct');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       shake();
+      playSound('wrong');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -207,6 +210,7 @@ export default function ReviewScreen() {
       setNextScheduledDate(freshNext);
 
       setResults(enriched);
+      playSound('complete');
       setPhase('results');
     } else {
       resultsRef.current = [

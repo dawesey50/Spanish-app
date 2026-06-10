@@ -23,6 +23,8 @@ import {
   updateProfileName,
   resetUnit,
   clearAllProgress,
+  getSoundsEnabled,
+  updateSoundsEnabled,
 } from '../database/db';
 import { UNITS, LESSONS_BY_ID } from '../data/units';
 import type { Unit } from '../types';
@@ -32,6 +34,7 @@ import {
   cancelDailyReminder,
 } from '../notifications';
 import AudioButton from '../components/AudioButton';
+import { playSound, setSoundsEnabled } from '../utils/sounds';
 import type { UserProgress } from '../types';
 
 const GOAL_OPTIONS = [10, 20, 30, 50];
@@ -54,6 +57,7 @@ const DEMO_WORD = 'Buenos días';
 export default function SettingsScreen() {
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [nameInput, setNameInput] = useState('');
+  const [soundsOn, setSoundsOn] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -61,6 +65,7 @@ export default function SettingsScreen() {
         setProgress(p);
         setNameInput(p.profileName ?? '');
       });
+      getSoundsEnabled().then(setSoundsOn);
     }, [])
   );
 
@@ -106,6 +111,13 @@ export default function SettingsScreen() {
     }
     await updateNotificationSettings(progress?.notificationsEnabled ?? false, hour);
     setProgress((p) => (p ? { ...p, notificationHour: hour } : p));
+  };
+
+  const toggleSounds = async (enabled: boolean) => {
+    await updateSoundsEnabled(enabled);
+    setSoundsEnabled(enabled);
+    setSoundsOn(enabled);
+    if (enabled) playSound('correct');
   };
 
   const toggleDeveloperMode = async (enabled: boolean) => {
@@ -232,6 +244,24 @@ export default function SettingsScreen() {
 
         <View style={styles.divider} />
 
+        {/* Sound effects */}
+        <View style={styles.sectionHeaderRow}>
+          <View style={styles.sectionHeaderText}>
+            <Text style={styles.sectionTitle}>Sound Effects</Text>
+            <Text style={styles.sectionDesc}>
+              Play sounds for correct and wrong answers, completions and level-ups.
+            </Text>
+          </View>
+          <Switch
+            value={soundsOn}
+            onValueChange={toggleSounds}
+            trackColor={{ false: '#E5E7EB', true: '#A5B4FC' }}
+            thumbColor={soundsOn ? '#4F46E5' : '#9CA3AF'}
+          />
+        </View>
+
+        <View style={styles.divider} />
+
         {/* Notifications */}
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderText}>
@@ -303,7 +333,7 @@ export default function SettingsScreen() {
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
-          <Row label="Version" value="1.0.0 (Phase 29)" />
+          <Row label="Version" value="1.0.0 (Phase 30)" />
           <Row label="Progress stored" value="On-device (SQLite)" />
           <Row label="AI conversation" value="Groq → Gemini → HuggingFace" />
         </View>

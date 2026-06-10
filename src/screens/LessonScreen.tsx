@@ -27,6 +27,8 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import PrimaryButton from '../components/PrimaryButton';
+import ComboPill from '../components/ComboPill';
+import { playSound } from '../utils/sounds';
 import type { RootStackParamList, Correction } from '../types';
 import { LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
@@ -71,9 +73,13 @@ export default function LessonScreen() {
   const [hintUsed, setHintUsed] = useState(false);
   const [ttsRate, setTtsRate] = useState(0.8);
 
+  const [combo, setCombo] = useState(0);
+
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const heartAnim = useRef(new Animated.Value(1)).current;
+  const questionAnim = useRef(new Animated.Value(0)).current;
+  const questionOpacity = useRef(new Animated.Value(1)).current;
 
   const current = questions[index];
 
@@ -112,6 +118,26 @@ export default function LessonScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const onCorrectFeedback = () => {
+    const newCombo = combo + 1;
+    setCombo(newCombo);
+    playSound('correct');
+    if (newCombo >= 8) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (newCombo >= 5) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const onWrongFeedback = () => {
+    setCombo(0);
+    playSound('wrong');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  };
+
   const checkAnswer = (answer: string) => {
     if (revealed || !current) return;
     const correct = isCorrect(answer, current.correctAnswer);
@@ -123,11 +149,11 @@ export default function LessonScreen() {
 
     if (correct) {
       setCorrectCount((n) => n + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onCorrectFeedback();
     } else {
       shake();
       pulseHeart();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      onWrongFeedback();
       if (current.wordId) recordWrongAnswer(current.wordId);
       const newHearts = hearts - 1;
       setHearts(newHearts);
@@ -145,7 +171,29 @@ export default function LessonScreen() {
     }
   };
 
+  const advanceWithSlide = () => {
+    Animated.parallel([
+      Animated.timing(questionAnim, { toValue: -36, duration: 150, useNativeDriver: true }),
+      Animated.timing(questionOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+    ]).start(() => {
+      setSelected(null);
+      setTypedAnswer('');
+      setRevealed(false);
+      setHintUsed(false);
+      setIndex((i) => i + 1);
+      questionAnim.setValue(36);
+      Animated.parallel([
+        Animated.timing(questionAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(questionOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
+    });
+  };
+
   const next = async () => {
+    if (index + 1 < questions.length) {
+      advanceWithSlide();
+      return;
+    }
     setSelected(null);
     setTypedAnswer('');
     setRevealed(false);
@@ -165,9 +213,8 @@ export default function LessonScreen() {
       );
       await Promise.all(newBadges.map((id) => unlockAchievement(id)));
       if (newBadges.length > 0) fireAchievementToast(newBadges);
+      playSound('complete');
       navigation.replace('Results', { lessonId, score, xpEarned, corrections, wordResults });
-    } else {
-      setIndex((i) => i + 1);
     }
   };
 
@@ -182,6 +229,7 @@ export default function LessonScreen() {
     setCorrections([]);
     setWordResults([]);
     setHintUsed(false);
+    setCombo(0);
     setPhase('quiz');
   };
 
@@ -195,12 +243,12 @@ export default function LessonScreen() {
   const handleSentenceResult = (correct: boolean, assembled: string) => {
     if (correct) {
       setCorrectCount((n) => n + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onCorrectFeedback();
       setSelected(current?.correctAnswer ?? '');
     } else {
       shake();
       pulseHeart();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      onWrongFeedback();
       const newHearts = hearts - 1;
       setHearts(newHearts);
       setCorrections((prev) => [
@@ -223,12 +271,12 @@ export default function LessonScreen() {
     }
     if (correct) {
       setCorrectCount((n) => n + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onCorrectFeedback();
       setSelected(current.correctAnswer);
     } else {
       shake();
       pulseHeart();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      onWrongFeedback();
       if (current.wordId) recordWrongAnswer(current.wordId);
       const newHearts = hearts - 1;
       setHearts(newHearts);
@@ -336,6 +384,7 @@ export default function LessonScreen() {
             <Animated.View
               style={[
                 styles.progressFill,
+                combo >= 5 && styles.progressFillHot,
                 {
                   width: progressAnim.interpolate({
                     inputRange: [0, 1],
@@ -345,6 +394,7 @@ export default function LessonScreen() {
               ]}
             />
           </View>
+          <ComboPill combo={combo} />
           <Animated.View style={{ transform: [{ scale: heartAnim }] }}>
             <HeartsDisplay count={hearts} max={MAX_HEARTS} />
           </Animated.View>
@@ -357,7 +407,7 @@ export default function LessonScreen() {
           showsVerticalScrollIndicator={false}
           scrollEnabled={false}
         >
-          <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+          <Animated.View style={{ opacity: questionOpacity, transform: [{ translateX: Animated.add(shakeAnim, questionAnim) }] }}>
             {/* Type badge + counter */}
             <View style={styles.typeBadge}>
               <View style={styles.typeBadgeInner}>
@@ -642,6 +692,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 4 },
+  progressFillHot: { backgroundColor: '#D97706' },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
   typeBadge: {
     flexDirection: 'row',

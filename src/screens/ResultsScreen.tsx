@@ -20,6 +20,7 @@ import { getUserLevel, type UserLevel } from '../utils/level';
 import AudioButton from '../components/AudioButton';
 import CountUp from '../components/CountUp';
 import LevelUpModal from '../components/LevelUpModal';
+import { playSound } from '../utils/sounds';
 import StreakMilestoneModal from '../components/StreakMilestoneModal';
 import { fonts } from '../theme';
 
@@ -94,7 +95,7 @@ export default function ResultsScreen() {
 
       // Let the score animation play first, then take over
       if (queuedLevelUp) {
-        setTimeout(() => setShowLevelUp(true), 1600);
+        setTimeout(() => { playSound('levelup'); setShowLevelUp(true); }, 1600);
       } else if (queuedStreak) {
         setTimeout(() => setShowStreak(true), 1600);
       }

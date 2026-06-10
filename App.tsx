@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { useFonts, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
-import { initDatabase, getUserProgress } from './src/database/db';
+import { initDatabase, getUserProgress, getSoundsEnabled } from './src/database/db';
+import { initSounds } from './src/utils/sounds';
 import { setupNotificationChannel } from './src/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import AchievementToast from './src/components/AchievementToast';
@@ -30,6 +31,8 @@ export default function App() {
       const progress = await getUserProgress();
       setOnboarded(progress.hasCompletedOnboarding);
       setReady(true);
+      // Non-blocking: preload sound effects with the persisted setting
+      getSoundsEnabled().then(initSounds);
     })();
   }, []);
 

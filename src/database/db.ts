@@ -31,6 +31,8 @@ export async function initDatabase(): Promise<void> {
     "ALTER TABLE user_progress ADD COLUMN profile_color TEXT NOT NULL DEFAULT '#4F46E5'",
     // Phase 29: streak milestone celebrations
     'ALTER TABLE user_progress ADD COLUMN last_streak_celebrated INTEGER NOT NULL DEFAULT 0',
+    // Phase 30: sound effects toggle
+    'ALTER TABLE user_progress ADD COLUMN sounds_enabled INTEGER NOT NULL DEFAULT 1',
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -376,6 +378,20 @@ export async function setProfileCharacter(emoji: string, color: string): Promise
   await getDb().runAsync(
     'UPDATE user_progress SET profile_emoji = ?, profile_color = ? WHERE id = 1',
     [emoji, color]
+  );
+}
+
+export async function getSoundsEnabled(): Promise<boolean> {
+  const row = await getDb().getFirstAsync<{ sounds_enabled: number }>(
+    'SELECT sounds_enabled FROM user_progress WHERE id = 1'
+  );
+  return (row?.sounds_enabled ?? 1) === 1;
+}
+
+export async function updateSoundsEnabled(enabled: boolean): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET sounds_enabled = ? WHERE id = 1',
+    [enabled ? 1 : 0]
   );
 }
 
