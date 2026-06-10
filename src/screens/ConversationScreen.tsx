@@ -31,7 +31,8 @@ import { fireAchievementToast } from '../utils/achievementEvents';
 import { GROQ_API_KEY, GROQ_MODEL } from '../config';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
-import { colors, radius, shadows } from '../theme';
+import { radius, shadows, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type ChatPhase = 'picker' | 'chat' | 'summary';
@@ -197,6 +198,8 @@ async function getFeedback(scenario: Scenario, history: Message[]): Promise<stri
 }
 
 export default function ConversationScreen() {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Nav>();
 
   const [phase, setPhase] = useState<ChatPhase>('picker');
@@ -574,8 +577,8 @@ export default function ConversationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
 
   // ─── Picker ───────────────────────────────────────────────────────────────
@@ -585,27 +588,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: c.border,
+    backgroundColor: c.card,
   },
-  pickerTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: '#111827', textAlign: 'center' },
+  pickerTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: c.text, textAlign: 'center' },
   pickerScroll: { padding: 20, paddingBottom: 40 },
-  pickerSubtitle: { fontSize: 14, color: '#6B7280', lineHeight: 21, marginBottom: 20 },
+  pickerSubtitle: { fontSize: 14, color: c.textSecondary, lineHeight: 21, marginBottom: 20 },
 
   noKeyBanner: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: isDark ? c.amberSoft : '#FFFBEB',
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   noKeyTitle: { fontSize: 14, fontWeight: '700', color: '#92400E', marginBottom: 4 },
   noKeyBody: { fontSize: 13, color: '#78350F', lineHeight: 19 },
   noKeyCode: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontWeight: '700' },
 
   scenarioCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.lg,
     padding: 16,
     flexDirection: 'row',
@@ -616,8 +619,8 @@ const styles = StyleSheet.create({
   },
   scenarioEmoji: { width: 40, height: 40 },
   scenarioText: { flex: 1 },
-  scenarioLabel: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  scenarioDesc: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  scenarioLabel: { fontSize: 15, fontWeight: '700', color: c.text },
+  scenarioDesc: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
   scenarioArrow: { fontSize: 18, color: '#C7D2FE' },
 
   // ─── Chat header ──────────────────────────────────────────────────────────
@@ -627,22 +630,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: c.border,
+    backgroundColor: c.card,
     gap: 8,
   },
   chatHeaderCenter: { flex: 1, alignItems: 'center' },
   chatHeaderTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chatHeaderIcon: { width: 18, height: 18 },
-  chatHeaderTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  chatHeaderSub: { fontSize: 11, color: '#6B7280', marginTop: 1 },
+  chatHeaderTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+  chatHeaderSub: { fontSize: 11, color: c.textSecondary, marginTop: 1 },
   endBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: c.redSoft,
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
-  endBtnText: { fontSize: 13, fontWeight: '700', color: '#DC2626' },
+  endBtnText: { fontSize: 13, fontWeight: '700', color: c.red },
 
   // ─── Messages ─────────────────────────────────────────────────────────────
   messageList: { flex: 1 },
@@ -656,7 +659,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -664,23 +667,23 @@ const styles = StyleSheet.create({
   avatarText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
 
   bubble: { borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexShrink: 1 },
-  bubbleUser: { backgroundColor: '#4F46E5', borderBottomRightRadius: 4 },
+  bubbleUser: { backgroundColor: c.indigo, borderBottomRightRadius: 4 },
   bubbleAI: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   bubbleText: { fontSize: 15, lineHeight: 22 },
   bubbleTextUser: { color: '#FFFFFF' },
-  bubbleTextAI: { color: '#111827' },
+  bubbleTextAI: { color: c.text },
 
   systemRow: { alignSelf: 'center', maxWidth: '90%' },
   systemText: {
     fontSize: 12,
-    color: '#DC2626',
+    color: c.red,
     textAlign: 'center',
-    backgroundColor: '#FEE2E2',
+    backgroundColor: c.redSoft,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
@@ -692,106 +695,106 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderTopColor: c.border,
+    backgroundColor: c.card,
     gap: 10,
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.borderLight,
     borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#111827',
+    color: c.text,
     maxHeight: 110,
     lineHeight: 20,
   },
   sendBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendBtnOff: { backgroundColor: '#C7D2FE' },
+  sendBtnOff: { backgroundColor: c.indigoBorder },
   sendBtnText: { fontSize: 22, color: '#FFFFFF', lineHeight: 26 },
 
   // ─── Summary ──────────────────────────────────────────────────────────────
   summaryScroll: { padding: 24, alignItems: 'center', paddingBottom: 48 },
   summaryEmoji: { width: 80, height: 80, marginBottom: 12 },
-  summaryTitle: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  summaryMeta: { fontSize: 14, color: '#6B7280', marginBottom: 20 },
+  summaryTitle: { fontSize: 24, fontWeight: '800', color: c.text, marginBottom: 4 },
+  summaryMeta: { fontSize: 14, color: c.textSecondary, marginBottom: 20 },
 
   xpBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: c.greenSoft,
     borderRadius: 24,
     paddingHorizontal: 28,
     paddingVertical: 10,
     marginBottom: 20,
   },
-  xpBadgeText: { fontSize: 20, fontWeight: '800', color: '#059669' },
+  xpBadgeText: { fontSize: 20, fontWeight: '800', color: c.green },
 
   statRow: { flexDirection: 'row', gap: 14, marginBottom: 20, width: '100%' },
   statBox: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.md,
     padding: 16,
     alignItems: 'center',
     ...shadows.card,
   },
-  statNum: { fontSize: 30, fontWeight: '800', color: '#4F46E5' },
-  statLabel: { fontSize: 12, color: '#6B7280', marginTop: 4 },
+  statNum: { fontSize: 30, fontWeight: '800', color: c.indigo },
+  statLabel: { fontSize: 12, color: c.textSecondary, marginTop: 4 },
 
   feedbackCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.lg,
     padding: 18,
     width: '100%',
     marginBottom: 24,
     ...shadows.card,
   },
-  feedbackTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 10 },
-  feedbackBody: { fontSize: 14, color: '#374151', lineHeight: 22 },
-  feedbackPlaceholder: { fontSize: 13, color: '#9CA3AF', lineHeight: 20, fontStyle: 'italic' },
+  feedbackTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 10 },
+  feedbackBody: { fontSize: 14, color: c.text, lineHeight: 22 },
+  feedbackPlaceholder: { fontSize: 13, color: c.textMuted, lineHeight: 20, fontStyle: 'italic' },
 
   primaryBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 16,
     padding: 18,
     width: '100%',
     alignItems: 'center',
     marginBottom: 12,
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
   primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   ghostBtn: { padding: 12 },
-  ghostBtnText: { fontSize: 14, color: '#6B7280', textDecorationLine: 'underline' },
+  ghostBtnText: { fontSize: 14, color: c.textSecondary, textDecorationLine: 'underline' },
 
   // Persona picker
-  personaTitle: { fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  personaTitle: { fontSize: 13, fontWeight: '700', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   personaRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   personaChip: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     gap: 5,
     ...shadows.card,
   },
-  personaChipActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
+  personaChipActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
   personaEmoji: { fontSize: 24 },
-  personaLabel: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  personaLabelActive: { color: '#4F46E5' },
+  personaLabel: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
+  personaLabelActive: { color: c.indigo },
 
   // Score banner
   scoreBanner: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: c.greenSoft,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -801,9 +804,9 @@ const styles = StyleSheet.create({
     borderColor: '#BBF7D0',
     gap: 4,
   },
-  scoreNum: { fontSize: 36, fontWeight: '800', color: '#059669' },
+  scoreNum: { fontSize: 36, fontWeight: '800', color: c.green },
   scoreLabel: { fontSize: 15, fontWeight: '700', color: '#065F46' },
-  correctionCount: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  correctionCount: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
 
   // Vocab card
   vocabCard: {
@@ -813,19 +816,19 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
-  vocabTitle: { fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 10 },
+  vocabTitle: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 10 },
   vocabChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   vocabChip: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  vocabChipText: { fontSize: 12, color: '#4F46E5', fontWeight: '600' },
+  vocabChipText: { fontSize: 12, color: c.indigo, fontWeight: '600' },
 
   // Shared
   backBtn: { padding: 8, width: 40, alignItems: 'center' },
-  backBtnText: { fontSize: 22, color: '#4F46E5', fontWeight: '600' },
+  backBtnText: { fontSize: 22, color: c.indigo, fontWeight: '600' },
 });

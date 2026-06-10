@@ -13,6 +13,8 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 import * as Haptics from 'expo-haptics';
 import { playSound } from '../utils/sounds';
 import { useNavigation } from '@react-navigation/native';
@@ -31,6 +33,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 const CONFETTI_COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#F97316'];
 
 function Confetti() {
+  const styles = useThemedStyles(createStyles);
   const particles = useRef(
     Array.from({ length: 20 }, (_, i) => {
       const angle = (i / 20) * 2 * Math.PI;
@@ -91,6 +94,8 @@ function Confetti() {
 }
 
 export default function DailyChallengeScreen() {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Nav>();
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -203,7 +208,7 @@ export default function DailyChallengeScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
           <Image source={TARGET_ICON} style={{ width: 64, height: 64, marginBottom: 16, opacity: 0.4 }} resizeMode="contain" />
-          <Text style={[styles.loadingText, { fontSize: 18, fontWeight: '700', color: '#374151' }]}>
+          <Text style={[styles.loadingText, { fontSize: 18, fontWeight: '700', color: c.text }]}>
             Complete a lesson first
           </Text>
           <Text style={[styles.loadingText, { marginTop: 8 }]}>
@@ -379,10 +384,10 @@ export default function DailyChallengeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { fontSize: 16, color: '#9CA3AF' },
+  loadingText: { fontSize: 16, color: c.textMuted },
 
   header: {
     flexDirection: 'row',
@@ -393,20 +398,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { padding: 4 },
-  backText: { fontSize: 18, color: '#9CA3AF' },
+  backText: { fontSize: 18, color: c.textMuted },
   progressTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 4,
   },
-  counter: { fontSize: 13, fontWeight: '700', color: '#6B7280', minWidth: 28, textAlign: 'right' },
+  counter: { fontSize: 13, fontWeight: '700', color: c.textSecondary, minWidth: 28, textAlign: 'right' },
 
   scroll: { paddingHorizontal: 20, paddingBottom: 20 },
 
@@ -416,16 +421,16 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 20,
     alignSelf: 'flex-start',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
   },
   badgeIcon: { width: 16, height: 16 },
-  badgeLabel: { fontSize: 12, fontWeight: '700', color: '#4F46E5' },
+  badgeLabel: { fontSize: 12, fontWeight: '700', color: c.indigo },
 
   questionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 18,
     padding: 24,
     marginBottom: 24,
@@ -435,11 +440,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  questionText: { fontSize: 20, fontWeight: '700', color: '#111827', lineHeight: 30, textAlign: 'center' },
+  questionText: { fontSize: 20, fontWeight: '700', color: c.text, lineHeight: 30, textAlign: 'center' },
 
   options: { gap: 10 },
   option: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 16,
@@ -447,41 +452,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
   },
-  optionCorrect: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
+  optionCorrect: { borderColor: '#10B981', backgroundColor: c.greenSoft },
   optionWrong: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
   optionDimmed: { opacity: 0.45 },
-  optionText: { fontSize: 16, fontWeight: '600', color: '#111827', flex: 1 },
+  optionText: { fontSize: 16, fontWeight: '600', color: c.text, flex: 1 },
   optionTextCorrect: { color: '#065F46' },
   optionTextWrong: { color: '#991B1B' },
   markIcon: { width: 20, height: 20 },
 
   typingArea: { gap: 12 },
   textInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     paddingHorizontal: 18,
     paddingVertical: 16,
     fontSize: 18,
-    color: '#111827',
+    color: c.text,
     fontWeight: '600',
   },
-  inputCorrect: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
+  inputCorrect: { borderColor: '#10B981', backgroundColor: c.greenSoft },
   inputWrong: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
   correctAnswerBox: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: c.amberSoft,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   correctAnswerLabel: { fontSize: 11, fontWeight: '700', color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
   correctAnswerText: { fontSize: 17, fontWeight: '700', color: '#78350F' },
@@ -491,15 +496,15 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 32,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: c.borderLight,
   },
   footerBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
   },
-  footerBtnDisabled: { backgroundColor: '#C7D2FE' },
+  footerBtnDisabled: { backgroundColor: c.indigoBorder },
   footerBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 
   // Results overlay
@@ -518,7 +523,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   resultsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
@@ -531,11 +536,11 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   resultsIcon: { width: 64, height: 64, marginBottom: 8 },
-  resultsTitle: { fontSize: 26, fontWeight: '800', color: '#111827' },
-  resultsScore: { fontSize: 52, fontWeight: '800', color: '#4F46E5', lineHeight: 60 },
-  resultsScoreLabel: { fontSize: 15, color: '#6B7280', marginBottom: 8 },
+  resultsTitle: { fontSize: 26, fontWeight: '800', color: c.text },
+  resultsScore: { fontSize: 52, fontWeight: '800', color: c.indigo, lineHeight: 60 },
+  resultsScoreLabel: { fontSize: 15, color: c.textSecondary, marginBottom: 8 },
   xpBadge: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: c.amberSoft,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 8,
@@ -543,7 +548,7 @@ const styles = StyleSheet.create({
   },
   xpBadgeText: { fontSize: 20, fontWeight: '800', color: '#92400E' },
   collectBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',

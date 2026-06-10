@@ -8,7 +8,8 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fonts, gradients } from '../theme';
+import { fonts, gradients, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 import { UNITS, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/units';
 
 const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
@@ -35,6 +36,7 @@ const SIDE_MARGIN  = 28;  // horizontal padding inside path container
 function Connector({
   ax, ay, bx, by, done,
 }: { ax: number; ay: number; bx: number; by: number; done: boolean }) {
+  const { c } = useTheme();
   const dx     = bx - ax;
   const dy     = by - ay;
   const length = Math.sqrt(dx * dx + dy * dy);
@@ -48,7 +50,7 @@ function Connector({
         width: length,
         height: 3,
         borderRadius: 2,
-        backgroundColor: done ? '#A7F3D0' : '#E5E7EB',
+        backgroundColor: done ? c.greenBorder : c.border,
         left: midX - length / 2,
         top: midY - 1.5,
         transform: [{ rotate: `${angle}deg` }],
@@ -63,6 +65,7 @@ export default function UnitMap({
   unlockAll = false,
   lessonScores = {},
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -218,7 +221,7 @@ export default function UnitMap({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   unitSection: { marginBottom: 32 },
 
   // ── Unit banner ──────────────────────────────────────────────────────────
@@ -251,7 +254,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   nodeDone: {
-    backgroundColor: '#059669',
+    backgroundColor: c.green,
     shadowColor: '#059669',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35,
@@ -259,7 +262,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   nodeAvailable: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.4,
@@ -267,7 +270,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   nodeLocked: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -295,15 +298,15 @@ const styles = StyleSheet.create({
   nodeLabelTitle: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#374151',
+    color: c.text,
     textAlign: 'center',
     lineHeight: 15,
   },
-  lockedLabelText: { color: '#9CA3AF' },
+  lockedLabelText: { color: c.textMuted },
   nodeLabelScore: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#059669',
+    color: c.green,
     marginTop: 2,
   },
 });

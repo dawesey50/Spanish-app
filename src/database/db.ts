@@ -33,6 +33,8 @@ export async function initDatabase(): Promise<void> {
     'ALTER TABLE user_progress ADD COLUMN last_streak_celebrated INTEGER NOT NULL DEFAULT 0',
     // Phase 30: sound effects toggle
     'ALTER TABLE user_progress ADD COLUMN sounds_enabled INTEGER NOT NULL DEFAULT 1',
+    // Phase 31: theme mode (system / light / dark)
+    "ALTER TABLE user_progress ADD COLUMN theme_mode TEXT NOT NULL DEFAULT 'system'",
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -378,6 +380,21 @@ export async function setProfileCharacter(emoji: string, color: string): Promise
   await getDb().runAsync(
     'UPDATE user_progress SET profile_emoji = ?, profile_color = ? WHERE id = 1',
     [emoji, color]
+  );
+}
+
+export async function getThemeMode(): Promise<'system' | 'light' | 'dark'> {
+  const row = await getDb().getFirstAsync<{ theme_mode: string }>(
+    'SELECT theme_mode FROM user_progress WHERE id = 1'
+  );
+  const mode = row?.theme_mode ?? 'system';
+  return mode === 'light' || mode === 'dark' ? mode : 'system';
+}
+
+export async function updateThemeMode(mode: 'system' | 'light' | 'dark'): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET theme_mode = ? WHERE id = 1',
+    [mode]
   );
 }
 

@@ -21,7 +21,8 @@ import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
 import type { MainTabParamList, RootStackParamList, UserProgress } from '../types';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts, gradients, radius, shadows, spacing } from '../theme';
+import { fonts, gradients, radius, shadows, spacing, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
 
@@ -53,6 +54,7 @@ function AvatarCircle({ emoji, color, initials, size = 80 }: { emoji: string; co
 }
 
 function StatCard({ icon, value, label, tint }: { icon: string; value: string | number; label: string; tint: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.statCard, { borderTopColor: tint, borderTopWidth: 3 }]}>
       <Text style={styles.statIcon}>{icon}</Text>
@@ -73,6 +75,8 @@ function formatJoinDate(isoDate: string): string {
 
 export default function ProfileScreen() {
   const navigation = useNavigation<ProfileNav>();
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [unlocked, setUnlocked] = useState<{ badgeId: string; unlockedAt: string }[]>([]);
   const [avatarVisible, setAvatarVisible] = useState(false);
@@ -94,7 +98,7 @@ export default function ProfileScreen() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: c.bg }]}>
         <ScreenSkeleton />
       </SafeAreaView>
     );
@@ -113,7 +117,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={{ backgroundColor: colors.bg }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ backgroundColor: c.bg }} showsVerticalScrollIndicator={false}>
         {/* ─── Hero Header ─────────────────────────────────────── */}
         <LinearGradient
           colors={gradients.hero}
@@ -175,9 +179,9 @@ export default function ProfileScreen() {
           {/* ─── Stats ───────────────────────────────────────────── */}
           <FadeSlideIn index={0}>
           <View style={styles.statsGrid}>
-            <StatCard icon="⚡" value={progress.xp} label="Total XP" tint={colors.indigo} />
+            <StatCard icon="⚡" value={progress.xp} label="Total XP" tint={c.indigo} />
             <StatCard icon="🔥" value={progress.streak} label="Streak" tint="#EA580C" />
-            <StatCard icon="📚" value={progress.completedLessons.length} label="Lessons" tint={colors.green} />
+            <StatCard icon="📚" value={progress.completedLessons.length} label="Lessons" tint={c.green} />
             <StatCard icon="🧠" value={progress.wordsMastered} label="Mastered" tint="#7C3AED" />
           </View>
           </FadeSlideIn>
@@ -194,7 +198,7 @@ export default function ProfileScreen() {
                 <Text style={styles.sectionLinkText}>
                   {unlockedCount} / 15
                 </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.indigo} />
+                <Ionicons name="chevron-forward" size={14} color={c.indigo} />
               </TouchableOpacity>
             </View>
 
@@ -231,7 +235,7 @@ export default function ProfileScreen() {
                   onPress={() => navigation.navigate('Achievements')}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="grid-outline" size={22} color={colors.indigo} />
+                  <Ionicons name="grid-outline" size={22} color={c.indigo} />
                   <Text style={styles.achievementMoreText}>All</Text>
                 </TouchableOpacity>
               </ScrollView>
@@ -243,7 +247,7 @@ export default function ProfileScreen() {
           {/* ─── Member since ────────────────────────────────────── */}
           <FadeSlideIn index={2}>
           <View style={styles.memberCard}>
-            <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="calendar-outline" size={16} color={c.textMuted} />
             <Text style={styles.memberText}>
               Learning since {formatJoinDate(progress.lastActiveDate || new Date().toISOString())}
             </Text>
@@ -263,13 +267,13 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#6366F1' },
-  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-  loadingText: { fontSize: 16, color: colors.textSecondary },
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg },
+  loadingText: { fontSize: 16, color: c.textSecondary },
 
   hero: {
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     paddingTop: 16,
     paddingBottom: 32,
     paddingHorizontal: spacing.xl,
@@ -292,7 +296,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     borderWidth: 2,
     borderColor: '#FFFFFF',
     alignItems: 'center',
@@ -326,7 +330,7 @@ const styles = StyleSheet.create({
   },
   xpFill: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.pill,
   },
   xpLabel: { fontSize: 12, color: 'rgba(255,255,255,0.75)', fontWeight: '600', textAlign: 'right' },
@@ -347,7 +351,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -356,10 +360,10 @@ const styles = StyleSheet.create({
   },
   statIcon: { fontSize: 18, marginBottom: 2 },
   statValue: { fontSize: 18, fontFamily: fonts.display },
-  statLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '600', textAlign: 'center' },
+  statLabel: { fontSize: 10, color: c.textMuted, fontWeight: '600', textAlign: 'center' },
 
   section: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
     ...shadows.card,
@@ -372,15 +376,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  sectionTitle: { fontSize: 16, fontFamily: fonts.display, color: colors.text },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.display, color: c.text },
   sectionLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  sectionLinkText: { fontSize: 13, fontWeight: '700', color: colors.indigo },
+  sectionLinkText: { fontSize: 13, fontWeight: '700', color: c.indigo },
 
   emptyAchievements: {
     padding: spacing.lg,
     paddingTop: spacing.sm,
   },
-  emptyAchievementsText: { fontSize: 13, color: colors.textSecondary },
+  emptyAchievementsText: { fontSize: 13, color: c.textSecondary },
 
   achievementScroll: {
     paddingHorizontal: spacing.lg,
@@ -400,7 +404,7 @@ const styles = StyleSheet.create({
   achievementLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.text,
+    color: c.text,
     textAlign: 'center',
   },
   achievementMore: {
@@ -409,16 +413,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  achievementMoreText: { fontSize: 10, fontWeight: '700', color: colors.indigo },
+  achievementMoreText: { fontSize: 10, fontWeight: '700', color: c.indigo },
 
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.md,
     padding: spacing.md,
     ...shadows.card,
   },
-  memberText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
+  memberText: { fontSize: 13, color: c.textSecondary, fontWeight: '600' },
 });

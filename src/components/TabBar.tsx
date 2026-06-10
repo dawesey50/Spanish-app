@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -16,6 +18,8 @@ const TABS: { name: string; label: string; icon: IconName; iconActive: IconName 
 
 export default function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const scales = useRef(state.routes.map(() => new Animated.Value(1))).current;
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export default function TabBar({ state, navigation }: BottomTabBarProps) {
                 <Ionicons
                   name={focused ? tab.iconActive : tab.icon}
                   size={22}
-                  color={focused ? '#4F46E5' : '#9CA3AF'}
+                  color={focused ? c.indigo : c.textMuted}
                 />
               </Animated.View>
               <Text style={[styles.label, focused && styles.labelActive]}>{tab.label}</Text>
@@ -60,10 +64,10 @@ export default function TabBar({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     paddingTop: 10,
     paddingHorizontal: 6,
     shadowColor: '#000',
@@ -84,16 +88,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   pillActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
   },
   label: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: c.textMuted,
     letterSpacing: 0.2,
   },
   labelActive: {
-    color: '#4F46E5',
+    color: c.indigo,
     fontWeight: '700',
   },
 });

@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 import { registerToastCallback } from '../utils/achievementEvents';
 import { ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
 
 export default function AchievementToast() {
+  const styles = useThemedStyles(createStyles);
   const [queue, setQueue] = useState<string[]>([]);
   const [current, setCurrent] = useState<string | null>(null);
   const slideAnim = useRef(new Animated.Value(-120)).current;
@@ -46,7 +49,7 @@ export default function AchievementToast() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   toast: {
     position: 'absolute',
     top: 56,
@@ -55,7 +58,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: '#FFFBEB',
+    backgroundColor: isDark ? c.amberSoft : '#FFFBEB',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1.5,
@@ -76,5 +79,5 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
-  title: { fontSize: 16, fontWeight: '800', color: '#111827', marginTop: 2 },
+  title: { fontSize: 16, fontWeight: '800', color: c.text, marginTop: 2 },
 });

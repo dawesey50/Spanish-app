@@ -11,6 +11,8 @@ import {
   Image,
   TextInput,
 } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const RED_LOCK_ICON = require('../../assets/icons/red_lock.png');
 import { useFocusEffect } from '@react-navigation/native';
@@ -55,6 +57,8 @@ const REMINDER_TIMES: { label: string; hour: number }[] = [
 const DEMO_WORD = 'Buenos días';
 
 export default function SettingsScreen() {
+  const { c, mode, setMode } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [nameInput, setNameInput] = useState('');
   const [soundsOn, setSoundsOn] = useState(true);
@@ -244,6 +248,33 @@ export default function SettingsScreen() {
 
         <View style={styles.divider} />
 
+        {/* Appearance */}
+        <View style={styles.sectionHeaderText}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <Text style={styles.sectionDesc}>
+            Dark mode for night-time study sessions.
+          </Text>
+        </View>
+        <View style={styles.timeGrid}>
+          {([
+            { label: 'System', value: 'system' },
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+          ] as const).map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[styles.timeBtn, mode === opt.value && styles.timeBtnActive]}
+              onPress={() => setMode(opt.value)}
+            >
+              <Text style={[styles.timeText, mode === opt.value && styles.timeTextActive]}>
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.divider} />
+
         {/* Sound effects */}
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionHeaderText}>
@@ -333,7 +364,7 @@ export default function SettingsScreen() {
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
-          <Row label="Version" value="1.0.0 (Phase 30)" />
+          <Row label="Version" value="1.0.0 (Phase 31)" />
           <Row label="Progress stored" value="On-device (SQLite)" />
           <Row label="AI conversation" value="Groq → Gemini → HuggingFace" />
         </View>
@@ -380,6 +411,7 @@ export default function SettingsScreen() {
 }
 
 function Row({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -388,12 +420,12 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   scroll: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  sectionDesc: { fontSize: 13, color: '#6B7280', marginBottom: 14, lineHeight: 19 },
+  title: { fontSize: 24, fontWeight: '800', color: c.text, marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 4 },
+  sectionDesc: { fontSize: 13, color: c.textSecondary, marginBottom: 14, lineHeight: 19 },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -407,63 +439,63 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   chipBtn: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
   },
-  chipBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-  chipText: { fontSize: 15, fontWeight: '600', color: '#374151' },
-  chipTextActive: { color: '#4F46E5' },
+  chipBtnActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
+  chipText: { fontSize: 15, fontWeight: '600', color: c.text },
+  chipTextActive: { color: c.indigo },
   speedRow: { flexDirection: 'row', gap: 10 },
   speedCard: {
     flex: 1,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderRadius: 12,
     padding: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     alignItems: 'center',
   },
-  speedCardActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-  speedLabel: { fontSize: 15, fontWeight: '700', color: '#374151', marginBottom: 2 },
-  speedLabelActive: { color: '#4F46E5' },
-  speedDesc: { fontSize: 11, color: '#9CA3AF', textAlign: 'center' },
+  speedCardActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
+  speedLabel: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 2 },
+  speedLabelActive: { color: c.indigo },
+  speedDesc: { fontSize: 11, color: c.textMuted, textAlign: 'center' },
   demoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     marginTop: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
-  demoText: { fontSize: 14, color: '#6B7280', flex: 1 },
+  demoText: { fontSize: 14, color: c.textSecondary, flex: 1 },
   timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
   timeBtn: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     minWidth: '45%',
     flex: 1,
     alignItems: 'center',
   },
-  timeBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-  timeText: { fontSize: 14, fontWeight: '600', color: '#374151' },
-  timeTextActive: { color: '#4F46E5' },
-  divider: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 24 },
+  timeBtnActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
+  timeText: { fontSize: 14, fontWeight: '600', color: c.text },
+  timeTextActive: { color: c.indigo },
+  divider: { height: 1, backgroundColor: c.border, marginVertical: 24 },
   aboutCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   row: {
     flexDirection: 'row',
@@ -471,10 +503,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: c.border,
   },
-  rowLabel: { fontSize: 14, color: '#374151', fontWeight: '500' },
-  rowValue: { fontSize: 14, color: '#6B7280' },
+  rowLabel: { fontSize: 14, color: c.text, fontWeight: '500' },
+  rowValue: { fontSize: 14, color: c.textSecondary },
   devWarning: {
     backgroundColor: '#FEF2F2',
     borderRadius: 10,
@@ -485,35 +517,35 @@ const styles = StyleSheet.create({
   },
   devWarningRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   devLockIcon: { width: 18, height: 18 },
-  devWarningText: { fontSize: 13, color: '#DC2626', fontWeight: '600', flex: 1 },
+  devWarningText: { fontSize: 13, color: c.red, fontWeight: '600', flex: 1 },
   // Profile name
   nameCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  nameCardLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280', width: 72 },
+  nameCardLabel: { fontSize: 14, fontWeight: '600', color: c.textSecondary, width: 72 },
   nameInput: {
     flex: 1,
     fontSize: 15,
-    color: '#111827',
+    color: c.text,
     paddingVertical: 4,
   },
 
   // Per-unit reset
-  noUnitsText: { fontSize: 13, color: '#9CA3AF', fontStyle: 'italic', marginBottom: 4 },
+  noUnitsText: { fontSize: 13, color: c.textMuted, fontStyle: 'italic', marginBottom: 4 },
   unitResetList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   unitResetRow: {
     flexDirection: 'row',
@@ -521,19 +553,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
   },
   unitResetLeft: { flex: 1 },
-  unitResetName: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  unitResetMeta: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
-  unitResetBtn: { fontSize: 13, fontWeight: '700', color: '#DC2626' },
+  unitResetName: { fontSize: 15, fontWeight: '600', color: c.text },
+  unitResetMeta: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  unitResetBtn: { fontSize: 13, fontWeight: '700', color: c.red },
 
   dangerBtn: {
     borderWidth: 2,
-    borderColor: '#DC2626',
+    borderColor: c.red,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
   },
-  dangerBtnText: { color: '#DC2626', fontSize: 16, fontWeight: '700' },
+  dangerBtnText: { color: c.red, fontSize: 16, fontWeight: '700' },
 });

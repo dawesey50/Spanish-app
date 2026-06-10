@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View, ViewStyle } from 'react-native';
-import { colors } from '../theme';
+import { type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 
 interface BlockProps {
   width?: number | `${number}%`;
@@ -11,6 +12,7 @@ interface BlockProps {
 
 /** Single shimmering placeholder block. */
 export function Skeleton({ width = '100%', height = 16, radius = 8, style }: BlockProps) {
+  const styles = useThemedStyles(createStyles);
   const sweep = useRef(new Animated.Value(-1)).current;
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export function Skeleton({ width = '100%', height = 16, radius = 8, style }: Blo
 
 /** Full-screen skeleton used while a tab screen loads its data. */
 export function ScreenSkeleton() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.screen}>
       <View style={styles.headerRow}>
@@ -56,9 +59,9 @@ export function ScreenSkeleton() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   block: {
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     overflow: 'hidden',
   },
   shine: {
@@ -66,11 +69,11 @@ const styles = StyleSheet.create({
     top: -20,
     bottom: -20,
     width: 90,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)',
   },
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     padding: 20,
     paddingTop: 24,
   },

@@ -15,7 +15,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, Word } from '../types';
-import { colors, radius, shadows } from '../theme';
+import { radius, shadows, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 import { WORDS } from '../data/words';
 import { LESSONS, LESSONS_BY_ID, UNITS_BY_ID } from '../data/units';
 import {
@@ -72,6 +73,8 @@ const SORT_LABELS: Record<SortMode, string> = {
 
 export default function VocabScreen() {
   const navigation = useNavigation<Nav>();
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const [query, setQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -180,7 +183,7 @@ export default function VocabScreen() {
       return (
         <EmptyState
           ionicon="star-outline"
-          tint={colors.amber}
+          tint={c.amber}
           title="No saved words yet"
           hint="Tap the star on any word to keep it here for quick access."
           ctaLabel="Browse all words"
@@ -192,7 +195,7 @@ export default function VocabScreen() {
       return (
         <EmptyState
           ionicon="checkmark-circle-outline"
-          tint={colors.green}
+          tint={c.green}
           title="No weak words — nice!"
           hint="Words you miss in lessons land here for extra practice."
           ctaLabel="Browse all words"
@@ -203,7 +206,7 @@ export default function VocabScreen() {
     return (
       <EmptyState
         ionicon="search-outline"
-        tint={colors.indigo}
+        tint={c.indigo}
         title="No matches"
         hint={
           topicFilter
@@ -227,7 +230,7 @@ export default function VocabScreen() {
       {/* Search bar */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <Ionicons name="search" size={18} color={colors.textMuted} />
+          <Ionicons name="search" size={18} color={c.textMuted} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search Spanish or English..."
@@ -240,7 +243,7 @@ export default function VocabScreen() {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              <Ionicons name="close-circle" size={18} color={c.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -412,6 +415,7 @@ function FilterChip({
 }: {
   label: string; count: number; active: boolean; onPress: () => void; icon?: ReturnType<typeof require>;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <TouchableOpacity
       style={[styles.chip, active && styles.chipActive]}
@@ -439,6 +443,7 @@ function EmptyState({
   ctaLabel?: string;
   onCta?: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.emptyWrap}>
       <View style={[styles.emptyIconCircle, { backgroundColor: `${tint}1A` }]}>
@@ -456,6 +461,7 @@ function EmptyState({
 }
 
 function TopicChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <TouchableOpacity
       style={[styles.topicChip, active && styles.topicChipActive]}
@@ -481,6 +487,7 @@ function WordDetailModal({
   onGoToLesson: () => void;
   onClose: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const lesson = lessonId ? LESSONS_BY_ID[lessonId] : undefined;
   const unit = lesson ? UNITS_BY_ID[lesson.unitId] : undefined;
   const topicLabel = TOPIC_LABELS[word.topic] ?? word.topic;
@@ -574,8 +581,8 @@ function WordDetailModal({
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
 
   header: {
     flexDirection: 'row',
@@ -585,18 +592,18 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#111827' },
-  subtitle: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
+  title: { fontSize: 24, fontWeight: '800', color: c.text },
+  subtitle: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
 
   searchRow: { paddingHorizontal: 20, marginBottom: 12 },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     paddingHorizontal: 14,
     height: 48,
     ...shadows.card,
@@ -604,7 +611,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: colors.text,
+    color: c.text,
     paddingVertical: 0,
   },
 
@@ -625,37 +632,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
-  chipActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
+  chipActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
   chipIcon: { width: 12, height: 12, opacity: 0.5 },
   chipIconActive: { opacity: 1 },
-  chipText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
-  chipTextActive: { color: '#4F46E5' },
+  chipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  chipTextActive: { color: c.indigo },
   chipBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.borderLight,
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
-  chipBadgeActive: { backgroundColor: '#C7D2FE' },
-  chipBadgeText: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
-  chipBadgeTextActive: { color: '#4F46E5' },
+  chipBadgeActive: { backgroundColor: c.indigoBorder },
+  chipBadgeText: { fontSize: 11, fontWeight: '700', color: c.textSecondary },
+  chipBadgeTextActive: { color: c.indigo },
 
   sortBtn: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     flexShrink: 0,
   },
-  sortBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-  sortBtnText: { fontSize: 12, fontWeight: '700', color: '#6B7280' },
-  sortBtnTextActive: { color: '#4F46E5' },
+  sortBtnActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
+  sortBtnText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  sortBtnTextActive: { color: c.indigo },
 
   // Topic chips row — flexGrow: 0 stops the ScrollView collapsing the chips
   topicChipRow: { flexGrow: 0, marginBottom: 12 },
@@ -664,20 +671,20 @@ const styles = StyleSheet.create({
     height: 38,
     paddingHorizontal: 16,
     borderRadius: 19,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  topicChipActive: { backgroundColor: colors.indigo, borderColor: colors.indigo, ...shadows.glow(colors.indigo) },
-  topicChipText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
+  topicChipActive: { backgroundColor: c.indigo, borderColor: c.indigo, ...shadows.glow(c.indigo) },
+  topicChipText: { fontSize: 14, fontWeight: '600', color: c.textSecondary },
   topicChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   sectionHeader: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#9CA3AF',
+    color: c.textMuted,
     letterSpacing: 1,
     textTransform: 'uppercase',
     paddingHorizontal: 4,
@@ -686,7 +693,7 @@ const styles = StyleSheet.create({
   },
   resultCount: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: c.textMuted,
     fontWeight: '600',
     marginBottom: 8,
     paddingHorizontal: 4,
@@ -710,20 +717,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 6 },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: c.text, marginBottom: 6 },
   emptyHint: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 21,
     marginBottom: 20,
   },
   emptyCta: {
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     borderRadius: radius.md,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
   emptyCtaText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 
@@ -734,7 +741,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sortModalSheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -745,7 +752,7 @@ const styles = StyleSheet.create({
   sortModalHandle: {
     width: 36,
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -753,7 +760,7 @@ const styles = StyleSheet.create({
   sortModalTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#111827',
+    color: c.text,
     marginBottom: 12,
   },
   sortOption: {
@@ -764,15 +771,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
   },
-  sortOptionActive: { backgroundColor: '#EEF2FF' },
+  sortOptionActive: { backgroundColor: c.indigoSoft },
   sortOptionLeft: { gap: 2 },
-  sortOptionLabel: { fontSize: 15, fontWeight: '600', color: '#374151' },
-  sortOptionLabelActive: { color: '#4F46E5' },
-  sortOptionDesc: { fontSize: 12, color: '#9CA3AF' },
+  sortOptionLabel: { fontSize: 15, fontWeight: '600', color: c.text },
+  sortOptionLabelActive: { color: c.indigo },
+  sortOptionDesc: { fontSize: 12, color: c.textMuted },
   sortOptionTick: { width: 18, height: 18 },
 
   // Modal
-  modalSafe: { flex: 1, backgroundColor: '#FFFFFF' },
+  modalSafe: { flex: 1, backgroundColor: c.card },
   modalScroll: { padding: 24, paddingBottom: 16 },
   modalTopRow: {
     flexDirection: 'row',
@@ -781,20 +788,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalCloseBtn: { padding: 4 },
-  modalCloseText: { fontSize: 18, color: '#9CA3AF' },
+  modalCloseText: { fontSize: 18, color: c.textMuted },
   modalStarBtn: { padding: 4 },
   modalStar: { width: 28, height: 28 },
   starInactive: { opacity: 0.2 },
 
   topicBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.borderLight,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 14,
   },
-  topicBadgeText: { fontSize: 11, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 },
+  topicBadgeText: { fontSize: 11, fontWeight: '700', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   modalWordRow: {
     flexDirection: 'row',
@@ -802,8 +809,8 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 8,
   },
-  modalSpanish: { fontSize: 32, fontWeight: '800', color: '#111827', flex: 1, flexWrap: 'wrap' },
-  modalEnglish: { fontSize: 18, color: '#6B7280', marginBottom: 16 },
+  modalSpanish: { fontSize: 32, fontWeight: '800', color: c.text, flex: 1, flexWrap: 'wrap' },
+  modalEnglish: { fontSize: 18, color: c.textSecondary, marginBottom: 16 },
 
   diffRow: {
     flexDirection: 'row',
@@ -811,39 +818,39 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 20,
   },
-  diffLabel: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
-  modalDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#E5E7EB' },
-  modalDotFilled: { backgroundColor: '#4F46E5' },
-  diffName: { fontSize: 13, color: '#6B7280', marginLeft: 4 },
+  diffLabel: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
+  modalDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.border },
+  modalDotFilled: { backgroundColor: c.indigo },
+  diffName: { fontSize: 13, color: c.textSecondary, marginLeft: 4 },
 
   exampleCard: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: c.bg,
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   exampleLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 6,
   },
-  exampleText: { fontSize: 16, color: '#374151', lineHeight: 24, fontStyle: 'italic' },
+  exampleText: { fontSize: 16, color: c.text, lineHeight: 24, fontStyle: 'italic' },
 
   weakCard: { marginBottom: 16, gap: 8 },
   weakBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: c.amberSoft,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   weakBannerIcon: { width: 16, height: 16 },
   weakBannerText: { fontSize: 13, color: '#92400E', flex: 1, lineHeight: 18 },
@@ -852,17 +859,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: c.greenSoft,
     borderRadius: 12,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: c.greenBorder,
   },
   practisedBtnIcon: { width: 16, height: 16 },
   practisedBtnText: { fontSize: 14, fontWeight: '700', color: '#065F46' },
 
   unitCard: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -882,10 +889,10 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: c.borderLight,
   },
   goToLessonBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',

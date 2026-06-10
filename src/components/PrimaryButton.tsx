@@ -2,7 +2,8 @@ import React from 'react';
 import { Text, StyleSheet, View, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from './PressableScale';
-import { colors, fonts, gradients, radius, shadows } from '../theme';
+import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 
 type Variant = 'indigo' | 'green' | 'amber';
 
@@ -12,9 +13,9 @@ const VARIANT_GRADIENT: Record<Variant, readonly [string, string, ...string[]]> 
   amber: gradients.amber,
 };
 const VARIANT_GLOW: Record<Variant, string> = {
-  indigo: colors.indigo,
-  green: colors.green,
-  amber: colors.amber,
+  indigo: '#4F46E5',
+  green: '#059669',
+  amber: '#D97706',
 };
 
 interface Props {
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function PrimaryButton({ label, onPress, variant = 'indigo', disabled = false, style, icon }: Props) {
+  const styles = useThemedStyles(createStyles);
   if (disabled) {
     return (
       <View style={[styles.base, styles.disabled, style]}>
@@ -51,7 +53,7 @@ export default function PrimaryButton({ label, onPress, variant = 'indigo', disa
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   disabled: {
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
   },
   label: {
     fontSize: 16,
@@ -71,6 +73,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   labelDisabled: {
-    color: colors.textMuted,
+    color: c.textMuted,
   },
 });

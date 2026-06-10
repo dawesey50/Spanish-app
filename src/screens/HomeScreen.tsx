@@ -27,12 +27,15 @@ import PulseImage from '../components/PulseImage';
 import CountUp from '../components/CountUp';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
-import { fonts, gradients } from '../theme';
+import { fonts, gradients, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -54,7 +57,7 @@ export default function HomeScreen() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: '#F8F9FC' }]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: c.bg }]}>
         <ScreenSkeleton />
       </SafeAreaView>
     );
@@ -208,15 +211,15 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#6366F1' },
 
-  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8F9FC' },
-  loadingText: { fontSize: 16, color: '#6B7280' },
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg },
+  loadingText: { fontSize: 16, color: c.textSecondary },
 
   // ─── Header ───────────────────────────────────────────────────────────
   header: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 22,
@@ -277,7 +280,7 @@ const styles = StyleSheet.create({
   },
   xpFill: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 3,
   },
 
@@ -291,7 +294,7 @@ const styles = StyleSheet.create({
   // ─── Content ──────────────────────────────────────────────────────────
   contentWrapper: {
     flex: 1,
-    backgroundColor: '#F8F9FC',
+    backgroundColor: c.bg,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     overflow: 'hidden',
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
 
   // AI chat card
   chatCard: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
@@ -330,7 +333,7 @@ const styles = StyleSheet.create({
   // Stats strip
   statsStrip: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -342,14 +345,14 @@ const styles = StyleSheet.create({
   },
   stripStat: { flex: 1, alignItems: 'center', gap: 4 },
   stripIcon: { width: 22, height: 22 },
-  stripValue: { fontSize: 20, fontFamily: fonts.display, color: '#111827' },
-  stripLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
-  stripDivider: { width: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
+  stripValue: { fontSize: 20, fontFamily: fonts.display, color: c.text },
+  stripLabel: { fontSize: 11, color: c.textMuted, fontWeight: '500' },
+  stripDivider: { width: 1, backgroundColor: c.borderLight, marginVertical: 4 },
 
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: c.text,
     marginBottom: 12,
   },
 });

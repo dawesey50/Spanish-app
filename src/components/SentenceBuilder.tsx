@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 import { normalize } from '../utils/questionGenerator';
 
 interface TokenItem {
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export default function SentenceBuilder({ english, correctAnswer, tokens, onResult }: Props) {
+  const styles = useThemedStyles(createStyles);
   const tokenItems: TokenItem[] = useMemo(
     () => tokens.map((value, i) => ({ key: `t_${i}`, value })),
     [tokens]
@@ -130,39 +133,39 @@ export default function SentenceBuilder({ english, correctAnswer, tokens, onResu
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: { gap: 16 },
 
   promptCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   promptLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#6B7280',
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   promptEnglish: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: c.text,
     textAlign: 'center',
     lineHeight: 28,
   },
 
   tray: {
     minHeight: 60,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.borderLight,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderStyle: 'dashed',
     justifyContent: 'center',
     paddingHorizontal: 8,
@@ -170,7 +173,7 @@ const styles = StyleSheet.create({
   },
   trayPlaceholder: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: c.textMuted,
     textAlign: 'center',
     fontStyle: 'italic',
   },
@@ -183,7 +186,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
   },
 
   pool: {
@@ -201,19 +204,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   tilePlaced: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#4F46E5',
+    backgroundColor: c.indigoSoft,
+    borderColor: c.indigo,
   },
   tilePlacedCorrect: {
-    backgroundColor: '#D1FAE5',
-    borderColor: '#059669',
+    backgroundColor: c.greenSoft,
+    borderColor: c.green,
   },
   tilePlacedWrong: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#DC2626',
+    backgroundColor: c.redSoft,
+    borderColor: c.red,
   },
   tilePool: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderColor: '#D1D5DB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -228,21 +231,21 @@ const styles = StyleSheet.create({
   tileText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#111827',
+    color: c.text,
   },
   tileTextCorrect: { color: '#065F46' },
   tileTextWrong: { color: '#991B1B' },
-  tileTextDisabled: { color: '#9CA3AF' },
+  tileTextDisabled: { color: c.textMuted },
 
   checkBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 4,
   },
   checkBtnDisabled: {
-    backgroundColor: '#C7D2FE',
+    backgroundColor: c.indigoBorder,
   },
   checkBtnText: {
     color: '#FFFFFF',

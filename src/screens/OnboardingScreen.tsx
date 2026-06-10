@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
@@ -91,6 +93,8 @@ const PLACEMENT_QUESTIONS: PlacementQuestion[] = [
 ];
 
 export default function OnboardingScreen() {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Nav>();
   const [step, setStep] = useState<'welcome' | 'test' | 'result'>('welcome');
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -244,8 +248,8 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -256,19 +260,19 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 30,
     fontWeight: '800',
-    color: '#111827',
+    color: c.text,
     marginBottom: 12,
     textAlign: 'center',
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 36,
   },
   startBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 16,
     paddingHorizontal: 40,
     paddingVertical: 16,
@@ -276,9 +280,9 @@ const styles = StyleSheet.create({
   },
   startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
   skipBtn: { padding: 12 },
-  skipBtnText: { fontSize: 15, color: '#6B7280', textDecorationLine: 'underline' },
+  skipBtnText: { fontSize: 15, color: c.textSecondary, textDecorationLine: 'underline' },
   placementCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
@@ -291,39 +295,39 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   placementEmoji: { fontSize: 40, marginBottom: 8 },
-  placementTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  placementDesc: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
+  placementTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 6 },
+  placementDesc: { fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   testContainer: { flex: 1, padding: 20 },
   testProgress: { marginBottom: 32 },
-  testCounter: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginBottom: 8 },
+  testCounter: { fontSize: 13, color: c.textSecondary, fontWeight: '600', marginBottom: 8 },
   testTrack: {
     height: 6,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
-  testFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 3 },
+  testFill: { height: '100%', backgroundColor: c.indigo, borderRadius: 3 },
   testPrompt: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
+    color: c.text,
     marginBottom: 28,
     lineHeight: 30,
   },
   testOptions: { gap: 10 },
   testOption: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderRadius: 12,
     padding: 16,
   },
-  testOptionText: { fontSize: 16, color: '#111827', fontWeight: '500' },
+  testOptionText: { fontSize: 16, color: c.text, fontWeight: '500' },
   nextBtn: {
     position: 'absolute',
     bottom: 32,
     left: 20,
     right: 20,
-    backgroundColor: '#059669',
+    backgroundColor: c.green,
     borderRadius: 14,
     padding: 18,
     alignItems: 'center',

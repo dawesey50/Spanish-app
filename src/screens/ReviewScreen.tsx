@@ -45,7 +45,8 @@ import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import { buildReviewQuestions, isCorrect } from '../utils/questionGenerator';
 import AudioButton from '../components/AudioButton';
-import { colors, radius, shadows } from '../theme';
+import { radius, shadows, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { Question } from '../types';
 
 const XP_PER_CORRECT = 5;
@@ -89,6 +90,8 @@ function formatDate(dateStr: string): string {
 }
 
 export default function ReviewScreen() {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [phase, setPhase] = useState<ReviewPhase>('list');
   const [dueWords, setDueWords] = useState<DueWord[]>([]);
   const [totalScheduled, setTotalScheduled] = useState(0);
@@ -578,32 +581,32 @@ export default function ReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // ─── List ─────────────────────────────────────────────────────────────────
   listScroll: { padding: 20, paddingBottom: 40 },
   listScrollGrow: { flexGrow: 1 },
-  listTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 20 },
+  listTitle: { fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 20 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60, paddingHorizontal: 12 },
   emptyIconCircle: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: colors.indigoSoft,
+    backgroundColor: c.indigoSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
   },
   emptyIcon: { width: 44, height: 44 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  emptyDesc: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 21 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: c.text, marginBottom: 8 },
+  emptyDesc: { fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 21 },
 
   caughtUpCard: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: c.greenSoft,
     borderRadius: 20,
     padding: 28,
     alignItems: 'center',
@@ -615,30 +618,30 @@ const styles = StyleSheet.create({
   },
   caughtUpIcon: { width: 52, height: 52, marginBottom: 4 },
   caughtUpTitle: { fontSize: 20, fontWeight: '800', color: '#065F46' },
-  caughtUpDesc: { fontSize: 14, color: '#059669', fontWeight: '600', textAlign: 'center' },
-  caughtUpHint: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
+  caughtUpDesc: { fontSize: 14, color: c.green, fontWeight: '600', textAlign: 'center' },
+  caughtUpHint: { fontSize: 13, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
 
   summaryCard: {
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     borderRadius: radius.lg,
     padding: 24,
     alignItems: 'center',
     marginBottom: 20,
     gap: 2,
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
   summaryCount: { fontSize: 50, fontWeight: '900', color: '#FFFFFF' },
   summaryLabel: { fontSize: 15, color: 'rgba(255,255,255,0.92)', fontWeight: '600' },
   summaryNext: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
 
-  dueSectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 10 },
+  dueSectionTitle: { fontSize: 17, fontWeight: '700', color: c.text, marginBottom: 10 },
 
   wordList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     marginBottom: 20,
     ...shadows.card,
   },
@@ -648,12 +651,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
     gap: 10,
   },
   wordInfo: { flex: 1 },
-  wordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  wordEnglish: { fontSize: 13, color: '#6B7280', marginTop: 1 },
+  wordSpanish: { fontSize: 15, fontWeight: '700', color: c.text },
+  wordEnglish: { fontSize: 13, color: c.textSecondary, marginTop: 1 },
   levelBadge: {
     borderRadius: 10,
     paddingHorizontal: 9,
@@ -662,19 +665,19 @@ const styles = StyleSheet.create({
   levelBadgeText: { fontSize: 11, fontWeight: '700' },
 
   startBtn: {
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
   startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 
   // ─── Results ──────────────────────────────────────────────────────────────
   resultsScroll: { padding: 24, alignItems: 'center', paddingBottom: 48 },
   resultsIcon: { width: 72, height: 72, marginBottom: 12 },
-  resultsTitle: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  resultsScore: { fontSize: 15, color: '#6B7280', marginBottom: 16 },
+  resultsTitle: { fontSize: 24, fontWeight: '800', color: c.text, marginBottom: 4 },
+  resultsScore: { fontSize: 15, color: c.textSecondary, marginBottom: 16 },
 
   masteredBanner: {
     flexDirection: 'row',
@@ -686,27 +689,27 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   masteredBannerIcon: { width: 20, height: 20 },
   masteredBannerText: { fontSize: 14, fontWeight: '700', color: '#78350F' },
 
   xpBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: c.greenSoft,
     borderRadius: 24,
     paddingHorizontal: 24,
     paddingVertical: 8,
     marginBottom: 20,
   },
-  xpBadgeText: { fontSize: 18, fontWeight: '800', color: '#059669' },
+  xpBadgeText: { fontSize: 18, fontWeight: '800', color: c.green },
 
   resultWordList: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     marginBottom: 20,
   },
   resultRow: {
@@ -715,32 +718,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
     gap: 10,
   },
-  resultRowCorrect: { backgroundColor: '#F0FDF4' },
+  resultRowCorrect: { backgroundColor: c.greenSoft },
   resultRowWrong: { backgroundColor: '#FFF5F5' },
   resultMark: { width: 18, height: 18 },
   resultWordInfo: { flex: 1 },
-  resultSpanish: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  resultEnglish: { fontSize: 12, color: '#6B7280', marginTop: 1 },
+  resultSpanish: { fontSize: 14, fontWeight: '700', color: c.text },
+  resultEnglish: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
 
   masteredTag: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: c.greenSoft,
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
   masteredTagText: { fontSize: 11, fontWeight: '700', color: '#065F46' },
   intervalTag: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
-  intervalTagText: { fontSize: 11, fontWeight: '700', color: '#4338CA' },
+  intervalTagText: { fontSize: 11, fontWeight: '700', color: c.indigoDark },
   dueAgainTag: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: c.redSoft,
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
@@ -748,7 +751,7 @@ const styles = StyleSheet.create({
   dueAgainTagText: { fontSize: 11, fontWeight: '700', color: '#991B1B' },
 
   doneBtn: { padding: 14 },
-  doneBtnText: { fontSize: 14, color: '#6B7280', textDecorationLine: 'underline' },
+  doneBtnText: { fontSize: 14, color: c.textSecondary, textDecorationLine: 'underline' },
 
   // ─── Session ──────────────────────────────────────────────────────────────
   sessionHeader: {
@@ -759,16 +762,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quitBtn: { padding: 4, width: 32 },
-  quitText: { fontSize: 18, color: '#9CA3AF' },
+  quitText: { fontSize: 18, color: c.textMuted },
   progressTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 4 },
-  sessionCounter: { fontSize: 13, color: '#9CA3AF', fontWeight: '600', width: 36, textAlign: 'right' },
+  progressFill: { height: '100%', backgroundColor: c.indigo, borderRadius: 4 },
+  sessionCounter: { fontSize: 13, color: c.textMuted, fontWeight: '600', width: 36, textAlign: 'right' },
 
   sessionContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
 
@@ -782,29 +785,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   typeBadgeIcon: { width: 16, height: 16 },
-  typeBadge: { fontSize: 13, color: '#4F46E5', fontWeight: '600' },
+  typeBadge: { fontSize: 13, color: c.indigo, fontWeight: '600' },
   reviewPillWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: c.amberSoft,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
   },
   reviewPillIcon: { width: 12, height: 12 },
-  reviewPill: { fontSize: 11, fontWeight: '700', color: '#D97706' },
+  reviewPill: { fontSize: 11, fontWeight: '700', color: c.amber },
 
-  prompt: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 24, lineHeight: 30 },
+  prompt: { fontSize: 22, fontWeight: '700', color: c.text, marginBottom: 24, lineHeight: 30 },
 
   listeningArea: { alignItems: 'center', paddingVertical: 16, gap: 10, marginBottom: 16 },
-  listeningHint: { fontSize: 13, color: '#9CA3AF', fontWeight: '500' },
+  listeningHint: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
 
   options: { gap: 10 },
   option: {
@@ -816,27 +819,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...shadows.card,
   },
-  optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
+  optionText: { fontSize: 16, color: c.text, fontWeight: '500', flex: 1 },
   optionMark: { width: 20, height: 20 },
 
   typingArea: { gap: 8 },
   input: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderRadius: radius.md,
     padding: 16,
     fontSize: 18,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    color: c.text,
+    backgroundColor: c.card,
   },
-  inputCorrect: { borderColor: '#059669', backgroundColor: '#D1FAE5' },
-  inputWrong: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
+  inputCorrect: { borderColor: c.green, backgroundColor: c.greenSoft },
+  inputWrong: { borderColor: c.red, backgroundColor: c.redSoft },
   correctionBox: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: c.amberSoft,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   correctionLabel: { fontSize: 11, fontWeight: '700', color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
   correctionText: { fontSize: 16, fontWeight: '700', color: '#78350F' },
@@ -850,20 +853,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  bannerCorrect: { backgroundColor: '#D1FAE5' },
-  bannerWrong: { backgroundColor: '#FEE2E2' },
+  bannerCorrect: { backgroundColor: c.greenSoft },
+  bannerWrong: { backgroundColor: c.redSoft },
   bannerIcon: { width: 20, height: 20 },
   resultBannerText: { fontSize: 16, fontWeight: '700', flex: 1 },
   bannerTextCorrect: { color: '#065F46' },
   bannerTextWrong: { color: '#991B1B' },
   actionBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
-  continueBtn: { backgroundColor: '#059669', ...shadows.glow(colors.green) },
-  btnDisabled: { backgroundColor: '#C7D2FE' },
+  continueBtn: { backgroundColor: c.green, ...shadows.glow(c.green) },
+  btnDisabled: { backgroundColor: c.indigoBorder },
   actionBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 });

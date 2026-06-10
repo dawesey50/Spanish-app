@@ -19,7 +19,8 @@ import CountUp from '../components/CountUp';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
 import PulseImage from '../components/PulseImage';
-import { colors, fonts, gradients, radius, shadows, spacing } from '../theme';
+import { fonts, gradients, radius, shadows, spacing, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
 const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
@@ -60,6 +61,7 @@ function groupHistory(history: UserProgress['history']) {
 function StatCard({ emoji, value, label, sub, tint }: {
   emoji: string; value: string; label: string; sub?: string; tint: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.statCard, { borderTopColor: tint, borderTopWidth: 3 }]}>
       <View style={[styles.statIconCircle, { backgroundColor: tint + '22' }]}>
@@ -77,8 +79,10 @@ function StatCard({ emoji, value, label, sub, tint }: {
 }
 
 function ScoreRing({ score }: { score: number }) {
-  const tint = score >= 80 ? colors.green : score >= 60 ? colors.amber : colors.red;
-  const bg   = score >= 80 ? colors.greenSoft : score >= 60 ? colors.amberSoft : colors.redSoft;
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const tint = score >= 80 ? c.green : score >= 60 ? c.amber : c.red;
+  const bg   = score >= 80 ? c.greenSoft : score >= 60 ? c.amberSoft : c.redSoft;
   return (
     <View style={[styles.scoreChip, { backgroundColor: bg, borderColor: tint + '66' }]}>
       <Text style={[styles.scoreChipText, { color: tint }]}>{score}%</Text>
@@ -87,6 +91,8 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 function XPChart({ data, goalXP }: { data: { date: string; xp: number }[]; goalXP: number }) {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const today  = new Date().toISOString().split('T')[0];
   const maxXP  = Math.max(...data.map((d) => d.xp), goalXP, 1);
   const total  = data.reduce((s, d) => s + d.xp, 0);
@@ -122,7 +128,7 @@ function XPChart({ data, goalXP }: { data: { date: string; xp: number }[]; goalX
           return (
             <View key={date} style={styles.chartCol}>
               {xp > 0 && (
-                <Text style={[styles.chartXPLabel, isToday && { color: colors.amber }]}>{xp}</Text>
+                <Text style={[styles.chartXPLabel, isToday && { color: c.amber }]}>{xp}</Text>
               )}
               <View style={{ height: BAR_MAX, justifyContent: 'flex-end' }}>
                 <Animated.View style={[
@@ -144,6 +150,8 @@ function XPChart({ data, goalXP }: { data: { date: string; xp: number }[]; goalX
 
 export default function ProgressScreen() {
   const navigation = useNavigation<any>();
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [progress, setProgress]   = useState<UserProgress | null>(null);
   const [weekXP, setWeekXP]       = useState<{ date: string; xp: number }[]>([]);
   const [monthXP, setMonthXP]     = useState<{ date: string; xp: number }[]>([]);
@@ -156,7 +164,7 @@ export default function ProgressScreen() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: c.bg }]}>
         <ScreenSkeleton />
       </SafeAreaView>
     );
@@ -185,7 +193,7 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={{ backgroundColor: colors.bg }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ backgroundColor: c.bg }} showsVerticalScrollIndicator={false}>
 
         {/* ─── Hero header ─────────────────────────────────────── */}
         <LinearGradient
@@ -236,11 +244,11 @@ export default function ProgressScreen() {
             <StatCard emoji="🔥" value={String(progress.streak)} label="Streak"
               sub={`Best: ${Math.max(progress.longestStreak, progress.streak)}d`} tint="#EA580C" />
             <StatCard emoji="⚡" value={progress.xp.toLocaleString()} label="Total XP"
-              sub={`Today: +${progress.dailyXPToday}`} tint={colors.indigo} />
+              sub={`Today: +${progress.dailyXPToday}`} tint={c.indigo} />
             <StatCard emoji="📚" value={`${progress.completedLessons.length}/${totalLessons}`}
-              label="Lessons" tint={colors.green} />
+              label="Lessons" tint={c.green} />
             <StatCard emoji="🎯" value={accuracy !== null ? `${accuracy}%` : '—'}
-              label="Accuracy" tint={colors.sky} />
+              label="Accuracy" tint={c.sky} />
             <StatCard emoji="🧠" value={String(progress.wordsMastered)} label="Mastered"
               sub="spaced repetition" tint="#7C3AED" />
             <StatCard emoji="📅" value={String(activeDays)} label="Active Days" tint="#D97706" />
@@ -278,7 +286,7 @@ export default function ProgressScreen() {
                 const xp       = calMap[date] ?? 0;
                 const isToday  = date === today;
                 const lvlIdx   = xp === 0 ? 0 : xp < maxCalXP * 0.33 ? 1 : xp < maxCalXP * 0.67 ? 2 : 3;
-                const bg       = ['#E5E7EB', '#A7F3D0', '#34D399', '#059669'][lvlIdx];
+                const bg       = [c.border, '#A7F3D0', '#34D399', '#059669'][lvlIdx];
                 return (
                   <View key={date} style={[styles.calCell, { backgroundColor: bg },
                     isToday && styles.calToday]} />
@@ -291,7 +299,7 @@ export default function ProgressScreen() {
               {(['None', 'Low', 'Mid', 'High'] as const).map((l, i) => (
                 <View key={l} style={styles.calLegendItem}>
                   <View style={[styles.calLegendDot,
-                    { backgroundColor: ['#E5E7EB', '#A7F3D0', '#34D399', '#059669'][i] }]} />
+                    { backgroundColor: [c.border, '#A7F3D0', '#34D399', '#059669'][i] }]} />
                   <Text style={styles.calLegendText}>{l}</Text>
                 </View>
               ))}
@@ -328,14 +336,14 @@ export default function ProgressScreen() {
                   <View style={styles.unitInfo}>
                     <View style={styles.unitTitleRow}>
                       <Text style={styles.unitName}>{unit.title}</Text>
-                      <Text style={[styles.unitCount, full && { color: colors.green }]}>
+                      <Text style={[styles.unitCount, full && { color: c.green }]}>
                         {done}/{total}
                       </Text>
                     </View>
                     <View style={styles.unitTrack}>
                       <View style={[styles.unitFill, {
                         width: `${Math.round(pct * 100)}%` as any,
-                        backgroundColor: full ? colors.green : colors.indigo,
+                        backgroundColor: full ? c.green : c.indigo,
                       }]} />
                     </View>
                   </View>
@@ -407,12 +415,12 @@ export default function ProgressScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#6366F1' },
 
   // Hero
   hero: {
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     paddingTop: spacing.xl,
     paddingBottom: 36,
     paddingHorizontal: spacing.xl,
@@ -453,7 +461,7 @@ const styles = StyleSheet.create({
   },
   heroBarFill: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.pill,
   },
   heroBarPct: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '700', width: 36, textAlign: 'right' },
@@ -468,7 +476,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statCard: {
     width: '47%',
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -485,12 +493,12 @@ const styles = StyleSheet.create({
   },
   statEmoji: { fontSize: 18 },
   statValue: { fontSize: 22, fontFamily: fonts.display },
-  statLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', textAlign: 'center' },
-  statSub: { fontSize: 10, color: colors.textMuted, textAlign: 'center' },
+  statLabel: { fontSize: 11, color: c.textSecondary, fontWeight: '600', textAlign: 'center' },
+  statSub: { fontSize: 10, color: c.textMuted, textAlign: 'center' },
 
   // Section wrapper
   section: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
     ...shadows.card,
@@ -502,8 +510,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  sectionTitle: { fontSize: 16, fontFamily: fonts.display, color: colors.text },
-  sectionSub: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.display, color: c.text },
+  sectionSub: { fontSize: 12, color: c.textMuted, fontWeight: '600' },
 
   // XP Chart
   chart: {
@@ -522,22 +530,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  goalLineLabel: { fontSize: 9, color: colors.textMuted, fontWeight: '700' },
+  goalLineLabel: { fontSize: 9, color: c.textMuted, fontWeight: '700' },
   goalLineDash: {
     flex: 1,
     height: 1,
     borderStyle: 'dashed',
     borderWidth: 1,
-    borderColor: colors.textMuted,
+    borderColor: c.textMuted,
     opacity: 0.5,
   },
   chartCol: { flex: 1, alignItems: 'center', gap: 4 },
-  chartXPLabel: { fontSize: 9, color: colors.textMuted, fontWeight: '700' },
+  chartXPLabel: { fontSize: 9, color: c.textMuted, fontWeight: '700' },
   bar: { width: '70%', borderRadius: 5, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
-  barNormal: { backgroundColor: colors.indigoBorder },
-  barToday: { backgroundColor: colors.amber },
-  dayLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '600' },
-  dayLabelToday: { color: colors.amber, fontWeight: '800' },
+  barNormal: { backgroundColor: c.indigoBorder },
+  barToday: { backgroundColor: c.amber },
+  dayLabel: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
+  dayLabelToday: { color: c.amber, fontWeight: '800' },
 
   // Calendar
   calRow: {
@@ -550,7 +558,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 9,
     fontWeight: '700',
-    color: colors.textMuted,
+    color: c.textMuted,
     textAlign: 'center',
   },
   calGrid: {
@@ -564,11 +572,11 @@ const styles = StyleSheet.create({
     minWidth: '12%',
     aspectRatio: 1,
     borderRadius: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
   },
   calToday: {
     borderWidth: 2,
-    borderColor: colors.indigo,
+    borderColor: c.indigo,
   },
   calLegend: {
     flexDirection: 'row',
@@ -578,14 +586,14 @@ const styles = StyleSheet.create({
   },
   calLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   calLegendDot: { width: 10, height: 10, borderRadius: 2 },
-  calLegendText: { fontSize: 10, color: colors.textMuted },
+  calLegendText: { fontSize: 10, color: c.textMuted },
   streakCallout: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: isDark ? c.amberSoft : '#FFF7ED',
     borderRadius: radius.sm,
     padding: spacing.sm,
     borderWidth: 1,
@@ -602,16 +610,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.borderLight,
+    borderTopColor: c.borderLight,
   },
   unitImg: { width: 36, height: 36, borderRadius: 8 },
   unitInfo: { flex: 1, gap: 6 },
   unitTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  unitName: { fontSize: 14, fontWeight: '700', color: colors.text },
-  unitCount: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+  unitName: { fontSize: 14, fontWeight: '700', color: c.text },
+  unitCount: { fontSize: 12, fontWeight: '700', color: c.textMuted },
   unitTrack: {
     height: 6,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     borderRadius: radius.pill,
     overflow: 'hidden',
   },
@@ -622,11 +630,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.amberSoft,
+    backgroundColor: c.amberSoft,
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.amberBorder,
+    borderColor: c.amberBorder,
   },
   reviewBannerEmoji: { fontSize: 22 },
   reviewBannerTitle: { fontSize: 14, fontWeight: '700', color: '#92400E' },
@@ -644,11 +652,11 @@ const styles = StyleSheet.create({
 
   // History
   emptyHistory: { padding: spacing.lg, paddingTop: spacing.xs },
-  emptyHistoryText: { fontSize: 13, color: colors.textSecondary },
+  emptyHistoryText: { fontSize: 13, color: c.textSecondary },
   histDateHeader: {
     fontSize: 11,
     fontWeight: '800',
-    color: colors.textMuted,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     paddingHorizontal: spacing.lg,
@@ -662,7 +670,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.borderLight,
+    borderTopColor: c.borderLight,
   },
-  histLesson: { flex: 1, fontSize: 14, fontWeight: '600', color: colors.text, marginRight: spacing.sm },
+  histLesson: { flex: 1, fontSize: 14, fontWeight: '600', color: c.text, marginRight: spacing.sm },
 });

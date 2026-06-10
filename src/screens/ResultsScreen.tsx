@@ -22,7 +22,8 @@ import CountUp from '../components/CountUp';
 import LevelUpModal from '../components/LevelUpModal';
 import { playSound } from '../utils/sounds';
 import StreakMilestoneModal from '../components/StreakMilestoneModal';
-import { fonts } from '../theme';
+import { fonts, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 50, 100];
 
@@ -41,6 +42,8 @@ const PARTICLE_SIZE     = 10;
 const PARTICLE_CENTER   = (CIRCLE_OUTER_SIZE - PARTICLE_SIZE) / 2;
 
 export default function ResultsScreen() {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Nav>();
   const route      = useRoute<Route>();
   const { lessonId, score, xpEarned, corrections, wordResults } = route.params;
@@ -312,7 +315,7 @@ export default function ResultsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1 },
 
   // ─── Header ───────────────────────────────────────────────────────────
@@ -359,7 +362,7 @@ const styles = StyleSheet.create({
   // ─── Content card ─────────────────────────────────────────────────────
   card: {
     flex: 1,
-    backgroundColor: '#F8F9FC',
+    backgroundColor: c.bg,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -369,7 +372,7 @@ const styles = StyleSheet.create({
   // Stats
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 18,
     padding: 16,
     marginBottom: 16,
@@ -381,11 +384,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   xpBadge:    { flex: 1, alignItems: 'center' },
-  xpValue:    { fontSize: 24, fontFamily: fonts.display, color: '#4F46E5' },
-  statDivider: { width: 1, height: 36, backgroundColor: '#F3F4F6' },
+  xpValue:    { fontSize: 24, fontFamily: fonts.display, color: c.indigo },
+  statDivider: { width: 1, height: 36, backgroundColor: c.borderLight },
   statItem:   { flex: 1, alignItems: 'center' },
-  statValue:  { fontSize: 24, fontWeight: '800', color: '#111827' },
-  statLabel:  { fontSize: 11, color: '#9CA3AF', fontWeight: '500', marginTop: 2 },
+  statValue:  { fontSize: 24, fontWeight: '800', color: c.text },
+  statLabel:  { fontSize: 11, color: c.textMuted, fontWeight: '500', marginTop: 2 },
 
   // Unit banner
   unitBanner: {
@@ -397,7 +400,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   unitIcon:  { width: 28, height: 28 },
   unitTitle: { fontSize: 15, fontWeight: '800', color: '#78350F' },
@@ -405,31 +408,31 @@ const styles = StyleSheet.create({
 
   // Sections
   section:      { marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10 },
 
   correctionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#DC2626',
+    borderLeftColor: c.red,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
   },
-  wrongAnswer: { fontSize: 14, color: '#DC2626', fontWeight: '600', marginBottom: 4 },
-  rightAnswer: { fontSize: 14, color: '#059669', fontWeight: '600', marginBottom: 4 },
-  explanation: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  wrongAnswer: { fontSize: 14, color: c.red, fontWeight: '600', marginBottom: 4 },
+  rightAnswer: { fontSize: 14, color: c.green, fontWeight: '600', marginBottom: 4 },
+  explanation: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
 
   wordList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   wordRow: {
     flexDirection: 'row',
@@ -437,13 +440,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
     gap: 8,
   },
   wordLeft:    { flex: 1 },
-  wordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  wordExample: { fontSize: 12, color: '#9CA3AF', marginTop: 1 },
-  wordEnglish: { fontSize: 13, color: '#4F46E5', fontWeight: '600' },
+  wordSpanish: { fontSize: 15, fontWeight: '700', color: c.text },
+  wordExample: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+  wordEnglish: { fontSize: 13, color: c.indigo, fontWeight: '600' },
   wordMark:    { width: 18, height: 18 },
 
   // Actions
@@ -461,14 +464,14 @@ const styles = StyleSheet.create({
   nextBtnSub:   { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.65)', letterSpacing: 1 },
   nextBtnTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF', marginTop: 3 },
   homeBtn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
-  homeBtnText: { color: '#374151', fontSize: 16, fontWeight: '600' },
+  homeBtnText: { color: c.text, fontSize: 16, fontWeight: '600' },
   retryBtn:    { borderRadius: 16, padding: 14, alignItems: 'center' },
-  retryBtnText: { color: '#9CA3AF', fontSize: 15, fontWeight: '600' },
+  retryBtnText: { color: c.textMuted, fontSize: 15, fontWeight: '600' },
 });

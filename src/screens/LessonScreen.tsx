@@ -38,7 +38,8 @@ import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import HeartsDisplay from '../components/HeartsDisplay';
 import AudioButton from '../components/AudioButton';
-import { colors, radius, shadows } from '../theme';
+import { radius, shadows, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 import SpeakingQuestion from '../components/SpeakingQuestion';
 import SentenceBuilder from '../components/SentenceBuilder';
 
@@ -53,6 +54,8 @@ const XP_HEART_BONUS = 10;
 type Phase = 'preview' | 'quiz' | 'no_hearts';
 
 export default function LessonScreen() {
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { lessonId } = route.params;
@@ -586,8 +589,8 @@ export default function LessonScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
 
   // Preview
@@ -602,27 +605,27 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: c.text,
     textAlign: 'center',
   },
   previewScroll: { paddingHorizontal: 20, paddingBottom: 40 },
-  previewUnit: { fontSize: 13, color: '#4F46E5', fontWeight: '600', marginBottom: 4 },
-  previewTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 6 },
-  previewDesc: { fontSize: 14, color: '#6B7280', marginBottom: 24 },
+  previewUnit: { fontSize: 13, color: c.indigo, fontWeight: '600', marginBottom: 4 },
+  previewTitle: { fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 6 },
+  previewDesc: { fontSize: 14, color: c.textSecondary, marginBottom: 24 },
   previewWordsLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#6B7280',
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 10,
   },
   previewWordList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     ...shadows.card,
   },
   previewWordRow: {
@@ -631,18 +634,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
     gap: 10,
   },
-  previewWordSpanish: { fontSize: 15, fontWeight: '700', color: '#111827', flex: 1 },
-  previewWordEnglish: { fontSize: 14, color: '#6B7280' },
+  previewWordSpanish: { fontSize: 15, fontWeight: '700', color: c.text, flex: 1 },
+  previewWordEnglish: { fontSize: 14, color: c.textSecondary },
   previewFooter: { padding: 20, paddingBottom: 32 },
   startBtn: {
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
   startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 
@@ -654,25 +657,25 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   noHeartsIcon: { width: 72, height: 72, marginBottom: 20, opacity: 0.5 },
-  noHeartsTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 10 },
+  noHeartsTitle: { fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 10 },
   noHeartsDesc: {
     fontSize: 16,
-    color: '#6B7280',
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 36,
   },
   retryBtn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 16,
     paddingHorizontal: 48,
     paddingVertical: 16,
     marginBottom: 14,
-    ...shadows.glow(colors.indigo),
+    ...shadows.glow(c.indigo),
   },
   retryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
   quitLinkBtn: { padding: 12 },
-  quitLinkText: { fontSize: 15, color: '#6B7280', textDecorationLine: 'underline' },
+  quitLinkText: { fontSize: 15, color: c.textSecondary, textDecorationLine: 'underline' },
 
   // Quiz
   topBar: {
@@ -683,16 +686,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quitBtn: { padding: 4, width: 32 },
-  quitText: { fontSize: 18, color: '#9CA3AF' },
+  quitText: { fontSize: 18, color: c.textMuted },
   progressTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: c.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 4 },
-  progressFillHot: { backgroundColor: '#D97706' },
+  progressFill: { height: '100%', backgroundColor: c.indigo, borderRadius: 4 },
+  progressFillHot: { backgroundColor: c.amber },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
   typeBadge: {
     flexDirection: 'row',
@@ -704,7 +707,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: c.indigoSoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -712,14 +715,14 @@ const styles = StyleSheet.create({
   typeBadgeIcon: { width: 16, height: 16 },
   typeText: {
     fontSize: 13,
-    color: '#4F46E5',
+    color: c.indigo,
     fontWeight: '600',
   },
-  counterBadge: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
+  counterBadge: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
   prompt: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
+    color: c.text,
     marginBottom: 24,
     lineHeight: 30,
   },
@@ -731,7 +734,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 16,
   },
-  listeningHint: { fontSize: 13, color: '#9CA3AF', fontWeight: '500' },
+  listeningHint: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
 
   // Options
   options: { gap: 10 },
@@ -744,40 +747,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...shadows.card,
   },
-  optionText: { fontSize: 16, color: '#111827', fontWeight: '500', flex: 1 },
+  optionText: { fontSize: 16, color: c.text, fontWeight: '500', flex: 1 },
   optionMark: { width: 20, height: 20 },
 
   // Typing
   typingArea: { gap: 8 },
   input: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     borderRadius: radius.md,
     padding: 16,
     fontSize: 18,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    color: c.text,
+    backgroundColor: c.card,
   },
-  inputCorrect: { borderColor: '#059669', backgroundColor: '#D1FAE5' },
-  inputWrong: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
-  correctionText: { fontSize: 15, color: '#059669', fontWeight: '600', paddingLeft: 4 },
+  inputCorrect: { borderColor: c.green, backgroundColor: c.greenSoft },
+  inputWrong: { borderColor: c.red, backgroundColor: c.redSoft },
+  correctionText: { fontSize: 15, color: c.green, fontWeight: '600', paddingLeft: 4 },
   hintBtn: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 2 },
-  hintBtnText: { fontSize: 13, color: '#9CA3AF', textDecorationLine: 'underline' },
+  hintBtnText: { fontSize: 13, color: c.textMuted, textDecorationLine: 'underline' },
   hintBox: { flexDirection: 'row', alignItems: 'center', paddingLeft: 2 },
-  hintLabel: { fontSize: 13, color: '#6B7280' },
-  hintChar: { fontSize: 15, fontWeight: '700', color: '#4F46E5' },
+  hintLabel: { fontSize: 13, color: c.textSecondary },
+  hintChar: { fontSize: 15, fontWeight: '700', color: c.indigo },
 
   // Footer
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   revealedFooter: { gap: 12 },
   resultBanner: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   bannerIcon: { width: 20, height: 20 },
-  bannerCorrect: { backgroundColor: '#D1FAE5' },
-  bannerWrong: { backgroundColor: '#FEE2E2' },
-  resultBannerText: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  bannerCorrect: { backgroundColor: c.greenSoft },
+  bannerWrong: { backgroundColor: c.redSoft },
+  resultBannerText: { fontSize: 16, fontWeight: '700', color: c.text },
   actionBtn: { borderRadius: 16, padding: 18, alignItems: 'center' },
-  checkBtn: { backgroundColor: '#4F46E5', ...shadows.glow(colors.indigo) },
-  nextBtn: { backgroundColor: '#059669', ...shadows.glow(colors.green) },
-  btnDisabled: { backgroundColor: '#C7D2FE' },
+  checkBtn: { backgroundColor: c.indigo, ...shadows.glow(c.indigo) },
+  nextBtn: { backgroundColor: c.green, ...shadows.glow(c.green) },
+  btnDisabled: { backgroundColor: c.indigoBorder },
   actionBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 });

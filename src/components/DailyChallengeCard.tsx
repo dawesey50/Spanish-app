@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 
 const TARGET_ICON = require('../../assets/icons/blue_target.png');
 const TICK_ICON = require('../../assets/icons/green_tick.png');
@@ -20,6 +22,7 @@ function timeUntilMidnight(): string {
 }
 
 export default function DailyChallengeCard({ completedLessons, completedToday, onStart }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [timeLeft, setTimeLeft] = useState(timeUntilMidnight);
 
   useEffect(() => {
@@ -58,9 +61,9 @@ export default function DailyChallengeCard({ completedLessons, completedToday, o
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
@@ -74,7 +77,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardDone: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: c.greenSoft,
     shadowColor: '#000',
     shadowOpacity: 0.06,
   },
@@ -87,10 +90,10 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     letterSpacing: 1,
   },
-  doneBadgeText: { fontSize: 12, fontWeight: '700', color: '#059669' },
+  doneBadgeText: { fontSize: 12, fontWeight: '700', color: c.green },
   title: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
   desc: { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
   doneTitle: { fontSize: 16, fontWeight: '700', color: '#065F46' },
-  doneReset: { fontSize: 12, color: '#6B7280' },
+  doneReset: { fontSize: 12, color: c.textSecondary },
   targetIcon: { width: 44, height: 44, marginLeft: 12, opacity: 0.9 },
 });

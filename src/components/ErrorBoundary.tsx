@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { lightColors, type ThemeColors } from '../theme';
 
 interface Props { children: ReactNode; }
 interface State { hasError: boolean; }
@@ -38,8 +39,8 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -47,10 +48,10 @@ const styles = StyleSheet.create({
     padding: 32,
     gap: 16,
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center' },
-  desc: { fontSize: 15, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
+  title: { fontSize: 22, fontWeight: '800', color: c.text, textAlign: 'center' },
+  desc: { fontSize: 15, color: c.textSecondary, textAlign: 'center', lineHeight: 22 },
   btn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: c.indigo,
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 32,
@@ -58,3 +59,6 @@ const styles = StyleSheet.create({
   },
   btnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });
+
+// Class component outside ThemeProvider — always renders light
+const styles = createStyles(lightColors);

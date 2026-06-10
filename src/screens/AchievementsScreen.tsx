@@ -12,7 +12,8 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getUnlockedAchievements } from '../database/db';
 import { ACHIEVEMENTS, ACHIEVEMENT_ICONS } from '../data/achievements';
-import { colors, radius, shadows, spacing } from '../theme';
+import { radius, shadows, spacing, type ThemeColors } from '../theme';
+import { useTheme, useThemedStyles } from '../ThemeContext';
 
 function formatDate(iso: string): string {
   try {
@@ -25,6 +26,8 @@ function formatDate(iso: string): string {
 
 export default function AchievementsScreen() {
   const navigation = useNavigation();
+  const { c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [unlocked, setUnlocked] = useState<Record<string, string>>({});
 
   useFocusEffect(
@@ -45,7 +48,7 @@ export default function AchievementsScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.indigo} />
+          <Ionicons name="chevron-back" size={24} color={c.indigo} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Achievements</Text>
         <View style={{ width: 40 }} />
@@ -112,35 +115,35 @@ export default function AchievementsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.card,
+    borderBottomColor: c.border,
+    backgroundColor: c.card,
   },
   backBtn: { padding: spacing.sm, width: 40, alignItems: 'center' },
   headerTitle: {
     flex: 1,
     fontSize: 18,
     fontWeight: '800',
-    color: colors.text,
+    color: c.text,
     textAlign: 'center',
   },
 
   scroll: { padding: spacing.xl, paddingBottom: 48 },
 
   progressCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.lg,
     padding: spacing.xl,
     marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     ...shadows.card,
   },
   progressTop: {
@@ -149,23 +152,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
-  progressTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  progressTitle: { fontSize: 16, fontWeight: '800', color: c.text },
   progressCountWrap: { flexDirection: 'row', alignItems: 'baseline' },
-  progressNum: { fontSize: 26, fontWeight: '800', color: colors.indigo },
-  progressTotal: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
+  progressNum: { fontSize: 26, fontWeight: '800', color: c.indigo },
+  progressTotal: { fontSize: 16, color: c.textSecondary, fontWeight: '600' },
   progressBarBg: {
     height: 10,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     borderRadius: radius.pill,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.indigo,
+    backgroundColor: c.indigo,
     borderRadius: radius.pill,
   },
-  progressHint: { fontSize: 12, color: colors.textSecondary },
+  progressHint: { fontSize: 12, color: c.textSecondary },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
 
@@ -179,12 +182,12 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   cardUnlocked: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: isDark ? c.amberSoft : '#FFFBEB',
     borderColor: '#FCD34D',
   },
   cardLocked: {
-    backgroundColor: '#F9FAFB',
-    borderColor: colors.border,
+    backgroundColor: c.bg,
+    borderColor: c.border,
   },
 
   iconWrap: {
@@ -217,20 +220,20 @@ const styles = StyleSheet.create({
   badgeTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: colors.text,
+    color: c.text,
     textAlign: 'center',
   },
-  titleLocked: { color: colors.textMuted },
+  titleLocked: { color: c.textMuted },
   badgeDesc: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 16,
   },
-  descLocked: { color: '#D1D5DB' },
+  descLocked: { color: c.textMuted },
   badgeDate: {
     fontSize: 10,
-    color: '#D97706',
+    color: c.amber,
     fontWeight: '700',
     marginTop: 2,
   },

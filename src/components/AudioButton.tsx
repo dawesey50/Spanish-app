@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TouchableOpacity, StyleSheet, Animated, ViewStyle, Image } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 
 const SPEAKER_ON = require('../../assets/icons/blue_speaker.png');
 const SPEAKER_OFF = require('../../assets/icons/grey_speaker.png');
@@ -27,6 +29,7 @@ export default function AudioButton({
   autoPlay = false,
   autoPlayDelay = 600,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [playing, setPlaying] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pressAnim = useRef(new Animated.Value(1)).current;
@@ -117,7 +120,7 @@ export default function AudioButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   btn: {
     alignItems: 'center',
     justifyContent: 'center',

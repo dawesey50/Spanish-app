@@ -1,8 +1,10 @@
 // Central design tokens (Phase 24). Import these instead of hard-coding
 // colours, spacing, radii, shadows, or font styles in screens/components.
+// Phase 31: light + dark palettes share the same token names — screens get
+// the active palette via useTheme() from ThemeContext.
 import type { TextStyle, ViewStyle } from 'react-native';
 
-export const colors = {
+export const lightColors = {
   // Brand
   indigo: '#4F46E5',
   indigoDark: '#4338CA',
@@ -30,7 +32,42 @@ export const colors = {
   card: '#FFFFFF',
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
-} as const;
+};
+
+export type ThemeColors = typeof lightColors;
+
+export const darkColors: ThemeColors = {
+  // Brand — slightly brighter accents read better on dark surfaces
+  indigo: '#6366F1',
+  indigoDark: '#4F46E5',
+  indigoSoft: 'rgba(99,102,241,0.16)',
+  indigoBorder: '#4338CA',
+  indigoLight: '#818CF8',
+
+  // Status
+  green: '#34D399',
+  greenSoft: 'rgba(16,185,129,0.14)',
+  greenBorder: '#065F46',
+  amber: '#FBBF24',
+  amberSoft: 'rgba(245,158,11,0.14)',
+  amberBorder: '#92400E',
+  red: '#F87171',
+  redSoft: 'rgba(239,68,68,0.16)',
+  sky: '#38BDF8',
+  skySoft: 'rgba(14,165,233,0.14)',
+
+  // Neutrals
+  text: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  textMuted: '#64748B',
+  bg: '#0F172A',
+  card: '#1E293B',
+  border: '#334155',
+  borderLight: '#28354B',
+};
+
+// Static export kept for code that hasn't been converted to useTheme().
+export const colors = lightColors;
 
 // Gradient stops (top-left → bottom-right) for hero headers and buttons
 export const gradients = {

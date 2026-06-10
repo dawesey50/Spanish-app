@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import { colors, fonts, radius, spacing } from '../theme';
+import { fonts, radius, spacing, type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 
 export const AVATAR_EMOJIS = ['🦊', '🐸', '🦉', '🐱', '🦁', '🐯', '🐧', '🚀', '⚡', '🌈', '🌺', '🎯', '🎸', '🌮', '☀️', '🧑‍🎓'];
 export const AVATAR_COLORS = [
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function AvatarPickerModal({ visible, currentEmoji, currentColor, onSave, onClose }: Props) {
+  const styles = useThemedStyles(createStyles);
   const [selEmoji, setSelEmoji] = useState(currentEmoji || AVATAR_EMOJIS[0]);
   const [selColor, setSelColor] = useState(currentColor || AVATAR_COLORS[0]);
 
@@ -88,14 +90,14 @@ export default function AvatarPickerModal({ visible, currentEmoji, currentColor,
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: spacing.xl,
@@ -106,13 +108,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginBottom: spacing.lg,
   },
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.text,
+    color: c.text,
     marginBottom: spacing.xl,
   },
   preview: {
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     fontSize: 12,
     fontWeight: '700',
-    color: colors.textMuted,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: spacing.sm,
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: 'transparent',
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
   },
   emojiItem: { fontSize: 26 },
   colorRow: {

@@ -8,6 +8,8 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 
 const MIC_IDLE = require('../../assets/icons/blue_microphone.png');
 const MIC_RECORDING = require('../../assets/icons/red_microphone.png');
@@ -44,6 +46,7 @@ export default function SpeakingQuestion({
   onResult,
   onSkip,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   const word = WORDS_BY_ID[wordId];
   const Voice = tryLoadVoice();
 
@@ -194,29 +197,29 @@ export default function SpeakingQuestion({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: { gap: 24 },
 
   // Word card
   wordCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   wordCardLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#6B7280',
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
-  wordEnglish: { fontSize: 26, fontWeight: '800', color: '#111827' },
+  wordEnglish: { fontSize: 26, fontWeight: '800', color: c.text },
   audioHintRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  audioHint: { fontSize: 13, color: '#9CA3AF' },
+  audioHint: { fontSize: 13, color: c.textMuted },
 
   // Mic
   micArea: { alignItems: 'center', gap: 14 },
@@ -233,27 +236,27 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   micIcon: { width: 42, height: 42 },
-  micHint: { fontSize: 15, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
+  micHint: { fontSize: 15, color: c.textSecondary, fontWeight: '500', textAlign: 'center' },
 
   // Skip
   skipLink: { alignSelf: 'center', padding: 8 },
-  skipLinkText: { fontSize: 13, color: '#9CA3AF', textDecorationLine: 'underline' },
+  skipLinkText: { fontSize: 13, color: c.textMuted, textDecorationLine: 'underline' },
 
   // Expo Go fallback
   fallbackBox: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: isDark ? c.amberSoft : '#FFFBEB',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: c.amberBorder,
   },
   fallbackIcon: { width: 52, height: 52 },
   fallbackTitle: { fontSize: 17, fontWeight: '700', color: '#92400E' },
   fallbackBody: { fontSize: 14, color: '#78350F', textAlign: 'center', lineHeight: 20 },
   codeBox: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: c.amberSoft,
     borderRadius: 10,
     padding: 12,
     width: '100%',
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
   },
   fallbackSub: { fontSize: 12, color: '#92400E', textAlign: 'center', opacity: 0.8 },
   skipBtnYellow: {
-    backgroundColor: '#D97706',
+    backgroundColor: c.amber,
     borderRadius: 10,
     paddingHorizontal: 24,
     paddingVertical: 12,

@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import type { Word } from '../types';
-import { colors, radius, shadows } from '../theme';
+import { radius, shadows, type ThemeColors } from '../theme';
+import { useThemedStyles } from '../ThemeContext';
 import PressableScale from './PressableScale';
 
 const STAR_FILLED = require('../../assets/icons/star.png');
@@ -17,6 +18,7 @@ interface Props {
 }
 
 function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.dots}>
       {[1, 2, 3].map((n) => (
@@ -27,6 +29,7 @@ function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
 }
 
 function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite, topicLabel }: Props) {
+  const styles = useThemedStyles(createStyles);
   return (
     <PressableScale style={styles.card} onPress={onPress}>
       <View style={styles.left}>
@@ -69,9 +72,9 @@ function WordCard({ word, isFavourite, isWeak, onPress, onToggleFavourite, topic
 
 export default memo(WordCard);
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radius.md,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -83,8 +86,8 @@ const styles = StyleSheet.create({
   },
   left: { flex: 1, gap: 3 },
   wordRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  spanish: { fontSize: 17, fontWeight: '700', color: colors.text },
-  english: { fontSize: 14, color: colors.textSecondary },
+  spanish: { fontSize: 17, fontWeight: '700', color: c.text },
+  english: { fontSize: 14, color: c.textSecondary },
   weakIcon: { width: 14, height: 14 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
   dots: { flexDirection: 'row', gap: 4 },
@@ -92,16 +95,16 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
   },
-  dotFilled: { backgroundColor: colors.indigo },
+  dotFilled: { backgroundColor: c.indigo },
   topicTag: {
-    backgroundColor: colors.borderLight,
+    backgroundColor: c.borderLight,
     borderRadius: 7,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  topicTagText: { fontSize: 10, fontWeight: '700', color: colors.textSecondary },
+  topicTagText: { fontSize: 10, fontWeight: '700', color: c.textSecondary },
   genderBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
