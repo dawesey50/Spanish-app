@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,26 +7,36 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  ImageSourcePropType,
+  Animated,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { getUserProgress, getXPHistory } from '../database/db';
+import { getUserLevel } from '../utils/level';
+import { UNITS, LESSONS_BY_ID } from '../data/units';
+import type { UserProgress } from '../types';
+import { colors, radius, shadows, spacing } from '../theme';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
-const STAR_ICON = require('../../assets/icons/star.png');
-const BOOK_ICON = require('../../assets/icons/blue_icon_book.png');
-const TARGET_ICON = require('../../assets/icons/blue_target.png');
-const WARNING_ICON = require('../../assets/icons/warning_sign.png');
-const TICK_ICON = require('../../assets/icons/green_tick.png');
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { getUserProgress, getXPHistory, getUnlockedAchievements } from '../database/db';
-import { getUserLevel } from '../utils/level';
-import { LESSONS, LESSONS_BY_ID } from '../data/units';
-import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID } from '../data/achievements';
-import type { UserProgress } from '../types';
+const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
+  unit_01: require('../../assets/units/Greetings.png'),
+  unit_02: require('../../assets/units/Food.png'),
+  unit_03: require('../../assets/units/travel.png'),
+  unit_04: require('../../assets/units/People.png'),
+};
 
-const BAR_MAX_H = 72;
-const CHART_DAYS = 7;
+const BAR_MAX = 80;
 const CAL_DAYS = 30;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+function labelDate(iso: string): string {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  if (iso === today) return 'Today';
+  if (iso === yesterday) return 'Yesterday';
+  return new Date(`${iso}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 function getDates(count: number): string[] {
   return Array.from({ length: count }, (_, i) => {
@@ -35,495 +45,599 @@ function getDates(count: number): string[] {
   });
 }
 
-export default function ProgressScreen() {
-  const navigation = useNavigation<any>();
-  const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [xpHistory, setXpHistory] = useState<{ date: string; xp: number }[]>([]);
-  const [unlockedBadges, setUnlockedBadges] = useState<Record<string, string>>({});
-
-  useFocusEffect(
-    useCallback(() => {
-      Promise.all([getUserProgress(), getXPHistory(CHART_DAYS), getUnlockedAchievements()]).then(
-        ([p, xp, badges]) => {
-          setProgress(p);
-          setXpHistory(xp);
-          const map: Record<string, string> = {};
-          badges.forEach((b) => { map[b.badgeId] = b.unlockedAt; });
-          setUnlockedBadges(map);
-        }
-      );
-    }, [])
-  );
-
-  if (!progress) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#4F46E5" />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const today = new Date().toISOString().split('T')[0];
-  const activeDates = new Set(progress.history.map((h) => h.date));
-  const last30 = getDates(CAL_DAYS);
-
-  const totalLessons = LESSONS.length;
-  const completedCount = progress.completedLessons.length;
-
-  const accuracy =
-    progress.history.length > 0
-      ? Math.round(
-          progress.history.reduce((sum, h) => sum + h.score, 0) / progress.history.length
-        )
-      : null;
-
-  const goalProgress = Math.min(progress.dailyXPToday / progress.dailyGoalXP, 1);
-  const goalDone = progress.dailyXPToday >= progress.dailyGoalXP;
-
-  const maxXP = Math.max(...xpHistory.map((d) => d.xp), 1);
-  const totalWeekXP = xpHistory.reduce((s, d) => s + d.xp, 0);
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Your Progress</Text>
-
-        {/* Today's Goal */}
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>Today's Goal</Text>
-            <Text style={[styles.goalValues, goalDone && styles.textGreen]}>
-              {progress.dailyXPToday} / {progress.dailyGoalXP} XP{goalDone ? ' ✓' : ''}
-            </Text>
-          </View>
-          <View style={styles.goalTrack}>
-            <View
-              style={[
-                styles.goalFill,
-                { width: `${goalProgress * 100}%` },
-                goalDone && styles.goalFillDone,
-              ]}
-            />
-          </View>
-          {goalDone && (
-            <Text style={styles.goalCompleteMsg}>Goal reached! 🎉 Keep going for bonus XP.</Text>
-          )}
-        </View>
-
-        {/* 30-day activity calendar */}
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>30-Day Activity</Text>
-            <Text style={styles.calSummary}>
-              {[...activeDates].filter((d) => last30.includes(d)).length} / {CAL_DAYS} days
-            </Text>
-          </View>
-          <View style={styles.calGrid}>
-            {last30.map((date) => {
-              const active = activeDates.has(date);
-              const isToday = date === today;
-              return (
-                <View
-                  key={date}
-                  style={[
-                    styles.calDot,
-                    active && styles.calDotActive,
-                    isToday && !active && styles.calDotToday,
-                  ]}
-                />
-              );
-            })}
-          </View>
-          <View style={styles.calLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#4F46E5' }]} />
-              <Text style={styles.legendText}>Practiced</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#E5E7EB' }]} />
-              <Text style={styles.legendText}>Missed</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { borderWidth: 2, borderColor: '#4F46E5', backgroundColor: '#EEF2FF' }]} />
-              <Text style={styles.legendText}>Today</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* XP this week chart */}
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>XP This Week</Text>
-            <Text style={styles.chartTotal}>{totalWeekXP > 0 ? `+${totalWeekXP} XP` : 'No lessons yet'}</Text>
-          </View>
-          <View style={styles.chart}>
-            {xpHistory.map(({ date, xp }) => {
-              const barH = xp > 0 ? Math.max((xp / maxXP) * BAR_MAX_H, 8) : 0;
-              const label = new Date(`${date}T12:00:00`)
-                .toLocaleDateString('en', { weekday: 'short' })
-                .slice(0, 2);
-              const isToday = date === today;
-              return (
-                <View key={date} style={styles.chartCol}>
-                  {xp > 0 && <Text style={styles.chartXPLabel}>{xp}</Text>}
-                  <View style={styles.chartBarArea}>
-                    {xp > 0 && (
-                      <View
-                        style={[
-                          styles.chartBar,
-                          { height: barH },
-                          isToday && styles.chartBarToday,
-                        ]}
-                      />
-                    )}
-                  </View>
-                  <Text style={[styles.chartDayLabel, isToday && styles.chartDayToday]}>
-                    {label}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Streak milestone banner */}
-        {progress.streak >= 7 && (
-          <View style={styles.milestoneBanner}>
-            <Image source={FIRE_ICON} style={styles.milestoneIcon} resizeMode="contain" />
-            <View style={styles.milestoneTextWrap}>
-              <Text style={styles.milestoneTitle}>
-                {progress.streak >= 100
-                  ? 'Century Club!'
-                  : progress.streak >= 30
-                  ? 'Monthly Legend!'
-                  : progress.streak >= 14
-                  ? 'Two Weeks Strong!'
-                  : 'Week Warrior!'}
-              </Text>
-              <Text style={styles.milestoneSub}>{progress.streak}-day streak and counting</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Stats grid */}
-        <View style={styles.statsGrid}>
-          <StatCard
-            icon={FIRE_ICON}
-            value={String(progress.streak)}
-            label="Current Streak"
-            sub={`Best: ${Math.max(progress.longestStreak, progress.streak)} days`}
-            color="#D97706"
-          />
-          <StatCard
-            icon={STAR_ICON}
-            value={String(progress.xp)}
-            label="Total XP"
-            color="#4F46E5"
-          />
-          <StatCard
-            icon={BOOK_ICON}
-            value={`${completedCount}/${totalLessons}`}
-            label="Lessons Done"
-            color="#059669"
-          />
-          <StatCard
-            icon={TARGET_ICON}
-            value={accuracy !== null ? `${accuracy}%` : '—'}
-            label="Avg. Accuracy"
-            color="#0EA5E9"
-          />
-          <StatCard
-            icon={TICK_ICON}
-            value={String(progress.wordsMastered)}
-            label="Words Mastered"
-            sub="via spaced repetition"
-            color="#7C3AED"
-          />
-          {(() => {
-            const lvl = getUserLevel(progress.xp);
-            const nextXP = lvl.nextLevelXP;
-            const sub = nextXP
-              ? `${nextXP - progress.xp} XP to Lv.${lvl.level + 1}`
-              : 'Max level!';
-            return (
-              <StatCard
-                icon={STAR_ICON}
-                value={`Lv.${lvl.level}`}
-                label={lvl.name}
-                sub={sub}
-                color={lvl.color}
-              />
-            );
-          })()}
-        </View>
-
-        {/* Weak words shortcut */}
-        {progress.weakWords.length > 0 && (
-          <TouchableOpacity
-            style={styles.reviewBanner}
-            onPress={() => navigation.navigate('Review')}
-            activeOpacity={0.8}
-          >
-            <View>
-              <View style={styles.reviewBannerRow}>
-                <Image source={WARNING_ICON} style={styles.warningIcon} resizeMode="contain" />
-                <Text style={styles.reviewBannerTitle}>
-                  {progress.weakWords.length} word{progress.weakWords.length !== 1 ? 's' : ''} need practice
-                </Text>
-              </View>
-              <Text style={styles.reviewBannerSub}>Tap to start a review session →</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* Achievements preview */}
-        <TouchableOpacity
-          style={styles.achievementsCard}
-          onPress={() => navigation.navigate('Achievements' as never)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.achievementsLeft}>
-            <Text style={styles.achievementsTitle}>Achievements</Text>
-            <Text style={styles.achievementsCount}>
-              {Object.keys(unlockedBadges).length} / {ACHIEVEMENTS.length} unlocked
-            </Text>
-          </View>
-          <View style={styles.badgeRow}>
-            {ACHIEVEMENTS.filter((a) => unlockedBadges[a.id]).slice(0, 4).map((a) => (
-              <Text key={a.id} style={styles.badgeEmoji}>{a.emoji}</Text>
-            ))}
-            {Object.keys(unlockedBadges).length === 0 && (
-              <Text style={styles.noBadgesText}>Complete lessons to earn badges →</Text>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* Lesson history */}
-        <Text style={styles.sectionTitle}>Lesson History</Text>
-        {progress.history.length === 0 ? (
-          <Text style={styles.empty}>No lessons completed yet. Start learning!</Text>
-        ) : (
-          progress.history.slice(0, 15).map((entry, i) => {
-            const lesson = LESSONS_BY_ID[entry.lessonId];
-            const scoreColor =
-              entry.score >= 80 ? '#065F46' : entry.score >= 60 ? '#92400E' : '#991B1B';
-            const scoreBg =
-              entry.score >= 80 ? '#D1FAE5' : entry.score >= 60 ? '#FEF3C7' : '#FEE2E2';
-            return (
-              <View key={i} style={styles.historyRow}>
-                <View style={styles.historyLeft}>
-                  <Text style={styles.historyLesson}>{lesson?.title ?? entry.lessonId}</Text>
-                  <Text style={styles.historyDate}>{entry.date}</Text>
-                </View>
-                <View style={[styles.scoreBadge, { backgroundColor: scoreBg }]}>
-                  <Text style={[styles.scoreText, { color: scoreColor }]}>{entry.score}%</Text>
-                </View>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
+function groupHistory(history: UserProgress['history']) {
+  const map: Record<string, typeof history> = {};
+  history.forEach((h) => { (map[h.date] = map[h.date] || []).push(h); });
+  return Object.entries(map).sort(([a], [b]) => b.localeCompare(a)).slice(0, 8);
 }
 
-function StatCard({
-  icon,
-  value,
-  label,
-  sub,
-  color,
-}: {
-  icon: ImageSourcePropType;
-  value: string;
-  label: string;
-  sub?: string;
-  color: string;
+// ─── Sub-components ──────────────────────────────────────────────────────
+
+function StatCard({ emoji, value, label, sub, tint }: {
+  emoji: string; value: string; label: string; sub?: string; tint: string;
 }) {
   return (
-    <View style={styles.statCard}>
-      <Image source={icon} style={styles.statIcon} resizeMode="contain" />
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
+    <View style={[styles.statCard, { borderTopColor: tint, borderTopWidth: 3 }]}>
+      <View style={[styles.statIconCircle, { backgroundColor: tint + '22' }]}>
+        <Text style={styles.statEmoji}>{emoji}</Text>
+      </View>
+      <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
       {sub ? <Text style={styles.statSub}>{sub}</Text> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  scroll: { padding: 20, paddingBottom: 48 },
-  title: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 20 },
+function ScoreRing({ score }: { score: number }) {
+  const tint = score >= 80 ? colors.green : score >= 60 ? colors.amber : colors.red;
+  const bg   = score >= 80 ? colors.greenSoft : score >= 60 ? colors.amberSoft : colors.redSoft;
+  return (
+    <View style={[styles.scoreChip, { backgroundColor: bg, borderColor: tint + '66' }]}>
+      <Text style={[styles.scoreChipText, { color: tint }]}>{score}%</Text>
+    </View>
+  );
+}
 
-  card: {
+function XPChart({ data, goalXP }: { data: { date: string; xp: number }[]; goalXP: number }) {
+  const today  = new Date().toISOString().split('T')[0];
+  const maxXP  = Math.max(...data.map((d) => d.xp), goalXP, 1);
+  const total  = data.reduce((s, d) => s + d.xp, 0);
+  const bars   = useRef(data.map(() => new Animated.Value(0))).current;
+
+  useFocusEffect(useCallback(() => {
+    bars.forEach((b) => b.setValue(0));
+    Animated.stagger(50, bars.map((b, i) =>
+      Animated.timing(b, {
+        toValue: data[i].xp > 0 ? Math.max((data[i].xp / maxXP) * BAR_MAX, 6) : 0,
+        duration: 420,
+        useNativeDriver: false,
+      })
+    )).start();
+  }, [JSON.stringify(data)]));
+
+  const goalY = (goalXP / maxXP) * BAR_MAX;
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>XP This Week</Text>
+        <Text style={styles.sectionSub}>{total > 0 ? `+${total} XP` : 'No lessons yet'}</Text>
+      </View>
+      <View style={styles.chart}>
+        <View style={[styles.goalLine, { bottom: goalY + 20 }]}>
+          <Text style={styles.goalLineLabel}>{goalXP} goal</Text>
+          <View style={styles.goalLineDash} />
+        </View>
+        {data.map(({ date, xp }, i) => {
+          const isToday = date === today;
+          const dayLabel = new Date(`${date}T12:00:00`).toLocaleDateString('en', { weekday: 'short' }).slice(0, 2);
+          return (
+            <View key={date} style={styles.chartCol}>
+              {xp > 0 && (
+                <Text style={[styles.chartXPLabel, isToday && { color: colors.amber }]}>{xp}</Text>
+              )}
+              <View style={{ height: BAR_MAX, justifyContent: 'flex-end' }}>
+                <Animated.View style={[
+                  styles.bar,
+                  { height: bars[i] },
+                  isToday ? styles.barToday : styles.barNormal,
+                ]} />
+              </View>
+              <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>{dayLabel}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ─── Main screen ─────────────────────────────────────────────────────────
+
+export default function ProgressScreen() {
+  const navigation = useNavigation<any>();
+  const [progress, setProgress]   = useState<UserProgress | null>(null);
+  const [weekXP, setWeekXP]       = useState<{ date: string; xp: number }[]>([]);
+  const [monthXP, setMonthXP]     = useState<{ date: string; xp: number }[]>([]);
+
+  useFocusEffect(useCallback(() => {
+    Promise.all([getUserProgress(), getXPHistory(7), getXPHistory(CAL_DAYS)]).then(
+      ([p, week, month]) => { setProgress(p); setWeekXP(week); setMonthXP(month); }
+    );
+  }, []));
+
+  if (!progress) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={colors.indigo} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const lvl   = getUserLevel(progress.xp);
+  const lvlPct = lvl.nextLevelXP
+    ? Math.min((progress.xp - lvl.minXP) / (lvl.nextLevelXP - lvl.minXP), 1)
+    : 1;
+
+  const accuracy = progress.history.length > 0
+    ? Math.round(progress.history.reduce((s, h) => s + h.score, 0) / progress.history.length)
+    : null;
+
+  const totalLessons = UNITS.reduce((s, u) => s + u.lessonIds.length, 0);
+  const activeDays   = new Set(progress.history.map((h) => h.date)).size;
+
+  // Calendar
+  const calMap    = Object.fromEntries(monthXP.map((d) => [d.date, d.xp]));
+  const maxCalXP  = Math.max(...monthXP.map((d) => d.xp), 1);
+  const last30    = getDates(CAL_DAYS);
+  const startDay  = new Date(`${last30[0]}T12:00:00`).getDay(); // 0=Sun
+
+  const histGroups = groupHistory(progress.history);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+
+        {/* ─── Hero header ─────────────────────────────────────── */}
+        <View style={styles.hero}>
+          {/* Medal badge */}
+          <View style={[styles.medalRing, { borderColor: lvl.color + '66' }]}>
+            <View style={[styles.medalCore, { borderColor: lvl.color }]}>
+              <Text style={[styles.medalNum, { color: lvl.color }]}>{lvl.level}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.heroLevelName}>{lvl.name}</Text>
+          <Text style={styles.heroXP}>
+            {progress.xp.toLocaleString()}
+            {lvl.nextLevelXP ? ` / ${lvl.nextLevelXP.toLocaleString()} XP` : ' XP — MAX LEVEL'}
+          </Text>
+
+          <View style={styles.heroBarWrap}>
+            <View style={styles.heroBarTrack}>
+              <View style={[styles.heroBarFill, { width: `${Math.round(lvlPct * 100)}%` as any }]} />
+            </View>
+            <Text style={styles.heroBarPct}>{Math.round(lvlPct * 100)}%</Text>
+          </View>
+
+          {lvl.nextLevelXP && (
+            <Text style={styles.heroHint}>
+              {(lvl.nextLevelXP - progress.xp).toLocaleString()} XP to Level {lvl.level + 1}
+            </Text>
+          )}
+
+          {progress.streak > 0 && (
+            <View style={styles.heroStreak}>
+              <Image source={FIRE_ICON} style={styles.heroFireIcon} resizeMode="contain" />
+              <Text style={styles.heroStreakText}>{progress.streak}-day streak</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.body}>
+
+          {/* ─── Stats grid ──────────────────────────────────────── */}
+          <View style={styles.statsGrid}>
+            <StatCard emoji="🔥" value={String(progress.streak)} label="Streak"
+              sub={`Best: ${Math.max(progress.longestStreak, progress.streak)}d`} tint="#EA580C" />
+            <StatCard emoji="⚡" value={progress.xp.toLocaleString()} label="Total XP"
+              sub={`Today: +${progress.dailyXPToday}`} tint={colors.indigo} />
+            <StatCard emoji="📚" value={`${progress.completedLessons.length}/${totalLessons}`}
+              label="Lessons" tint={colors.green} />
+            <StatCard emoji="🎯" value={accuracy !== null ? `${accuracy}%` : '—'}
+              label="Accuracy" tint={colors.sky} />
+            <StatCard emoji="🧠" value={String(progress.wordsMastered)} label="Mastered"
+              sub="spaced repetition" tint="#7C3AED" />
+            <StatCard emoji="📅" value={String(activeDays)} label="Active Days" tint="#D97706" />
+          </View>
+
+          {/* ─── XP chart ────────────────────────────────────────── */}
+          <XPChart data={weekXP} goalXP={progress.dailyGoalXP} />
+
+          {/* ─── 30-day calendar ─────────────────────────────────── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>30-Day Activity</Text>
+              <Text style={styles.sectionSub}>
+                {monthXP.filter((d) => d.xp > 0).length} / {CAL_DAYS} days
+              </Text>
+            </View>
+
+            {/* Weekday headers */}
+            <View style={styles.calRow}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                <Text key={i} style={styles.calDayHeader}>{d}</Text>
+              ))}
+            </View>
+
+            {/* Grid */}
+            <View style={styles.calGrid}>
+              {Array.from({ length: startDay }, (_, i) => (
+                <View key={`pad-${i}`} style={styles.calCell} />
+              ))}
+              {last30.map((date) => {
+                const xp       = calMap[date] ?? 0;
+                const isToday  = date === today;
+                const lvlIdx   = xp === 0 ? 0 : xp < maxCalXP * 0.33 ? 1 : xp < maxCalXP * 0.67 ? 2 : 3;
+                const bg       = ['#E5E7EB', '#A7F3D0', '#34D399', '#059669'][lvlIdx];
+                return (
+                  <View key={date} style={[styles.calCell, { backgroundColor: bg },
+                    isToday && styles.calToday]} />
+                );
+              })}
+            </View>
+
+            {/* Legend */}
+            <View style={styles.calLegend}>
+              {(['None', 'Low', 'Mid', 'High'] as const).map((l, i) => (
+                <View key={l} style={styles.calLegendItem}>
+                  <View style={[styles.calLegendDot,
+                    { backgroundColor: ['#E5E7EB', '#A7F3D0', '#34D399', '#059669'][i] }]} />
+                  <Text style={styles.calLegendText}>{l}</Text>
+                </View>
+              ))}
+            </View>
+
+            {progress.streak >= 3 && (
+              <View style={styles.streakCallout}>
+                <Image source={FIRE_ICON} style={styles.streakCalloutIcon} resizeMode="contain" />
+                <Text style={styles.streakCalloutText}>
+                  {progress.streak >= 30 ? 'Monthly Legend!' : progress.streak >= 14
+                    ? 'Two Weeks Strong!' : progress.streak >= 7 ? 'Week Warrior!' : 'On a Roll!'}
+                  {' '}· {progress.streak}-day streak
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* ─── Unit mastery ────────────────────────────────────── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Unit Mastery</Text>
+            </View>
+            {UNITS.map((unit) => {
+              const done  = unit.lessonIds.filter((id) => progress.completedLessons.includes(id)).length;
+              const total = unit.lessonIds.length;
+              const pct   = done / total;
+              const full  = pct === 1;
+              return (
+                <View key={unit.id} style={styles.unitRow}>
+                  <Image source={UNIT_IMAGES[unit.id]} style={styles.unitImg} resizeMode="contain" />
+                  <View style={styles.unitInfo}>
+                    <View style={styles.unitTitleRow}>
+                      <Text style={styles.unitName}>{unit.title}</Text>
+                      <Text style={[styles.unitCount, full && { color: colors.green }]}>
+                        {done}/{total}
+                      </Text>
+                    </View>
+                    <View style={styles.unitTrack}>
+                      <View style={[styles.unitFill, {
+                        width: `${Math.round(pct * 100)}%` as any,
+                        backgroundColor: full ? colors.green : colors.indigo,
+                      }]} />
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* ─── Review shortcut ─────────────────────────────────── */}
+          {progress.weakWords.length > 0 && (
+            <TouchableOpacity
+              style={styles.reviewBanner}
+              onPress={() => navigation.navigate('Review')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.reviewBannerEmoji}>⚠️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.reviewBannerTitle}>
+                  {progress.weakWords.length} word{progress.weakWords.length !== 1 ? 's' : ''} need practice
+                </Text>
+                <Text style={styles.reviewBannerSub}>Tap to start a review session</Text>
+              </View>
+              <Text style={styles.reviewBannerArrow}>→</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* ─── Lesson history ──────────────────────────────────── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Lesson History</Text>
+            </View>
+            {progress.history.length === 0 ? (
+              <View style={styles.emptyHistory}>
+                <Text style={styles.emptyHistoryText}>
+                  Complete a lesson to see your history here.
+                </Text>
+              </View>
+            ) : (
+              histGroups.map(([date, entries]) => (
+                <View key={date}>
+                  <Text style={styles.histDateHeader}>{labelDate(date)}</Text>
+                  {entries.map((entry, i) => {
+                    const lesson = LESSONS_BY_ID[entry.lessonId];
+                    return (
+                      <View key={i} style={styles.histRow}>
+                        <Text style={styles.histLesson} numberOfLines={1}>
+                          {lesson?.title ?? entry.lessonId}
+                        </Text>
+                        <ScoreRing score={entry.score} />
+                      </View>
+                    );
+                  })}
+                </View>
+              ))
+            )}
+          </View>
+
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+
+  // Hero
+  hero: {
+    backgroundColor: colors.indigo,
+    paddingTop: spacing.xl,
+    paddingBottom: 36,
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  medalRing: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  medalCore: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medalNum: {
+    fontSize: 34,
+    fontWeight: '900',
+  },
+  heroLevelName: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  heroXP: { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
+  heroBarWrap: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  heroBarTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
+  heroBarFill: {
+    height: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    gap: 12,
+    borderRadius: radius.pill,
   },
-  cardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  heroBarPct: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '700', width: 36, textAlign: 'right' },
+  heroHint: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  heroStreak: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.xs },
+  heroFireIcon: { width: 14, height: 14 },
+  heroStreakText: { fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: '700' },
+
+  body: { padding: spacing.xl, gap: spacing.xl },
+
+  // Stats
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  statCard: {
+    width: '47%',
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: 3,
+    ...shadows.card,
   },
-  rowBetween: {
+  statIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  statEmoji: { fontSize: 18 },
+  statValue: { fontSize: 22, fontWeight: '800' },
+  statLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', textAlign: 'center' },
+  statSub: { fontSize: 10, color: colors.textMuted, textAlign: 'center' },
+
+  // Section wrapper
+  section: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: spacing.lg,
+    paddingBottom: spacing.sm,
   },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  sectionSub: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
 
-  // Goal
-  goalValues: { fontSize: 14, fontWeight: '700', color: '#4F46E5' },
-  textGreen: { color: '#059669' },
-  goalTrack: { height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden' },
-  goalFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 5 },
-  goalFillDone: { backgroundColor: '#059669' },
-  goalCompleteMsg: { fontSize: 13, color: '#059669', fontWeight: '500' },
-
-  // 30-day calendar
-  calSummary: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
-  calGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 5,
-  },
-  calDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
-  },
-  calDotActive: { backgroundColor: '#4F46E5' },
-  calDotToday: { backgroundColor: '#EEF2FF', borderWidth: 2, borderColor: '#4F46E5' },
-  calLegend: { flexDirection: 'row', gap: 16, marginTop: 4 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  legendDot: { width: 10, height: 10, borderRadius: 2 },
-  legendText: { fontSize: 11, color: '#9CA3AF' },
-
-  // XP bar chart
-  chartTotal: { fontSize: 13, fontWeight: '700', color: '#4F46E5' },
+  // XP Chart
   chart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    height: BAR_MAX_H + 36,
-    paddingTop: 20,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    height: BAR_MAX + 56,
+    position: 'relative',
   },
-  chartCol: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-  },
-  chartXPLabel: { fontSize: 9, color: '#9CA3AF', fontWeight: '600' },
-  chartBarArea: { width: '70%', height: BAR_MAX_H, justifyContent: 'flex-end' },
-  chartBar: {
-    width: '100%',
-    backgroundColor: '#C7D2FE',
-    borderRadius: 4,
-    minHeight: 8,
-  },
-  chartBarToday: { backgroundColor: '#4F46E5' },
-  chartDayLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
-  chartDayToday: { color: '#4F46E5' },
-
-  // Streak milestone
-  milestoneBanner: {
-    backgroundColor: '#FFF7ED',
-    borderRadius: 14,
-    padding: 14,
+  goalLine: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  goalLineLabel: { fontSize: 9, color: colors.textMuted, fontWeight: '700' },
+  goalLineDash: {
+    flex: 1,
+    height: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: colors.textMuted,
+    opacity: 0.5,
+  },
+  chartCol: { flex: 1, alignItems: 'center', gap: 4 },
+  chartXPLabel: { fontSize: 9, color: colors.textMuted, fontWeight: '700' },
+  bar: { width: '70%', borderRadius: 5, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
+  barNormal: { backgroundColor: colors.indigoBorder },
+  barToday: { backgroundColor: colors.amber },
+  dayLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '600' },
+  dayLabelToday: { color: colors.amber, fontWeight: '800' },
+
+  // Calendar
+  calRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+    gap: 4,
+  },
+  calDayHeader: {
+    flex: 1,
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  calGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: 4,
+  },
+  calCell: {
+    flex: 1,
+    minWidth: '12%',
+    aspectRatio: 1,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
+  },
+  calToday: {
+    borderWidth: 2,
+    borderColor: colors.indigo,
+  },
+  calLegend: {
+    flexDirection: 'row',
     gap: 12,
-    marginBottom: 14,
+    padding: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  calLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  calLegendDot: { width: 10, height: 10, borderRadius: 2 },
+  calLegendText: { fontSize: 10, color: colors.textMuted },
+  streakCallout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: '#FFF7ED',
+    borderRadius: radius.sm,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: '#FED7AA',
   },
-  milestoneIcon: { width: 36, height: 36 },
-  milestoneTextWrap: { flex: 1 },
-  milestoneTitle: { fontSize: 15, fontWeight: '800', color: '#C2410C' },
-  milestoneSub: { fontSize: 12, color: '#EA580C', marginTop: 2 },
+  streakCalloutIcon: { width: 18, height: 18 },
+  streakCalloutText: { flex: 1, fontSize: 12, fontWeight: '700', color: '#C2410C' },
 
-  // Stats grid
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 14 },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
+  // Unit mastery
+  unitRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    gap: 2,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderLight,
   },
-  statIcon: { width: 30, height: 30, marginBottom: 4 },
-  statValue: { fontSize: 26, fontWeight: '800' },
-  statLabel: { fontSize: 12, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
-  statSub: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 2 },
+  unitImg: { width: 36, height: 36, borderRadius: 8 },
+  unitInfo: { flex: 1, gap: 6 },
+  unitTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  unitName: { fontSize: 14, fontWeight: '700', color: colors.text },
+  unitCount: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+  unitTrack: {
+    height: 6,
+    backgroundColor: colors.border,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
+  unitFill: { height: '100%', borderRadius: radius.pill },
 
   // Review banner
   reviewBanner: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
+    backgroundColor: colors.amberSoft,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.amberBorder,
   },
-  reviewBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  warningIcon: { width: 18, height: 18 },
+  reviewBannerEmoji: { fontSize: 22 },
   reviewBannerTitle: { fontSize: 14, fontWeight: '700', color: '#92400E' },
-  reviewBannerSub: { fontSize: 12, color: '#A16207', marginTop: 3 },
+  reviewBannerSub: { fontSize: 12, color: '#A16207', marginTop: 2 },
+  reviewBannerArrow: { fontSize: 18, color: '#A16207', fontWeight: '700' },
 
-  // Achievements card
-  achievementsCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: '#FCD34D',
-    gap: 10,
+  // Score chip
+  scoreChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    borderWidth: 1,
   },
-  achievementsLeft: {},
-  achievementsTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  achievementsCount: { fontSize: 12, color: '#D97706', fontWeight: '600', marginTop: 2 },
-  badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' },
-  badgeEmoji: { fontSize: 26 },
-  noBadgesText: { fontSize: 12, color: '#A16207', fontStyle: 'italic' },
+  scoreChipText: { fontSize: 13, fontWeight: '800' },
 
   // History
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 12 },
-  empty: { fontSize: 15, color: '#9CA3AF', textAlign: 'center', paddingVertical: 20 },
-  historyRow: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
+  emptyHistory: { padding: spacing.lg, paddingTop: spacing.xs },
+  emptyHistoryText: { fontSize: 13, color: colors.textSecondary },
+  histDateHeader: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  histRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderLight,
   },
-  historyLeft: { flex: 1 },
-  historyLesson: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  historyDate: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
-  scoreBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10 },
-  scoreText: { fontSize: 14, fontWeight: '700' },
+  histLesson: { flex: 1, fontSize: 14, fontWeight: '600', color: colors.text, marginRight: spacing.sm },
 });
