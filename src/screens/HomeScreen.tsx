@@ -75,8 +75,12 @@ export default function HomeScreen() {
         {/* Row 1: avatar + greeting + streak */}
         <View style={styles.headerTop}>
           <View style={styles.avatarRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
+            <View style={[styles.avatar, progress.profileEmoji ? { backgroundColor: progress.profileColor } : {}]}>
+              {progress.profileEmoji ? (
+                <Text style={styles.avatarEmoji}>{progress.profileEmoji}</Text>
+              ) : (
+                <Text style={styles.avatarText}>{initials}</Text>
+              )}
             </View>
             <View>
               <Text style={styles.greeting}>
@@ -214,6 +218,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.35)',
   },
   avatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  avatarEmoji: { fontSize: 22 },
   greeting: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
   subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 1 },
 

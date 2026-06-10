@@ -11,6 +11,7 @@ import ReviewScreen from '../screens/ReviewScreen';
 import ResultsScreen from '../screens/ResultsScreen';
 import ProgressScreen from '../screens/ProgressScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
 import VocabScreen from '../screens/VocabScreen';
@@ -30,7 +31,7 @@ function MainTabs() {
       <Tab.Screen name="Review" component={ReviewScreen} />
       <Tab.Screen name="Vocab" component={VocabScreen} />
       <Tab.Screen name="Progress" component={ProgressScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -72,6 +73,11 @@ export default function AppNavigator({ hasCompletedOnboarding }: Props) {
           name="DailyChallenge"
           component={DailyChallengeScreen}
           options={{ animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

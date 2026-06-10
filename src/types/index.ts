@@ -52,6 +52,8 @@ export interface UserProgress {
   lastChallengeDate: string;
   profileName: string;
   streakShieldAvailable: boolean;
+  profileEmoji: string;
+  profileColor: string;
 }
 
 export type RootStackParamList = {
@@ -68,6 +70,7 @@ export type RootStackParamList = {
   };
   Achievements: undefined;
   DailyChallenge: undefined;
+  Settings: undefined;
 };
 
 export type MainTabParamList = {
@@ -75,7 +78,7 @@ export type MainTabParamList = {
   Review: undefined;
   Vocab: undefined;
   Progress: undefined;
-  Settings: undefined;
+  Profile: undefined;
 };
 
 export interface Correction {

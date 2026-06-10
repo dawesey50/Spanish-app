@@ -11,7 +11,7 @@ const TABS: { name: string; label: string; icon: IconName; iconActive: IconName 
   { name: 'Review',   label: 'Review',   icon: 'sync-outline',    iconActive: 'sync' },
   { name: 'Vocab',    label: 'Vocab',    icon: 'library-outline', iconActive: 'library' },
   { name: 'Progress', label: 'Progress', icon: 'trophy-outline',  iconActive: 'trophy' },
-  { name: 'Settings', label: 'More',     icon: 'person-outline',  iconActive: 'person' },
+  { name: 'Profile',  label: 'Profile',  icon: 'person-outline',  iconActive: 'person' },
 ];
 
 export default function TabBar({ state, navigation }: BottomTabBarProps) {

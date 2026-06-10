@@ -26,6 +26,9 @@ export async function initDatabase(): Promise<void> {
     "ALTER TABLE user_progress ADD COLUMN profile_name TEXT NOT NULL DEFAULT ''",
     // Phase 19: streak shield
     "ALTER TABLE user_progress ADD COLUMN streak_shield_last_used TEXT NOT NULL DEFAULT ''",
+    // Phase 25: profile character
+    "ALTER TABLE user_progress ADD COLUMN profile_emoji TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE user_progress ADD COLUMN profile_color TEXT NOT NULL DEFAULT '#4F46E5'",
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
@@ -57,6 +60,8 @@ export async function getUserProgress(): Promise<UserProgress> {
     last_challenge_date: string;
     profile_name: string;
     streak_shield_last_used: string;
+    profile_emoji: string;
+    profile_color: string;
   }>('SELECT * FROM user_progress WHERE id = 1');
 
   const completedRows = await database.getAllAsync<{ lesson_id: string }>(
@@ -124,6 +129,8 @@ export async function getUserProgress(): Promise<UserProgress> {
     lastChallengeDate: row?.last_challenge_date ?? '',
     profileName: row?.profile_name ?? '',
     streakShieldAvailable,
+    profileEmoji: row?.profile_emoji ?? '',
+    profileColor: row?.profile_color ?? '#4F46E5',
   };
 }
 
@@ -360,6 +367,13 @@ export async function updateProfileName(name: string): Promise<void> {
   await getDb().runAsync(
     'UPDATE user_progress SET profile_name = ? WHERE id = 1',
     [name]
+  );
+}
+
+export async function setProfileCharacter(emoji: string, color: string): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE user_progress SET profile_emoji = ?, profile_color = ? WHERE id = 1',
+    [emoji, color]
   );
 }
 
