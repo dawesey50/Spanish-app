@@ -94,6 +94,11 @@ export default function HomeScreen() {
   const dayIndex = Math.floor(Date.now() / 86400000);
   const wotd = WORDS[dayIndex % WORDS.length];
 
+  // Shield recharge countdown (7-day cooldown)
+  const shieldRechargesIn = !progress.streakShieldAvailable && progress.shieldUsedDate
+    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(progress.shieldUsedDate + 'T00:00:00').getTime()) / 86400000))
+    : 0;
+
   const initials = progress.profileName
     ? progress.profileName.slice(0, 2).toUpperCase()
     : 'ES';
@@ -132,9 +137,11 @@ export default function HomeScreen() {
               <Image source={FIRE_ICON} style={[styles.streakFire, { opacity: 0.5 }]} resizeMode="contain" />
             )}
             <Text style={styles.streakCount}>{progress.streak}</Text>
-            {progress.streakShieldAvailable && (
+            {progress.streakShieldAvailable ? (
               <Text style={styles.shieldIcon}>🛡️</Text>
-            )}
+            ) : shieldRechargesIn > 0 ? (
+              <Text style={styles.shieldCooldown}>🛡️{shieldRechargesIn}d</Text>
+            ) : null}
           </View>
         </View>
 
@@ -352,6 +359,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     textAlign: 'center',
   },
   shieldIcon: { fontSize: 14 },
+  shieldCooldown: { fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '700' },
   shieldBanner: {
     flexDirection: 'row',
     alignItems: 'center',

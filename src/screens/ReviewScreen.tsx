@@ -242,25 +242,34 @@ export default function ReviewScreen() {
       );
     }
 
+    const heroSub = dueWords.length === 0
+      ? nextScheduledDate ? 'All caught up!' : 'No words yet'
+      : `${dueWords.length} word${dueWords.length !== 1 ? 's' : ''} due today`;
+
     // No weak words at all
     if (dueWords.length === 0 && !nextScheduledDate) {
       return (
-        <SafeAreaView style={styles.safe}>
-          <ScrollView
-            contentContainerStyle={[styles.listScroll, styles.listScrollGrow]}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={styles.listTitle}>Review</Text>
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconCircle}>
-                <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
+        <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
+          <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.reviewHero}>
+            <Text style={styles.reviewHeroTitle}>Review</Text>
+            <Text style={styles.reviewHeroSub}>{heroSub}</Text>
+          </LinearGradient>
+          <View style={[styles.contentWrapper, styles.contentFlex]}>
+            <ScrollView
+              contentContainerStyle={[styles.listScroll, styles.listScrollGrow]}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconCircle}>
+                  <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
+                </View>
+                <Text style={styles.emptyTitle}>Nothing to review yet</Text>
+                <Text style={styles.emptyDesc}>
+                  Complete lessons — any words you find difficult will appear here for extra practice.
+                </Text>
               </View>
-              <Text style={styles.emptyTitle}>Nothing to review yet</Text>
-              <Text style={styles.emptyDesc}>
-                Complete lessons — any words you find difficult will appear here for extra practice.
-              </Text>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          </View>
         </SafeAreaView>
       );
     }
@@ -268,20 +277,25 @@ export default function ReviewScreen() {
     // All words scheduled for future — nothing due today
     if (dueWords.length === 0 && nextScheduledDate) {
       return (
-        <SafeAreaView style={styles.safe}>
-          <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
-            <Text style={styles.listTitle}>Review</Text>
-            <View style={styles.caughtUpCard}>
-              <Image source={TICK_ICON} style={styles.caughtUpIcon} resizeMode="contain" />
-              <Text style={styles.caughtUpTitle}>All caught up for today!</Text>
-              <Text style={styles.caughtUpDesc}>
-                Next review {daysUntilLabel(nextScheduledDate)} · {formatDate(nextScheduledDate)}
+        <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
+          <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.reviewHero}>
+            <Text style={styles.reviewHeroTitle}>Review</Text>
+            <Text style={styles.reviewHeroSub}>{heroSub}</Text>
+          </LinearGradient>
+          <View style={[styles.contentWrapper, styles.contentFlex]}>
+            <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.caughtUpCard}>
+                <Image source={TICK_ICON} style={styles.caughtUpIcon} resizeMode="contain" />
+                <Text style={styles.caughtUpTitle}>All caught up for today!</Text>
+                <Text style={styles.caughtUpDesc}>
+                  Next review {daysUntilLabel(nextScheduledDate)} · {formatDate(nextScheduledDate)}
+                </Text>
+              </View>
+              <Text style={styles.caughtUpHint}>
+                Keep completing lessons to add more words to your review queue.
               </Text>
-            </View>
-            <Text style={styles.caughtUpHint}>
-              Keep completing lessons to add more words to your review queue.
-            </Text>
-          </ScrollView>
+            </ScrollView>
+          </View>
         </SafeAreaView>
       );
     }
@@ -622,7 +636,8 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   // ─── List ─────────────────────────────────────────────────────────────────
   listScroll: { padding: 20, paddingBottom: 40 },
   listScrollGrow: { flexGrow: 1 },
-  listTitle: { fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 20 },
+  listTitle: { fontSize: 26, fontFamily: fonts.display, color: c.text, marginBottom: 20 },
+  contentFlex: { flex: 1 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60, paddingHorizontal: 12 },
   emptyIconCircle: {
@@ -635,7 +650,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     marginBottom: 18,
   },
   emptyIcon: { width: 44, height: 44 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: c.text, marginBottom: 8 },
+  emptyTitle: { fontSize: 20, fontFamily: fonts.display, color: c.text, marginBottom: 8 },
   emptyDesc: { fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 21 },
 
   caughtUpCard: {
@@ -650,7 +665,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     ...shadows.card,
   },
   caughtUpIcon: { width: 52, height: 52, marginBottom: 4 },
-  caughtUpTitle: { fontSize: 20, fontWeight: '800', color: '#065F46' },
+  caughtUpTitle: { fontSize: 20, fontFamily: fonts.display, color: '#065F46' },
   caughtUpDesc: { fontSize: 14, color: c.green, fontWeight: '600', textAlign: 'center' },
   caughtUpHint: { fontSize: 13, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
 
@@ -709,7 +724,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   // ─── Results ──────────────────────────────────────────────────────────────
   resultsScroll: { padding: 24, alignItems: 'center', paddingBottom: 48 },
   resultsIcon: { width: 72, height: 72, marginBottom: 12 },
-  resultsTitle: { fontSize: 24, fontWeight: '800', color: c.text, marginBottom: 4 },
+  resultsTitle: { fontSize: 24, fontFamily: fonts.display, color: c.text, marginBottom: 4 },
   resultsScore: { fontSize: 15, color: c.textSecondary, marginBottom: 16 },
 
   masteredBanner: {
@@ -837,7 +852,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   reviewPillIcon: { width: 12, height: 12 },
   reviewPill: { fontSize: 11, fontWeight: '700', color: c.amber },
 
-  prompt: { fontSize: 22, fontWeight: '700', color: c.text, marginBottom: 24, lineHeight: 30 },
+  prompt: { fontSize: 22, fontFamily: fonts.bold, color: c.text, marginBottom: 24, lineHeight: 30 },
 
   listeningArea: { alignItems: 'center', paddingVertical: 16, gap: 10, marginBottom: 16 },
   listeningHint: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
