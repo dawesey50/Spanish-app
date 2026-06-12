@@ -10,9 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SCENARIO_IMAGES: Record<string, ReturnType<typeof require>> = {
   food: require('../../assets/scenarios/ordering_food.png'),
@@ -20,6 +20,9 @@ const SCENARIO_IMAGES: Record<string, ReturnType<typeof require>> = {
   meeting: require('../../assets/scenarios/meeting.png'),
   shopping: require('../../assets/scenarios/shopping.png'),
   freeform: require('../../assets/scenarios/freeform.png'),
+  hotel: require('../../assets/scenarios/meeting.png'),
+  doctor: require('../../assets/scenarios/freeform.png'),
+  interview: require('../../assets/scenarios/meeting.png'),
 };
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -31,7 +34,7 @@ import { fireAchievementToast } from '../utils/achievementEvents';
 import { GROQ_API_KEY, GROQ_MODEL } from '../config';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID } from '../data/words';
-import { radius, shadows, type ThemeColors } from '../theme';
+import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -127,6 +130,48 @@ const SCENARIOS: Scenario[] = [
 5. Ask follow-up questions to keep the conversation flowing naturally`,
     aiOpener: '¡Hola! Me alegra hablar contigo. ¿Hace mucho tiempo que estudias español?',
   },
+  {
+    id: 'hotel',
+    emoji: '🏨',
+    label: 'Hotel Check-in',
+    description: 'Check into a hotel in Spanish',
+    aiName: 'Recepcionista',
+    systemPrompt: `You are a professional hotel receptionist at "Hotel Sol" in Seville. A Spanish learner is checking in. Strict rules:
+1. ALWAYS respond in Spanish only
+2. Keep responses to 1–3 sentences
+3. Add corrections in parentheses: (Corrección: "Tengo una reserva a nombre de...")
+4. Walk through a real check-in: ask for name/booking, confirm room type, explain breakfast times, give room key, ask about luggage
+5. Be warm and professional`,
+    aiOpener: '¡Buenas tardes! Bienvenido al Hotel Sol. ¿Tiene usted una reserva con nosotros?',
+  },
+  {
+    id: 'doctor',
+    emoji: '🩺',
+    label: "Doctor's Visit",
+    description: 'Describe symptoms at a clinic',
+    aiName: 'Doctor',
+    systemPrompt: `You are Dr. Ramírez, a friendly Spanish-speaking doctor at a medical clinic in Spain. A Spanish learner is visiting as a patient. Strict rules:
+1. ALWAYS respond in Spanish only
+2. Keep responses to 1–3 sentences
+3. Add corrections in parentheses: (Corrección: "Me duele la cabeza desde ayer")
+4. Ask natural medical questions: symptoms, duration, pain level, allergies, medication
+5. Stay professional but warm — this is a routine appointment, nothing serious`,
+    aiOpener: '¡Buenos días! Soy el doctor Ramírez. ¿Cómo se encuentra hoy? ¿Qué le trae por aquí?',
+  },
+  {
+    id: 'interview',
+    emoji: '💼',
+    label: 'Job Interview',
+    description: 'Practice a Spanish job interview',
+    aiName: 'Entrevistador',
+    systemPrompt: `You are an interviewer at a Spanish company called "TechMadrid". A Spanish learner is applying for a position. Strict rules:
+1. ALWAYS respond in Spanish only
+2. Keep responses to 1–2 sentences — mostly ask questions
+3. Add corrections in parentheses: (Corrección: "Tengo cinco años de experiencia en...")
+4. Ask typical interview questions: experience, strengths, why this company, career goals, availability
+5. Be professional and formal — use "usted" throughout`,
+    aiOpener: '¡Buenos días! Gracias por venir. Soy el director de recursos humanos de TechMadrid. Para empezar, ¿podría presentarse brevemente?',
+  },
 ];
 
 const CONVERSATION_XP = 30;
@@ -207,6 +252,7 @@ export default function ConversationScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const [feedback, setFeedback] = useState('');
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<string>('amigo');
@@ -247,14 +293,19 @@ export default function ConversationScreen() {
     scrollToBottom();
   };
 
-  const sendMessage = async () => {
-    const text = inputText.trim();
+  const sendMessage = async (overrideText?: string) => {
+    const text = (overrideText ?? inputText).trim();
     if (!text || loading || !scenario) return;
 
+    setLastFailedMessage(null);
     const userMsg: Message = { id: newId(), role: 'user', text };
-    const withUser = [...messages, userMsg];
-    setMessages(withUser);
-    setInputText('');
+    const withUser = overrideText
+      ? messages  // retry — messages already contain the user turn
+      : [...messages, userMsg];
+    if (!overrideText) {
+      setMessages(withUser);
+      setInputText('');
+    }
     setLoading(true);
     scrollToBottom();
 
@@ -264,7 +315,7 @@ export default function ConversationScreen() {
         {
           id: newId(),
           role: 'assistant',
-          text: '⚠️ Demo mode — add your free Groq API key to src/config.ts to get real AI responses. Visit console.groq.com/keys',
+          text: '⚠️ Demo mode — add your free Groq API key to src/config.ts to get real AI responses.',
         },
       ]);
       setLoading(false);
@@ -276,9 +327,10 @@ export default function ConversationScreen() {
       const reply = await callGroq(scenario.systemPrompt, withUser);
       setMessages((prev) => [...prev, { id: newId(), role: 'assistant', text: reply }]);
     } catch (err) {
+      setLastFailedMessage(text);
       setMessages((prev) => [
         ...prev,
-        { id: newId(), role: 'system', text: `❌ ${(err as Error).message}` },
+        { id: newId(), role: 'system', text: `❌ Network error. Tap Retry to try again.` },
       ]);
     } finally {
       setLoading(false);
@@ -286,39 +338,34 @@ export default function ConversationScreen() {
     }
   };
 
-  const endConversation = () => {
+  const retryLastMessage = () => {
+    if (!lastFailedMessage) return;
+    setMessages((prev) => prev.filter((m) => m.role !== 'system'));
+    sendMessage(lastFailedMessage);
+  };
+
+  const endConversation = async () => {
     const userCount = messages.filter((m) => m.role === 'user').length;
-    if (userCount === 0) {
-      Alert.alert('No messages yet', 'Send at least one message before ending the conversation.');
-      return;
+    if (userCount === 0) return;
+    setPhase('summary');
+    await awardXP(CONVERSATION_XP);
+    const alreadyUnlocked = await getUnlockedAchievements();
+    const newBadges = checkAchievements(
+      { type: 'conversation' },
+      alreadyUnlocked.map((b) => b.badgeId)
+    );
+    await Promise.all(newBadges.map((id) => unlockAchievement(id)));
+    if (newBadges.length > 0) fireAchievementToast(newBadges);
+    if (GROQ_API_KEY && scenario) {
+      setLoadingFeedback(true);
+      try {
+        setFeedback(await getFeedback(scenario, messages));
+      } catch {
+        setFeedback('Could not load feedback. Check your network and try again.');
+      } finally {
+        setLoadingFeedback(false);
+      }
     }
-    Alert.alert('End Conversation?', 'This will finish the chat and show your results.', [
-      { text: 'Keep chatting', style: 'cancel' },
-      {
-        text: 'End & Review',
-        onPress: async () => {
-          setPhase('summary');
-          await awardXP(CONVERSATION_XP);
-          const alreadyUnlocked = await getUnlockedAchievements();
-          const newBadges = checkAchievements(
-            { type: 'conversation' },
-            alreadyUnlocked.map((b) => b.badgeId)
-          );
-          await Promise.all(newBadges.map((id) => unlockAchievement(id)));
-          if (newBadges.length > 0) fireAchievementToast(newBadges);
-          if (GROQ_API_KEY && scenario) {
-            setLoadingFeedback(true);
-            try {
-              setFeedback(await getFeedback(scenario, messages));
-            } catch {
-              setFeedback('Could not load feedback. Check your API key and network, then try again.');
-            } finally {
-              setLoadingFeedback(false);
-            }
-          }
-        },
-      },
-    ]);
   };
 
   const newConversation = () => {
@@ -332,19 +379,24 @@ export default function ConversationScreen() {
   // ─── Picker ───────────────────────────────────────────────────────────────
   if (phase === 'picker') {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.pickerHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backBtnText}>←</Text>
+      <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.pickerHero}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.heroBack}>
+            <Text style={styles.heroBackText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.pickerTitle}>AI Conversation</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.pickerSubtitle}>
-            Choose a persona and scenario, then practice Spanish with your AI tutor. Mistakes are corrected inline — just keep talking!
+          <Text style={styles.pickerHeroTitle}>AI Conversation</Text>
+          <Text style={styles.pickerHeroSub}>
+            Speak Spanish with an AI tutor — mistakes corrected inline
           </Text>
+        </LinearGradient>
+
+        <View style={styles.contentWrapper}>
+        <ScrollView contentContainerStyle={styles.pickerScroll} showsVerticalScrollIndicator={false}>
 
           <Text style={styles.personaTitle}>AI Persona</Text>
           <View style={styles.personaRow}>
@@ -374,6 +426,7 @@ export default function ConversationScreen() {
             </View>
           )}
 
+          <Text style={styles.sectionLabel}>Scenarios</Text>
           {SCENARIOS.map((s) => (
             <TouchableOpacity
               key={s.id}
@@ -381,15 +434,18 @@ export default function ConversationScreen() {
               onPress={() => startScenario(s)}
               activeOpacity={0.8}
             >
-              <Image source={SCENARIO_IMAGES[s.id]} style={styles.scenarioEmoji} resizeMode="contain" />
+              <View style={styles.scenarioIconWrap}>
+                <Text style={styles.scenarioIconEmoji}>{s.emoji}</Text>
+              </View>
               <View style={styles.scenarioText}>
                 <Text style={styles.scenarioLabel}>{s.label}</Text>
                 <Text style={styles.scenarioDesc}>{s.description}</Text>
               </View>
-              <Text style={styles.scenarioArrow}>→</Text>
+              <Text style={styles.scenarioArrow}>›</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
@@ -481,6 +537,7 @@ export default function ConversationScreen() {
   }
 
   // ─── Chat ─────────────────────────────────────────────────────────────────
+  const userTurns = messages.filter((m) => m.role === 'user').length;
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.chatHeader}>
@@ -489,14 +546,20 @@ export default function ConversationScreen() {
         </TouchableOpacity>
         <View style={styles.chatHeaderCenter}>
           <View style={styles.chatHeaderTitleRow}>
-            {scenario && <Image source={SCENARIO_IMAGES[scenario.id]} style={styles.chatHeaderIcon} resizeMode="contain" />}
+            <Text style={styles.chatHeaderEmoji}>{scenario?.emoji}</Text>
             <Text style={styles.chatHeaderTitle}>{scenario?.label}</Text>
           </View>
-          <Text style={styles.chatHeaderSub}>with {scenario?.aiName}</Text>
+          <Text style={styles.chatHeaderSub}>
+            {scenario?.aiName} · {userTurns} exchange{userTurns !== 1 ? 's' : ''}
+          </Text>
         </View>
-        <TouchableOpacity onPress={endConversation} style={styles.endBtn}>
-          <Text style={styles.endBtnText}>End</Text>
-        </TouchableOpacity>
+        {userTurns > 0 ? (
+          <TouchableOpacity onPress={endConversation} style={styles.endBtn}>
+            <Text style={styles.endBtnText}>End</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 52 }} />
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -515,6 +578,11 @@ export default function ConversationScreen() {
               return (
                 <View key={msg.id} style={styles.systemRow}>
                   <Text style={styles.systemText}>{msg.text}</Text>
+                  {lastFailedMessage && (
+                    <TouchableOpacity style={styles.retryBtn} onPress={retryLastMessage}>
+                      <Text style={styles.retryBtnText}>Retry ↺</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               );
             }
@@ -582,18 +650,33 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   flex: { flex: 1 },
 
   // ─── Picker ───────────────────────────────────────────────────────────────
-  pickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: c.border,
-    backgroundColor: c.card,
+  pickerHero: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
+    gap: 4,
   },
-  pickerTitle: { flex: 1, fontSize: 17, fontWeight: '700', color: c.text, textAlign: 'center' },
+  heroBack: { paddingBottom: 8 },
+  heroBackText: { fontSize: 22, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
+  pickerHeroTitle: { fontSize: 28, fontFamily: fonts.display, color: '#FFFFFF' },
+  pickerHeroSub: { fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 20 },
+  contentWrapper: {
+    flex: 1,
+    backgroundColor: c.bg,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    overflow: 'hidden',
+  },
   pickerScroll: { padding: 20, paddingBottom: 40 },
-  pickerSubtitle: { fontSize: 14, color: c.textSecondary, lineHeight: 21, marginBottom: 20 },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+    marginTop: 4,
+  },
 
   noKeyBanner: {
     backgroundColor: isDark ? c.amberSoft : '#FFFBEB',
@@ -610,18 +693,28 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   scenarioCard: {
     backgroundColor: c.card,
     borderRadius: radius.lg,
-    padding: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: c.border,
     ...shadows.card,
   },
-  scenarioEmoji: { width: 40, height: 40 },
+  scenarioIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: c.indigoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scenarioIconEmoji: { fontSize: 22 },
   scenarioText: { flex: 1 },
-  scenarioLabel: { fontSize: 15, fontWeight: '700', color: c.text },
+  scenarioLabel: { fontSize: 15, fontFamily: fonts.bold, color: c.text },
   scenarioDesc: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
-  scenarioArrow: { fontSize: 18, color: '#C7D2FE' },
+  scenarioArrow: { fontSize: 24, color: c.indigoBorder, fontWeight: '300' },
 
   // ─── Chat header ──────────────────────────────────────────────────────────
   chatHeader: {
@@ -637,7 +730,8 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   chatHeaderCenter: { flex: 1, alignItems: 'center' },
   chatHeaderTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   chatHeaderIcon: { width: 18, height: 18 },
-  chatHeaderTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+  chatHeaderEmoji: { fontSize: 16 },
+  chatHeaderTitle: { fontSize: 14, fontFamily: fonts.bold, color: c.text },
   chatHeaderSub: { fontSize: 11, color: c.textSecondary, marginTop: 1 },
   endBtn: {
     backgroundColor: c.redSoft,
@@ -678,7 +772,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   bubbleTextUser: { color: '#FFFFFF' },
   bubbleTextAI: { color: c.text },
 
-  systemRow: { alignSelf: 'center', maxWidth: '90%' },
+  systemRow: { alignSelf: 'center', maxWidth: '90%', alignItems: 'center', gap: 6 },
   systemText: {
     fontSize: 12,
     color: c.red,
@@ -688,6 +782,13 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
   },
+  retryBtn: {
+    backgroundColor: c.indigo,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  retryBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 
   // ─── Input ────────────────────────────────────────────────────────────────
   inputRow: {
