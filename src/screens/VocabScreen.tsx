@@ -223,8 +223,17 @@ export default function VocabScreen() {
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Vocabulary</Text>
-        <Text style={styles.subtitle}>{WORDS.length} words</Text>
+        <View>
+          <Text style={styles.title}>Vocabulary</Text>
+          <Text style={styles.subtitle}>{WORDS.length} words</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.soundsBtn}
+          onPress={() => navigation.navigate('Pronunciation')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.soundsBtnText}>🔊 Sounds</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search bar */}
@@ -587,13 +596,22 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
   },
   title: { fontSize: 24, fontWeight: '800', color: c.text },
   subtitle: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
+  soundsBtn: {
+    backgroundColor: c.indigoSoft,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: c.indigoBorder,
+  },
+  soundsBtnText: { fontSize: 13, fontWeight: '700', color: c.indigo },
 
   searchRow: { paddingHorizontal: 20, marginBottom: 12 },
   searchBox: {

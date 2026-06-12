@@ -79,6 +79,7 @@ export type RootStackParamList = {
   Achievements: undefined;
   DailyChallenge: undefined;
   Settings: undefined;
+  Pronunciation: undefined;
 };
 
 export type MainTabParamList = {

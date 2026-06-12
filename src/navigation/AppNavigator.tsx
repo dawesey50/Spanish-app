@@ -15,6 +15,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
 import VocabScreen from '../screens/VocabScreen';
+import PronunciationScreen from '../screens/PronunciationScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import TabBar from '../components/TabBar';
 
@@ -77,6 +78,11 @@ export default function AppNavigator({ hasCompletedOnboarding }: Props) {
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="Pronunciation"
+          component={PronunciationScreen}
           options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
