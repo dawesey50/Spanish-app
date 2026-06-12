@@ -59,6 +59,7 @@ export interface UserProgress {
   lastChallengeDate: string;
   profileName: string;
   streakShieldAvailable: boolean;
+  shieldUsedDate: string;
   profileEmoji: string;
   profileColor: string;
 }

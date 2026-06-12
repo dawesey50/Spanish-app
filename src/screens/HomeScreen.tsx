@@ -20,6 +20,8 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, UserProgress } from '../types';
 import { getUserProgress } from '../database/db';
+import { WORDS } from '../data/words';
+import AudioButton from '../components/AudioButton';
 import { getUserLevel } from '../utils/level';
 import UnitMap from '../components/UnitMap';
 import DailyChallengeCard from '../components/DailyChallengeCard';
@@ -86,6 +88,11 @@ export default function HomeScreen() {
 
   const todayStr = new Date().toISOString().split('T')[0];
   const completedToday = progress.lastChallengeDate === todayStr;
+  const shieldUsedToday = progress.shieldUsedDate === todayStr;
+
+  // Word of the day — deterministic daily rotation
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  const wotd = WORDS[dayIndex % WORDS.length];
 
   const initials = progress.profileName
     ? progress.profileName.slice(0, 2).toUpperCase()
@@ -125,6 +132,9 @@ export default function HomeScreen() {
               <Image source={FIRE_ICON} style={[styles.streakFire, { opacity: 0.5 }]} resizeMode="contain" />
             )}
             <Text style={styles.streakCount}>{progress.streak}</Text>
+            {progress.streakShieldAvailable && (
+              <Text style={styles.shieldIcon}>🛡️</Text>
+            )}
           </View>
         </View>
 
@@ -151,6 +161,16 @@ export default function HomeScreen() {
         {progress.streak >= 7 && (
           <Text style={styles.multiplierHint}>🔥 ×1.5 XP bonus active this streak</Text>
         )}
+
+        {/* Shield used banner */}
+        {shieldUsedToday && (
+          <View style={styles.shieldBanner}>
+            <Text style={styles.shieldBannerIcon}>🛡️</Text>
+            <Text style={styles.shieldBannerText}>
+              Streak protected! Your shield saved your {progress.streak}-day streak.
+            </Text>
+          </View>
+        )}
       </LinearGradient>
 
       {/* ─── White content area ────────────────────────────────────────── */}
@@ -170,8 +190,29 @@ export default function HomeScreen() {
             />
           </FadeSlideIn>
 
-          {/* AI Conversation button */}
+          {/* Word of the Day */}
           <FadeSlideIn index={1}>
+            <View style={styles.wotdCard}>
+              <View style={styles.wotdHeader}>
+                <Text style={styles.wotdLabel}>Word of the Day</Text>
+                <View style={[styles.wotdDiffDot, { backgroundColor: ['#10B981','#F59E0B','#EF4444'][wotd.difficulty - 1] }]} />
+              </View>
+              <View style={styles.wotdBody}>
+                <View style={styles.wotdTextCol}>
+                  <Text style={styles.wotdSpanish}>{wotd.spanish}</Text>
+                  <Text style={styles.wotdEnglish}>{wotd.english}</Text>
+                  {wotd.gender && (
+                    <Text style={styles.wotdGender}>{wotd.gender === 'm' ? '♂ masculine' : '♀ feminine'}</Text>
+                  )}
+                </View>
+                <AudioButton text={wotd.spanish} rate={progress.ttsRate} size="sm" />
+              </View>
+              <Text style={styles.wotdExample} numberOfLines={2}>{wotd.example}</Text>
+            </View>
+          </FadeSlideIn>
+
+          {/* AI Conversation button */}
+          <FadeSlideIn index={2}>
           <PressableScale
             style={styles.chatCard}
             onPress={() => navigation.navigate('Conversation', {})}
@@ -190,7 +231,7 @@ export default function HomeScreen() {
           </FadeSlideIn>
 
           {/* Stats strip */}
-          <FadeSlideIn index={2}>
+          <FadeSlideIn index={3}>
           <View style={styles.statsStrip}>
             <View style={styles.stripStat}>
               <Image source={TICK_ICON} style={styles.stripIcon} resizeMode="contain" />
@@ -213,7 +254,7 @@ export default function HomeScreen() {
           </FadeSlideIn>
 
           {/* Lessons */}
-          <FadeSlideIn index={3}>
+          <FadeSlideIn index={4}>
           <Text style={styles.sectionTitle}>Your Lessons</Text>
           <UnitMap
             completedLessons={progress.completedLessons}
@@ -310,6 +351,20 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  shieldIcon: { fontSize: 14 },
+  shieldBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  shieldBannerIcon: { fontSize: 18 },
+  shieldBannerText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', flex: 1 },
 
   // ─── Content ──────────────────────────────────────────────────────────
   contentWrapper: {
@@ -374,5 +429,48 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     fontFamily: fonts.display,
     color: c.text,
     marginBottom: 12,
+  },
+
+  // Word of the Day
+  wotdCard: {
+    backgroundColor: c.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: c.indigoBorder,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  wotdHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  wotdLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.indigo,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  wotdDiffDot: { width: 8, height: 8, borderRadius: 4 },
+  wotdBody: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  wotdTextCol: { flex: 1 },
+  wotdSpanish: { fontSize: 22, fontFamily: fonts.display, color: c.text },
+  wotdEnglish: { fontSize: 14, color: c.textSecondary, marginTop: 1 },
+  wotdGender: { fontSize: 11, color: c.textMuted, marginTop: 3 },
+  wotdExample: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontStyle: 'italic',
+    lineHeight: 19,
+    borderTopWidth: 1,
+    borderTopColor: c.borderLight,
+    paddingTop: 8,
   },
 });

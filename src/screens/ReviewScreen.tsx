@@ -12,6 +12,7 @@ import {
   Animated,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
   multipleChoice: require('../../assets/badges/multiple_chioice.png'),
@@ -45,7 +46,9 @@ import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import { buildReviewQuestions, isCorrect } from '../utils/questionGenerator';
 import AudioButton from '../components/AudioButton';
-import { radius, shadows, type ThemeColors } from '../theme';
+import PressableScale from '../components/PressableScale';
+import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { Question } from '../types';
 
@@ -285,9 +288,20 @@ export default function ReviewScreen() {
 
     // Words due today
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.reviewHero}
+        >
+          <Text style={styles.reviewHeroTitle}>Review</Text>
+          <Text style={styles.reviewHeroSub}>
+            {dueWords.length} word{dueWords.length !== 1 ? 's' : ''} due today
+          </Text>
+        </LinearGradient>
+        <View style={styles.contentWrapper}>
         <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.listTitle}>Review</Text>
 
           <FadeSlideIn index={0}>
           <View style={styles.summaryCard}>
@@ -328,6 +342,7 @@ export default function ReviewScreen() {
           <PrimaryButton label="Start Review →" onPress={startSession} />
           </FadeSlideIn>
         </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
@@ -493,26 +508,27 @@ export default function ReviewScreen() {
             {(current.type === 'multipleChoice' || current.type === 'listening') &&
               current.options && (
                 <View style={styles.options}>
-                  {current.options.map((opt) => {
+                  {current.options.map((opt, idx) => {
                     const isSelected = selected === opt;
                     const isRight = opt === current.correctAnswer;
-                    let bg = '#FFFFFF';
-                    let borderColor = '#E5E7EB';
-                    if (revealed && isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
-                    if (revealed && isSelected && !isRight) { bg = '#FEE2E2'; borderColor = '#DC2626'; }
-                    if (revealed && !isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
+                    const isHighlighted = !revealed ? isSelected : (isRight || isSelected);
+                    const cardBg = !revealed ? (isSelected ? c.indigoSoft : c.card) : (isRight ? c.greenSoft : isSelected ? c.redSoft : c.card);
+                    const cardBorder = !revealed ? (isSelected ? c.indigo : c.border) : (isRight ? c.green : isSelected ? c.red : c.border);
+                    const badgeBg = !revealed ? (isSelected ? c.indigo : c.borderLight) : (isRight ? c.green : isSelected ? c.red : c.borderLight);
+                    const optionTextColor = !revealed ? (isSelected ? c.indigo : c.text) : (isRight ? c.green : isSelected ? c.red : c.text);
                     return (
-                      <TouchableOpacity
-                        key={opt}
-                        style={[styles.option, { backgroundColor: bg, borderColor }]}
-                        onPress={() => checkAnswer(opt)}
-                        disabled={revealed}
-                        activeOpacity={0.75}
-                      >
-                        <Text style={styles.optionText}>{opt}</Text>
-                        {revealed && isRight && <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />}
-                        {revealed && isSelected && !isRight && <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />}
-                      </TouchableOpacity>
+                      <PressableScale key={opt} onPress={() => checkAnswer(opt)} disabled={revealed} scaleTo={0.97}>
+                        <View style={[styles.option, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+                          <View style={[styles.optionBadge, { backgroundColor: badgeBg }]}>
+                            <Text style={[styles.optionBadgeText, { color: isHighlighted ? '#FFFFFF' : c.textMuted }]}>
+                              {OPTION_LETTERS[idx] ?? String(idx + 1)}
+                            </Text>
+                          </View>
+                          <Text style={[styles.optionText, { color: optionTextColor }]}>{opt}</Text>
+                          {revealed && isRight && <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />}
+                          {revealed && isSelected && !isRight && <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />}
+                        </View>
+                      </PressableScale>
                     );
                   })}
                 </View>
@@ -585,6 +601,23 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  // ─── Review hero ─────────────────────────────────────────────────────────
+  reviewHero: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
+    gap: 4,
+  },
+  reviewHeroTitle: { fontSize: 28, fontFamily: fonts.display, color: '#FFFFFF' },
+  reviewHeroSub: { fontSize: 14, color: 'rgba(255,255,255,0.72)' },
+  contentWrapper: {
+    flex: 1,
+    backgroundColor: c.bg,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    overflow: 'hidden',
+  },
 
   // ─── List ─────────────────────────────────────────────────────────────────
   listScroll: { padding: 20, paddingBottom: 40 },
@@ -813,12 +846,20 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   option: {
     borderWidth: 2,
     borderRadius: radius.md,
-    padding: 16,
+    padding: 14,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
     ...shadows.card,
   },
+  optionBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionBadgeText: { fontSize: 13, fontWeight: '800' },
   optionText: { fontSize: 16, color: c.text, fontWeight: '500', flex: 1 },
   optionMark: { width: 20, height: 20 },
 

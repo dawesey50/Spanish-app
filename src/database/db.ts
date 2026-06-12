@@ -135,6 +135,7 @@ export async function getUserProgress(): Promise<UserProgress> {
     lastChallengeDate: row?.last_challenge_date ?? '',
     profileName: row?.profile_name ?? '',
     streakShieldAvailable,
+    shieldUsedDate: shieldLastUsed,
     profileEmoji: row?.profile_emoji ?? '',
     profileColor: row?.profile_color ?? '#4F46E5',
   };
