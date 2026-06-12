@@ -328,6 +328,33 @@ export default function LessonScreen() {
 
         <View style={styles.previewContent}>
           <ScrollView contentContainerStyle={styles.previewScroll} showsVerticalScrollIndicator={false}>
+            {lesson?.lessonType === 'review' && (
+              <View style={styles.reviewBanner}>
+                <Text style={styles.reviewBannerIcon}>🏆</Text>
+                <Text style={styles.reviewBannerText}>Covers all vocabulary from this unit — test yourself!</Text>
+              </View>
+            )}
+
+            {lesson?.grammarNote && (
+              <View style={styles.grammarCard}>
+                <View style={styles.grammarCardHeader}>
+                  <Text style={styles.grammarCardIcon}>💡</Text>
+                  <Text style={styles.grammarCardTitle}>Grammar Tip</Text>
+                </View>
+                <Text style={styles.grammarCardTip}>{lesson.grammarNote.tip}</Text>
+                {lesson.grammarNote.examples.length > 0 && (
+                  <View style={styles.grammarExamples}>
+                    {lesson.grammarNote.examples.map((ex, i) => (
+                      <View key={i} style={styles.grammarExample}>
+                        <Text style={styles.grammarExampleSpanish}>{ex.spanish}</Text>
+                        <Text style={styles.grammarExampleEnglish}>{ex.english}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+
             <Text style={styles.previewWordsLabel}>Words in this lesson</Text>
             <View style={styles.previewWordList}>
               {words.map((w) => (
@@ -614,6 +641,51 @@ export default function LessonScreen() {
 const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
+
+  // Review banner
+  reviewBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: isDark ? 'rgba(251,191,36,0.12)' : '#FFFBEB',
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(251,191,36,0.3)' : '#FDE68A',
+  },
+  reviewBannerIcon: { fontSize: 20 },
+  reviewBannerText: { fontSize: 13, fontWeight: '600', color: isDark ? '#FBBF24' : '#92400E', flex: 1, lineHeight: 18 },
+
+  // Grammar note card
+  grammarCard: {
+    backgroundColor: isDark ? 'rgba(99,102,241,0.1)' : '#EEF2FF',
+    borderRadius: radius.md,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(99,102,241,0.25)' : '#C7D2FE',
+  },
+  grammarCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  grammarCardIcon: { fontSize: 16 },
+  grammarCardTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: c.indigo,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  grammarCardTip: { fontSize: 14, color: c.text, lineHeight: 21, marginBottom: 10 },
+  grammarExamples: { gap: 6 },
+  grammarExample: {
+    backgroundColor: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(79,70,229,0.06)',
+    borderRadius: 8,
+    padding: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: c.indigo,
+  },
+  grammarExampleSpanish: { fontSize: 14, fontFamily: fonts.bold, color: c.indigo, marginBottom: 2 },
+  grammarExampleEnglish: { fontSize: 13, color: c.textSecondary },
 
   // Preview hero
   previewHero: {

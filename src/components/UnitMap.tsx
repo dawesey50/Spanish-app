@@ -145,10 +145,11 @@ export default function UnitMap({
                   const prevCy = (i - 1) * VERT_GAP + NODE_RADIUS;
                   const connectorDone = lessonDone && completedLessons.includes(unit.lessonIds[i - 1]);
 
+                  const isReview = lesson?.lessonType === 'review';
                   const nodeStyle = lessonDone
                     ? styles.nodeDone
                     : lessonUnlocked
-                    ? styles.nodeAvailable
+                    ? (isReview ? styles.nodeReview : styles.nodeAvailable)
                     : styles.nodeLocked;
 
                   const labelLeft = cx - 54;
@@ -195,6 +196,8 @@ export default function UnitMap({
                           <Image source={LOCK_ICON} style={styles.nodeIcon} resizeMode="contain" />
                         ) : lessonDone ? (
                           <Image source={CHECK_ICON} style={styles.nodeIcon} resizeMode="contain" />
+                        ) : isReview ? (
+                          <Text style={styles.nodeReviewIcon}>★</Text>
                         ) : (
                           <Text style={styles.nodeNum}>{i + 1}</Text>
                         )}
@@ -277,8 +280,17 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  nodeReview: {
+    backgroundColor: '#D97706',
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
+  },
   nodeIcon: { width: 24, height: 24 },
   nodeNum:  { fontSize: 20, fontFamily: fonts.display, color: '#FFFFFF' },
+  nodeReviewIcon: { fontSize: 22, color: '#FFFFFF' },
 
   // ── Pulse ring ───────────────────────────────────────────────────────────
   pulseRing: {

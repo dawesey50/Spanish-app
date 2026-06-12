@@ -10,12 +10,19 @@ export interface Word {
   gender?: 'm' | 'f' | null;
 }
 
+export interface GrammarNote {
+  tip: string;
+  examples: { spanish: string; english: string }[];
+}
+
 export interface Lesson {
   id: string;
   unitId: string;
   title: string;
   questionTypes: QuestionType[];
   wordIds: string[];
+  grammarNote?: GrammarNote;
+  lessonType?: 'standard' | 'review';
 }
 
 export interface Unit {

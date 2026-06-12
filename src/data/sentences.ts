@@ -198,6 +198,110 @@ export const SENTENCES: Sentence[] = [
     tokens: ['Salimos', 'con', 'amigos', 'los', 'viernes.'],
     distractors: ['cine', 'teatro', 'película', 'el'],
   },
+
+  // Lesson 27 — Asking Questions (Unit 1)
+  {
+    id: 'sn027', lessonId: 'lesson_27',
+    english: 'Where is the train station?',
+    spanish: '¿Dónde está la estación de tren?',
+    tokens: ['¿Dónde', 'está', 'la', 'estación', 'de', 'tren?'],
+    distractors: ['qué', 'cuándo', 'quién', 'hay'],
+  },
+  {
+    id: 'sn028', lessonId: 'lesson_27',
+    english: 'Why do you study Spanish?',
+    spanish: '¿Por qué estudias español?',
+    tokens: ['¿Por', 'qué', 'estudias', 'español?'],
+    distractors: ['cómo', 'cuánto', 'hablas', 'dónde'],
+  },
+
+  // Lesson 28 — Unit 1 Review
+  {
+    id: 'sn029', lessonId: 'lesson_28',
+    english: 'Good afternoon, what is your name?',
+    spanish: 'Buenas tardes, ¿cómo te llamas?',
+    tokens: ['Buenas', 'tardes,', '¿cómo', 'te', 'llamas?'],
+    distractors: ['días', 'noches', 'mucho', 'gracias'],
+  },
+
+  // Lesson 29 — Transport (Unit 3)
+  {
+    id: 'sn030', lessonId: 'lesson_29',
+    english: 'I go to work by metro every day.',
+    spanish: 'Voy al trabajo en metro cada día.',
+    tokens: ['Voy', 'al', 'trabajo', 'en', 'metro', 'cada', 'día.'],
+    distractors: ['tren', 'autobús', 'coche', 'taxi'],
+  },
+  {
+    id: 'sn031', lessonId: 'lesson_29',
+    english: 'Shall we take a taxi?',
+    spanish: '¿Tomamos un taxi?',
+    tokens: ['¿Tomamos', 'un', 'taxi?'],
+    distractors: ['metro', 'coche', 'bicicleta', 'autobús'],
+  },
+
+  // Lesson 30 — Unit 2 Review
+  {
+    id: 'sn032', lessonId: 'lesson_30',
+    english: 'I eat rice and drink water every day.',
+    spanish: 'Como arroz y bebo agua todos los días.',
+    tokens: ['Como', 'arroz', 'y', 'bebo', 'agua', 'todos', 'los', 'días.'],
+    distractors: ['café', 'leche', 'como', 'pan'],
+  },
+
+  // Lesson 31 — Unit 3 Review
+  {
+    id: 'sn033', lessonId: 'lesson_31',
+    english: 'Take the train and get off at the second stop.',
+    spanish: 'Coge el tren y baja en la segunda parada.',
+    tokens: ['Coge', 'el', 'tren', 'y', 'baja', 'en', 'la', 'segunda', 'parada.'],
+    distractors: ['autobús', 'metro', 'sube', 'primera'],
+  },
+
+  // Lesson 32 — Unit 4 Review
+  {
+    id: 'sn034', lessonId: 'lesson_32',
+    english: 'My older sister has blue eyes.',
+    spanish: 'Mi hermana mayor tiene los ojos azules.',
+    tokens: ['Mi', 'hermana', 'mayor', 'tiene', 'los', 'ojos', 'azules.'],
+    distractors: ['hermano', 'verdes', 'rojos', 'pequeño'],
+  },
+
+  // Lesson 33 — Unit 5 Review
+  {
+    id: 'sn035', lessonId: 'lesson_33',
+    english: 'I would like to pay by card, please.',
+    spanish: 'Quisiera pagar con tarjeta, por favor.',
+    tokens: ['Quisiera', 'pagar', 'con', 'tarjeta,', 'por', 'favor.'],
+    distractors: ['efectivo', 'precio', 'cambio', 'quiero'],
+  },
+
+  // Lesson 34 — Unit 6 Review
+  {
+    id: 'sn036', lessonId: 'lesson_34',
+    english: 'In spring the weather is nice.',
+    spanish: 'En primavera hace buen tiempo.',
+    tokens: ['En', 'primavera', 'hace', 'buen', 'tiempo.'],
+    distractors: ['verano', 'frío', 'llueve', 'invierno'],
+  },
+
+  // Lesson 35 — Unit 7 Review
+  {
+    id: 'sn037', lessonId: 'lesson_35',
+    english: 'My feet hurt and I have a fever.',
+    spanish: 'Me duelen los pies y tengo fiebre.',
+    tokens: ['Me', 'duelen', 'los', 'pies', 'y', 'tengo', 'fiebre.'],
+    distractors: ['duele', 'brazos', 'tos', 'dolor'],
+  },
+
+  // Lesson 36 — Unit 8 Review
+  {
+    id: 'sn038', lessonId: 'lesson_36',
+    english: 'I play guitar and I like reading.',
+    spanish: 'Toco la guitarra y me gusta leer.',
+    tokens: ['Toco', 'la', 'guitarra', 'y', 'me', 'gusta', 'leer.'],
+    distractors: ['piano', 'escuchar', 'bailar', 'estudiar'],
+  },
 ];
 
 export const SENTENCES_BY_LESSON: Record<string, Sentence[]> = SENTENCES.reduce(

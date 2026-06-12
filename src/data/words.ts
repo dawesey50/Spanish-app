@@ -210,6 +210,23 @@ export const WORDS: Word[] = [
   { id: 'w169', spanish: 'salir', english: 'to go out', example: 'Salimos con amigos los viernes.', topic: 'hobbies', difficulty: 2, gender: null },
   { id: 'w170', spanish: 'la película', english: 'film / movie', example: 'La película duró dos horas.', topic: 'hobbies', difficulty: 2, gender: 'f' },
   { id: 'w171', spanish: 'el teatro', english: 'theatre', example: 'Fuimos al teatro a ver una obra.', topic: 'hobbies', difficulty: 2, gender: 'm' },
+
+  // Lesson 27 — Question Words (Unit 1)
+  { id: 'w172', spanish: '¿qué?', english: 'what?', example: '¿Qué quieres comer hoy?', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w173', spanish: '¿dónde?', english: 'where?', example: '¿Dónde está la estación?', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w174', spanish: '¿cuándo?', english: 'when?', example: '¿Cuándo llega el tren?', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w175', spanish: '¿quién?', english: 'who?', example: '¿Quién es esa persona?', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w176', spanish: '¿por qué?', english: 'why?', example: '¿Por qué estudias español?', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w177', spanish: '¿cuánto?', english: 'how much? / how many?', example: '¿Cuánto cuesta esto?', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w178', spanish: '¿cómo?', english: 'how?', example: '¿Cómo se dice "hello" en español?', topic: 'greetings', difficulty: 1, gender: null },
+
+  // Lesson 29 — Transport (Unit 3)
+  { id: 'w179', spanish: 'el metro', english: 'metro / subway', example: 'Cojo el metro para ir al trabajo.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w180', spanish: 'el autobús', english: 'bus', example: 'El autobús número cinco va al centro.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w181', spanish: 'el coche', english: 'car', example: 'Vamos en coche, es más rápido.', topic: 'travel', difficulty: 1, gender: 'm' },
+  { id: 'w182', spanish: 'el taxi', english: 'taxi', example: 'Pedimos un taxi al aeropuerto.', topic: 'travel', difficulty: 1, gender: 'm' },
+  { id: 'w183', spanish: 'la bicicleta', english: 'bicycle', example: 'Voy al parque en bicicleta.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w184', spanish: 'el tren', english: 'train', example: 'El tren sale a las ocho en punto.', topic: 'travel', difficulty: 1, gender: 'm' },
 ];
 
 export const WORDS_BY_ID: Record<string, Word> = Object.fromEntries(
