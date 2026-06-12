@@ -23,7 +23,7 @@ import { fonts, gradients, radius, shadows, spacing, type ThemeColors } from '..
 import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const FIRE_ICON = require('../../assets/icons/fire.png');
-const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
+const UNIT_IMAGES: Partial<Record<string, ReturnType<typeof require>>> = {
   unit_01: require('../../assets/units/Greetings.png'),
   unit_02: require('../../assets/units/Food.png'),
   unit_03: require('../../assets/units/travel.png'),
@@ -234,6 +234,12 @@ export default function ProgressScreen() {
               <Text style={styles.heroStreakText}>{progress.streak}-day streak</Text>
             </View>
           )}
+
+          <View style={styles.heroLessonsRow}>
+            <Text style={styles.heroLessonsText}>
+              {progress.completedLessons.length} of {totalLessons} lessons complete
+            </Text>
+          </View>
         </LinearGradient>
 
         <View style={styles.body}>
@@ -330,15 +336,24 @@ export default function ProgressScreen() {
               const total = unit.lessonIds.length;
               const pct   = done / total;
               const full  = pct === 1;
+              const img   = UNIT_IMAGES[unit.id];
               return (
                 <View key={unit.id} style={styles.unitRow}>
-                  <Image source={UNIT_IMAGES[unit.id]} style={styles.unitImg} resizeMode="contain" />
+                  {img ? (
+                    <Image source={img} style={styles.unitImg} resizeMode="contain" />
+                  ) : (
+                    <View style={styles.unitEmojiWrap}>
+                      <Text style={styles.unitEmoji}>{unit.icon}</Text>
+                    </View>
+                  )}
                   <View style={styles.unitInfo}>
                     <View style={styles.unitTitleRow}>
-                      <Text style={styles.unitName}>{unit.title}</Text>
-                      <Text style={[styles.unitCount, full && { color: c.green }]}>
-                        {done}/{total}
-                      </Text>
+                      <Text style={styles.unitName} numberOfLines={1}>{unit.title}</Text>
+                      {full ? (
+                        <Text style={styles.unitComplete}>✓ Done</Text>
+                      ) : (
+                        <Text style={styles.unitCount}>{done}/{total}</Text>
+                      )}
                     </View>
                     <View style={styles.unitTrack}>
                       <View style={[styles.unitFill, {
@@ -346,6 +361,7 @@ export default function ProgressScreen() {
                         backgroundColor: full ? c.green : c.indigo,
                       }]} />
                     </View>
+                    <Text style={styles.unitPct}>{Math.round(pct * 100)}% complete</Text>
                   </View>
                 </View>
               );
@@ -469,6 +485,14 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   heroStreak: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.xs },
   heroFireIcon: { width: 14, height: 14 },
   heroStreakText: { fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: '700' },
+  heroLessonsRow: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginTop: 4,
+  },
+  heroLessonsText: { fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
 
   body: { padding: spacing.xl, gap: spacing.xl },
 
@@ -613,10 +637,21 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     borderTopColor: c.borderLight,
   },
   unitImg: { width: 36, height: 36, borderRadius: 8 },
-  unitInfo: { flex: 1, gap: 6 },
+  unitEmojiWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: c.indigoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unitEmoji: { fontSize: 20 },
+  unitInfo: { flex: 1, gap: 4 },
   unitTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  unitName: { fontSize: 14, fontWeight: '700', color: c.text },
+  unitName: { fontSize: 14, fontWeight: '700', color: c.text, flex: 1, marginRight: 8 },
   unitCount: { fontSize: 12, fontWeight: '700', color: c.textMuted },
+  unitComplete: { fontSize: 12, fontWeight: '700', color: c.green },
+  unitPct: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
   unitTrack: {
     height: 6,
     backgroundColor: c.border,
