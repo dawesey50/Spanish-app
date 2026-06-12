@@ -11,7 +11,8 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import { type ThemeColors } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { gradients, fonts, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const RED_LOCK_ICON = require('../../assets/icons/red_lock.png');
@@ -176,9 +177,18 @@ export default function SettingsScreen() {
   if (!progress) return null;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
+      <LinearGradient
+        colors={gradients.hero}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.settingsHero}
+      >
+        <Text style={styles.heroTitle}>Settings</Text>
+        <Text style={styles.heroSub}>Customise your learning experience</Text>
+      </LinearGradient>
+      <View style={styles.contentWrapper}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Settings</Text>
 
         {/* Profile */}
         <Text style={styles.sectionTitle}>Profile</Text>
@@ -364,7 +374,7 @@ export default function SettingsScreen() {
         {/* About */}
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutCard}>
-          <Row label="Version" value="1.0.0 (Phase 31)" />
+          <Row label="Version" value="1.0.0 (Phase 32)" />
           <Row label="Progress stored" value="On-device (SQLite)" />
           <Row label="AI conversation" value="Groq → Gemini → HuggingFace" />
         </View>
@@ -406,6 +416,7 @@ export default function SettingsScreen() {
           <Text style={styles.dangerBtnText}>Clear All Progress</Text>
         </TouchableOpacity>
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -421,10 +432,32 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.bg },
+  safe: { flex: 1 },
+  settingsHero: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
+    gap: 4,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontFamily: fonts.display,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  heroSub: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.72)',
+  },
+  contentWrapper: {
+    flex: 1,
+    backgroundColor: c.bg,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    overflow: 'hidden',
+  },
   scroll: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 24, fontWeight: '800', color: c.text, marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 4 },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.bold, color: c.text, marginBottom: 4 },
   sectionDesc: { fontSize: 13, color: c.textSecondary, marginBottom: 14, lineHeight: 19 },
   sectionHeaderRow: {
     flexDirection: 'row',

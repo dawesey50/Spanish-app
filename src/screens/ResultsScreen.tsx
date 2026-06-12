@@ -10,6 +10,8 @@ import {
   Animated,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import PressableScale from '../components/PressableScale';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
@@ -22,7 +24,7 @@ import CountUp from '../components/CountUp';
 import LevelUpModal from '../components/LevelUpModal';
 import { playSound } from '../utils/sounds';
 import StreakMilestoneModal from '../components/StreakMilestoneModal';
-import { fonts, type ThemeColors } from '../theme';
+import { fonts, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 50, 100];
@@ -145,10 +147,10 @@ export default function ResultsScreen() {
   const isUnitComplete = unitLessons.length > 0 && unitLessons.every((id) => completedLessons.includes(id));
 
   const grade =
-    score >= 90 ? { label: '¡Excelente!', sub: 'Outstanding performance',       bg: '#059669' }
-    : score >= 70 ? { label: '¡Bien hecho!', sub: 'Great job!',                  bg: '#4F46E5' }
-    : score >= 50 ? { label: 'Keep going!',  sub: "You're making progress",      bg: '#D97706' }
-    :               { label: 'Keep at it!',  sub: 'Every attempt makes you better', bg: '#DC2626' };
+    score >= 90 ? { label: '¡Excelente!', sub: 'Outstanding performance',       bg: '#059669', gradient: ['#10B981', '#059669', '#047857'] as const }
+    : score >= 70 ? { label: '¡Bien hecho!', sub: 'Great job!',                  bg: '#4F46E5', gradient: ['#6366F1', '#4F46E5', '#4338CA'] as const }
+    : score >= 50 ? { label: 'Keep going!',  sub: "You're making progress",      bg: '#D97706', gradient: ['#F59E0B', '#D97706', '#B45309'] as const }
+    :               { label: 'Keep at it!',  sub: 'Every attempt makes you better', bg: '#DC2626', gradient: ['#EF4444', '#DC2626', '#B91C1C'] as const };
 
   const wordPerformance: Record<string, boolean> = {};
   if (wordResults) {
@@ -166,7 +168,8 @@ export default function ResultsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: grade.bg }]}>
+    <LinearGradient colors={grade.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safe}>
       {levelUp && (
         <LevelUpModal visible={showLevelUp} level={levelUp} onClose={closeLevelUp} />
       )}
@@ -285,22 +288,23 @@ export default function ResultsScreen() {
           {/* Actions */}
           <View style={styles.actions}>
             {nextLesson && (
-              <TouchableOpacity
-                style={[styles.nextBtn, { backgroundColor: grade.bg }]}
-                onPress={() => navigation.replace('Lesson', { lessonId: nextLessonId! })}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.nextBtnSub}>UP NEXT</Text>
-                <Text style={styles.nextBtnTitle}>{nextLesson.title} →</Text>
-              </TouchableOpacity>
+              <PressableScale onPress={() => navigation.replace('Lesson', { lessonId: nextLessonId! })}>
+                <LinearGradient
+                  colors={grade.gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.nextBtn, shadows.glow(grade.bg)]}
+                >
+                  <Text style={styles.nextBtnSub}>UP NEXT</Text>
+                  <Text style={styles.nextBtnTitle}>{nextLesson.title} →</Text>
+                </LinearGradient>
+              </PressableScale>
             )}
-            <TouchableOpacity
-              style={styles.homeBtn}
-              onPress={() => navigation.navigate('Main')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.homeBtnText}>Back to Home</Text>
-            </TouchableOpacity>
+            <PressableScale onPress={() => navigation.navigate('Main')}>
+              <View style={styles.homeBtn}>
+                <Text style={styles.homeBtnText}>Back to Home</Text>
+              </View>
+            </PressableScale>
             <TouchableOpacity
               style={styles.retryBtn}
               onPress={() => navigation.replace('Lesson', { lessonId })}
@@ -312,6 +316,7 @@ export default function ResultsScreen() {
         </ScrollView>
       </View>
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -408,7 +413,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
 
   // Sections
   section:      { marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10 },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.bold, color: c.text, marginBottom: 10 },
 
   correctionCard: {
     backgroundColor: c.card,
@@ -455,11 +460,6 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   nextBtnSub:   { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.65)', letterSpacing: 1 },
   nextBtnTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF', marginTop: 3 },

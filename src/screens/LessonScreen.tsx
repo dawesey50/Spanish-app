@@ -22,11 +22,14 @@ const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
 };
 const TICK_ICON = require('../../assets/icons/green_tick.png');
 const CROSS_ICON = require('../../assets/icons/red_cross.png');
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import PrimaryButton from '../components/PrimaryButton';
+import PressableScale from '../components/PressableScale';
 import ComboPill from '../components/ComboPill';
 import { playSound } from '../utils/sounds';
 import type { RootStackParamList, Correction } from '../types';
@@ -38,7 +41,7 @@ import { checkAchievements } from '../data/achievements';
 import { fireAchievementToast } from '../utils/achievementEvents';
 import HeartsDisplay from '../components/HeartsDisplay';
 import AudioButton from '../components/AudioButton';
-import { radius, shadows, type ThemeColors } from '../theme';
+import { radius, shadows, gradients, fonts, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import SpeakingQuestion from '../components/SpeakingQuestion';
 import SentenceBuilder from '../components/SentenceBuilder';
@@ -304,38 +307,42 @@ export default function LessonScreen() {
   if (phase === 'preview') {
     const words = lesson?.wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean) ?? [];
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.previewHeader}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
+        <LinearGradient
+          colors={gradients.hero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.previewHero}
+        >
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.quitBtn}>
-            <Text style={styles.quitText}>✕</Text>
+            <Text style={[styles.quitText, { color: 'rgba(255,255,255,0.75)' }]}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.previewHeaderTitle} numberOfLines={1}>
-            {lesson?.title ?? lessonId}
-          </Text>
-          <View style={{ width: 32 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.previewScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.previewUnit}>{unit?.title}</Text>
-          <Text style={styles.previewTitle}>{lesson?.title}</Text>
-          <Text style={styles.previewDesc}>
-            {words.length} words · {questions.length} questions · {MAX_HEARTS} lives
-          </Text>
-
-          <Text style={styles.previewWordsLabel}>Words in this lesson</Text>
-          <View style={styles.previewWordList}>
-            {words.map((w) => (
-              <View key={w.id} style={styles.previewWordRow}>
-                <AudioButton text={w.spanish} size="sm" rate={ttsRate} />
-                <Text style={styles.previewWordSpanish}>{w.spanish}</Text>
-                <Text style={styles.previewWordEnglish}>{w.english}</Text>
-              </View>
-            ))}
+          <Text style={styles.previewUnitLabel}>{unit?.title}</Text>
+          <Text style={styles.previewTitleHero}>{lesson?.title ?? lessonId}</Text>
+          <View style={styles.previewMetaPills}>
+            <View style={styles.previewMetaPill}><Text style={styles.previewMetaPillText}>{words.length} words</Text></View>
+            <View style={styles.previewMetaPill}><Text style={styles.previewMetaPillText}>{questions.length} questions</Text></View>
+            <View style={styles.previewMetaPill}><Text style={styles.previewMetaPillText}>{MAX_HEARTS} lives</Text></View>
           </View>
-        </ScrollView>
+        </LinearGradient>
 
-        <View style={styles.previewFooter}>
-          <PrimaryButton label="Start Lesson →" onPress={() => setPhase('quiz')} />
+        <View style={styles.previewContent}>
+          <ScrollView contentContainerStyle={styles.previewScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.previewWordsLabel}>Words in this lesson</Text>
+            <View style={styles.previewWordList}>
+              {words.map((w) => (
+                <View key={w.id} style={styles.previewWordRow}>
+                  <AudioButton text={w.spanish} size="sm" rate={ttsRate} />
+                  <Text style={styles.previewWordSpanish}>{w.spanish}</Text>
+                  <Text style={styles.previewWordEnglish}>{w.english}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View style={styles.previewFooter}>
+            <PrimaryButton label="Start Lesson →" onPress={() => setPhase('quiz')} />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -461,31 +468,46 @@ export default function LessonScreen() {
             {(current.type === 'multipleChoice' || current.type === 'listening') &&
               current.options && (
                 <View style={styles.options}>
-                  {current.options.map((opt) => {
+                  {current.options.map((opt, idx) => {
                     const isSelected = selected === opt;
                     const isRight = opt === current.correctAnswer;
-                    let borderColor = '#E5E7EB';
-                    let bg = '#FFFFFF';
-                    if (revealed && isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
-                    if (revealed && isSelected && !isRight) { bg = '#FEE2E2'; borderColor = '#DC2626'; }
-                    if (revealed && !isSelected && isRight) { bg = '#D1FAE5'; borderColor = '#059669'; }
+                    const isHighlighted = !revealed ? isSelected : (isRight || isSelected);
+
+                    const cardBg = !revealed
+                      ? (isSelected ? c.indigoSoft : c.card)
+                      : (isRight ? c.greenSoft : isSelected ? c.redSoft : c.card);
+                    const cardBorder = !revealed
+                      ? (isSelected ? c.indigo : c.border)
+                      : (isRight ? c.green : isSelected ? c.red : c.border);
+                    const badgeBg = !revealed
+                      ? (isSelected ? c.indigo : c.borderLight)
+                      : (isRight ? c.green : isSelected ? c.red : c.borderLight);
+                    const optionTextColor = !revealed
+                      ? (isSelected ? c.indigo : c.text)
+                      : (isRight ? c.green : isSelected ? c.red : c.text);
 
                     return (
-                      <TouchableOpacity
+                      <PressableScale
                         key={opt}
-                        style={[styles.option, { backgroundColor: bg, borderColor }]}
                         onPress={() => checkAnswer(opt)}
                         disabled={revealed}
-                        activeOpacity={0.75}
+                        scaleTo={0.97}
                       >
-                        <Text style={styles.optionText}>{opt}</Text>
-                        {revealed && isRight && (
-                          <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />
-                        )}
-                        {revealed && isSelected && !isRight && (
-                          <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />
-                        )}
-                      </TouchableOpacity>
+                        <View style={[styles.option, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+                          <View style={[styles.optionBadge, { backgroundColor: badgeBg }]}>
+                            <Text style={[styles.optionBadgeText, { color: isHighlighted ? '#FFFFFF' : c.textMuted }]}>
+                              {OPTION_LETTERS[idx] ?? String(idx + 1)}
+                            </Text>
+                          </View>
+                          <Text style={[styles.optionText, { color: optionTextColor }]}>{opt}</Text>
+                          {revealed && isRight && (
+                            <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />
+                          )}
+                          {revealed && isSelected && !isRight && (
+                            <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />
+                          )}
+                        </View>
+                      </PressableScale>
                     );
                   })}
                 </View>
@@ -593,25 +615,43 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
 
-  // Preview
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+  // Preview hero
+  previewHero: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 28,
+    gap: 4,
   },
-  previewHeaderTitle: {
+  previewContent: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: c.text,
-    textAlign: 'center',
+    backgroundColor: c.bg,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    overflow: 'hidden',
   },
-  previewScroll: { paddingHorizontal: 20, paddingBottom: 40 },
-  previewUnit: { fontSize: 13, color: c.indigo, fontWeight: '600', marginBottom: 4 },
-  previewTitle: { fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 6 },
-  previewDesc: { fontSize: 14, color: c.textSecondary, marginBottom: 24 },
+  previewUnitLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.65)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 10,
+  },
+  previewTitleHero: {
+    fontSize: 26,
+    fontFamily: fonts.display,
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  previewMetaPills: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  previewMetaPill: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  previewMetaPillText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
+  previewScroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   previewWordsLabel: {
     fontSize: 12,
     fontWeight: '700',
@@ -640,14 +680,6 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   previewWordSpanish: { fontSize: 15, fontWeight: '700', color: c.text, flex: 1 },
   previewWordEnglish: { fontSize: 14, color: c.textSecondary },
   previewFooter: { padding: 20, paddingBottom: 32 },
-  startBtn: {
-    backgroundColor: c.indigo,
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-    ...shadows.glow(c.indigo),
-  },
-  startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
 
   // No hearts
   noHeartsContainer: {
@@ -657,7 +689,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     padding: 32,
   },
   noHeartsIcon: { width: 72, height: 72, marginBottom: 20, opacity: 0.5 },
-  noHeartsTitle: { fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 10 },
+  noHeartsTitle: { fontSize: 26, fontFamily: fonts.display, color: c.text, marginBottom: 10 },
   noHeartsDesc: {
     fontSize: 16,
     color: c.textSecondary,
@@ -665,15 +697,6 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     lineHeight: 24,
     marginBottom: 36,
   },
-  retryBtn: {
-    backgroundColor: c.indigo,
-    borderRadius: 16,
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    marginBottom: 14,
-    ...shadows.glow(c.indigo),
-  },
-  retryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
   quitLinkBtn: { padding: 12 },
   quitLinkText: { fontSize: 15, color: c.textSecondary, textDecorationLine: 'underline' },
 
@@ -713,15 +736,11 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     borderRadius: 12,
   },
   typeBadgeIcon: { width: 16, height: 16 },
-  typeText: {
-    fontSize: 13,
-    color: c.indigo,
-    fontWeight: '600',
-  },
+  typeText: { fontSize: 13, color: c.indigo, fontWeight: '600' },
   counterBadge: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
   prompt: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: c.text,
     marginBottom: 24,
     lineHeight: 30,
@@ -741,13 +760,21 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   option: {
     borderWidth: 2,
     borderRadius: radius.md,
-    padding: 16,
+    padding: 14,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
     ...shadows.card,
   },
-  optionText: { fontSize: 16, color: c.text, fontWeight: '500', flex: 1 },
+  optionBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionBadgeText: { fontSize: 13, fontWeight: '800' },
+  optionText: { fontSize: 16, fontWeight: '500', flex: 1 },
   optionMark: { width: 20, height: 20 },
 
   // Typing
@@ -773,11 +800,18 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   // Footer
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   revealedFooter: { gap: 12 },
-  resultBanner: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  resultBanner: {
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderLeftWidth: 4,
+  },
   bannerIcon: { width: 20, height: 20 },
-  bannerCorrect: { backgroundColor: c.greenSoft },
-  bannerWrong: { backgroundColor: c.redSoft },
-  resultBannerText: { fontSize: 16, fontWeight: '700', color: c.text },
+  bannerCorrect: { backgroundColor: c.greenSoft, borderLeftColor: c.green },
+  bannerWrong: { backgroundColor: c.redSoft, borderLeftColor: c.red },
+  resultBannerText: { fontSize: 16, fontFamily: fonts.bold, color: c.text },
   actionBtn: { borderRadius: 16, padding: 18, alignItems: 'center' },
   checkBtn: { backgroundColor: c.indigo, ...shadows.glow(c.indigo) },
   nextBtn: { backgroundColor: c.green, ...shadows.glow(c.green) },

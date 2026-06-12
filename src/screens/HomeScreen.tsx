@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ScrollView,
   Image,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -38,6 +39,21 @@ export default function HomeScreen() {
   const styles = useThemedStyles(createStyles);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  const xpFillAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!progress) return;
+    const lvl = getUserLevel(progress.xp);
+    const lp = lvl.nextLevelXP
+      ? Math.min((progress.xp - lvl.minXP) / (lvl.nextLevelXP - lvl.minXP), 1)
+      : 1;
+    Animated.timing(xpFillAnim, {
+      toValue: lp,
+      duration: 900,
+      useNativeDriver: false,
+    }).start();
+  }, [progress]);
 
   const load = useCallback(() => {
     (async () => {
@@ -124,7 +140,11 @@ export default function HomeScreen() {
 
         {/* Progress bar */}
         <View style={styles.xpTrack}>
-          <View style={[styles.xpFill, { width: `${levelProgress * 100}%` as any }]} />
+          <Animated.View
+            style={[styles.xpFill, {
+              width: xpFillAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+            }]}
+          />
         </View>
 
         {/* Multiplier hint */}
@@ -351,7 +371,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.display,
     color: c.text,
     marginBottom: 12,
   },
