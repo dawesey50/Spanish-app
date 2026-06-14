@@ -1,4 +1,4 @@
-import type { Question } from '../types';
+import type { Question, Word } from '../types';
 import { LESSONS_BY_ID } from '../data/units';
 import { WORDS_BY_ID, WORDS } from '../data/words';
 import { SENTENCES_BY_LESSON } from '../data/sentences';
@@ -48,6 +48,35 @@ export function isCorrect(answer: string, correct: string): boolean {
   return false;
 }
 
+// ── Varied prompt phrasings ──────────────────────────────────────────────────
+const ES_EN_PROMPTS = [
+  (sp: string) => `What does "${sp}" mean?`,
+  (sp: string) => `Choose the correct meaning of "${sp}":`,
+  (sp: string) => `"${sp}" translates to:`,
+];
+const EN_ES_PROMPTS = [
+  (en: string) => `How do you say "${en}" in Spanish?`,
+  (en: string) => `Select the Spanish word for "${en}":`,
+  (en: string) => `Translate "${en}" to Spanish:`,
+];
+
+// ── Fill-the-gap helper ──────────────────────────────────────────────────────
+function buildFillBlankQuestion(word: Word, distractors: string[], promptIndex: number): Question | null {
+  if (!word.example) return null;
+  const escaped = word.spanish.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(escaped, 'i');
+  if (!regex.test(word.example)) return null;
+  const blanked = word.example.replace(regex, '___');
+  return {
+    id: `fill_${word.id}`,
+    type: 'fillBlank',
+    wordId: word.id,
+    prompt: blanked,
+    correctAnswer: word.spanish,
+    options: [...new Set([...distractors, word.spanish])].slice(0, 4).sort(() => Math.random() - 0.5),
+  };
+}
+
 function getDistractors(
   wordId: string,
   lang: 'spanish' | 'english',
@@ -68,16 +97,18 @@ export function buildQuestions(lessonId: string): Question[] {
   const words = lesson.wordIds.map((id) => WORDS_BY_ID[id]).filter(Boolean);
   const pool: Question[] = [];
 
-  words.forEach((word) => {
+  words.forEach((word, wi) => {
     const esDistractors = getDistractors(word.id, 'spanish', word.topic);
     const enDistractors = getDistractors(word.id, 'english', word.topic);
+    const esEnPrompt   = ES_EN_PROMPTS[wi % ES_EN_PROMPTS.length](word.spanish);
+    const enEsPrompt   = EN_ES_PROMPTS[wi % EN_ES_PROMPTS.length](word.english);
 
     // ES→EN multiple choice
     pool.push({
       id: `mc_es_en_${word.id}`,
       type: 'multipleChoice',
       wordId: word.id,
-      prompt: `What does "${word.spanish}" mean?`,
+      prompt: esEnPrompt,
       correctAnswer: word.english,
       options: [...new Set([...enDistractors, word.english])]
         .slice(0, 4)
@@ -89,12 +120,16 @@ export function buildQuestions(lessonId: string): Question[] {
       id: `mc_en_es_${word.id}`,
       type: 'multipleChoice',
       wordId: word.id,
-      prompt: `How do you say "${word.english}" in Spanish?`,
+      prompt: enEsPrompt,
       correctAnswer: word.spanish,
       options: [...new Set([...esDistractors, word.spanish])]
         .slice(0, 4)
         .sort(() => Math.random() - 0.5),
     });
+
+    // Fill the Gap (when the example sentence contains the word)
+    const fillQ = buildFillBlankQuestion(word, esDistractors, wi);
+    if (fillQ) pool.push(fillQ);
 
     // Typing: EN→ES
     if (lesson.questionTypes.includes('typing')) {
@@ -134,11 +169,13 @@ export function buildQuestions(lessonId: string): Question[] {
     }
   });
 
-  // Ensure every word appears at least once, then fill to target length with randoms
-  const mustInclude = words.map((w) => {
-    const forWord = pool.filter((q) => q.wordId === w.id);
-    return forWord[Math.floor(Math.random() * forWord.length)];
-  });
+  // Ensure every word appears at least once (in shuffled order), then fill with extras
+  const mustInclude = words
+    .map((w) => {
+      const forWord = pool.filter((q) => q.wordId === w.id);
+      return forWord[Math.floor(Math.random() * forWord.length)];
+    })
+    .sort(() => Math.random() - 0.5);  // shuffle so words don't appear in lesson order
 
   const rest = pool
     .filter((q) => !mustInclude.find((m) => m.id === q.id))

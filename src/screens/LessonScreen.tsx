@@ -16,9 +16,10 @@ import {
 
 const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
   multipleChoice: require('../../assets/badges/multiple_chioice.png'),
-  typing: require('../../assets/badges/typing.png'),
-  listening: require('../../assets/badges/listening.png'),
-  speaking: require('../../assets/badges/speaking.png'),
+  fillBlank:      require('../../assets/badges/typing.png'),
+  typing:         require('../../assets/badges/typing.png'),
+  listening:      require('../../assets/badges/listening.png'),
+  speaking:       require('../../assets/badges/speaking.png'),
 };
 const TICK_ICON = require('../../assets/icons/green_tick.png');
 const CROSS_ICON = require('../../assets/icons/red_cross.png');
@@ -458,6 +459,8 @@ export default function LessonScreen() {
                 <Text style={styles.typeText}>
                   {current.type === 'multipleChoice'
                     ? 'Multiple Choice'
+                    : current.type === 'fillBlank'
+                    ? 'Fill the Gap'
                     : current.type === 'typing'
                     ? 'Type the Answer'
                     : current.type === 'speaking'
@@ -491,8 +494,8 @@ export default function LessonScreen() {
               </View>
             )}
 
-            {/* MCQ options (both multipleChoice and listening) */}
-            {(current.type === 'multipleChoice' || current.type === 'listening') &&
+            {/* MCQ options (multipleChoice, listening, and fillBlank) */}
+            {(current.type === 'multipleChoice' || current.type === 'listening' || current.type === 'fillBlank') &&
               current.options && (
                 <View style={styles.options}>
                   {current.options.map((opt, idx) => {

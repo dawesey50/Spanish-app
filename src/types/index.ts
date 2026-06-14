@@ -1,4 +1,4 @@
-export type QuestionType = 'multipleChoice' | 'typing' | 'listening' | 'speaking' | 'sentenceBuilder';
+export type QuestionType = 'multipleChoice' | 'typing' | 'listening' | 'speaking' | 'sentenceBuilder' | 'fillBlank';
 
 export interface Word {
   id: string;
