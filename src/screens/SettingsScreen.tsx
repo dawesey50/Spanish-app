@@ -19,7 +19,6 @@ const RED_LOCK_ICON = require('../../assets/icons/red_lock.png');
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getUserProgress,
-  updateDailyGoal,
   updateTTSRate,
   updateNotificationSettings,
   updateDeveloperMode,
@@ -39,8 +38,6 @@ import {
 import AudioButton from '../components/AudioButton';
 import { playSound, setSoundsEnabled } from '../utils/sounds';
 import type { UserProgress } from '../types';
-
-const GOAL_OPTIONS = [10, 20, 30, 50];
 
 const TTS_SPEEDS: { label: string; value: number; desc: string }[] = [
   { label: 'Slow', value: 0.4, desc: 'Great for beginners' },
@@ -78,11 +75,6 @@ export default function SettingsScreen() {
     const trimmed = nameInput.trim();
     await updateProfileName(trimmed);
     setProgress((p) => (p ? { ...p, profileName: trimmed } : p));
-  };
-
-  const setGoal = async (goal: number) => {
-    await updateDailyGoal(goal);
-    setProgress((p) => (p ? { ...p, dailyGoalXP: goal } : p));
   };
 
   const setSpeed = async (rate: number) => {
@@ -207,25 +199,6 @@ export default function SettingsScreen() {
             autoCorrect={false}
             maxLength={30}
           />
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* Daily Goal */}
-        <Text style={styles.sectionTitle}>Daily XP Goal</Text>
-        <Text style={styles.sectionDesc}>How much XP do you want to earn each day?</Text>
-        <View style={styles.chipRow}>
-          {GOAL_OPTIONS.map((g) => (
-            <TouchableOpacity
-              key={g}
-              style={[styles.chipBtn, progress.dailyGoalXP === g && styles.chipBtnActive]}
-              onPress={() => setGoal(g)}
-            >
-              <Text style={[styles.chipText, progress.dailyGoalXP === g && styles.chipTextActive]}>
-                {g} XP
-              </Text>
-            </TouchableOpacity>
-          ))}
         </View>
 
         <View style={styles.divider} />
@@ -469,18 +442,6 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   sectionHeaderText: {
     flex: 1,
   },
-  chipRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  chipBtn: {
-    borderWidth: 2,
-    borderColor: c.border,
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: c.card,
-  },
-  chipBtnActive: { borderColor: c.indigo, backgroundColor: c.indigoSoft },
-  chipText: { fontSize: 15, fontWeight: '600', color: c.text },
-  chipTextActive: { color: c.indigo },
   speedRow: { flexDirection: 'row', gap: 10 },
   speedCard: {
     flex: 1,
