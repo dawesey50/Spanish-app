@@ -19,10 +19,10 @@ const TYPE_BADGE_ICONS: Record<string, ReturnType<typeof require>> = {
   typing: require('../../assets/badges/typing.png'),
   listening: require('../../assets/badges/listening.png'),
 };
-const TICK_ICON = require('../../assets/icons/green_tick.png');
-const CROSS_ICON = require('../../assets/icons/red_cross.png');
-const STAR_ICON = require('../../assets/icons/star.png');
-const BOOK_ICON = require('../../assets/icons/blue_icon_book.png');
+const TICK_ICON   = require('../../assets/icons/green_tick.png');
+const CROSS_ICON  = require('../../assets/icons/red_cross.png');
+const STAR_ICON   = require('../../assets/icons/star.png');
+const BOOK_ICON   = require('../../assets/icons/blue_icon_book.png');
 const TARGET_ICON = require('../../assets/icons/blue_target.png');
 
 import { useFocusEffect } from '@react-navigation/native';
@@ -32,6 +32,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
 import { WORDS_BY_ID } from '../data/words';
+import { UNITS, LESSONS_BY_ID } from '../data/units';
 import {
   getDueReviewWords,
   getNextScheduledReview,
@@ -54,7 +55,19 @@ import type { Question } from '../types';
 
 const XP_PER_CORRECT = 5;
 
+type ReviewMode  = 'weakWords' | 'practice';
 type ReviewPhase = 'list' | 'session' | 'results';
+
+const UNIT_EMOJIS: Record<string, string> = {
+  unit_01: '👋',
+  unit_02: '🔢',
+  unit_03: '🏠',
+  unit_04: '🛒',
+  unit_05: '🗺️',
+  unit_06: '⏰',
+  unit_07: '💼',
+  unit_08: '🎭',
+};
 
 interface DueWord {
   wordId: string;
@@ -71,10 +84,10 @@ interface ReviewResult {
 }
 
 function masteryLevel(interval: number): { label: string; bg: string; color: string } {
-  if (interval >= 8) return { label: 'Strong', bg: '#D1FAE5', color: '#065F46' };
-  if (interval >= 4) return { label: 'Familiar', bg: '#EEF2FF', color: '#4338CA' };
-  if (interval >= 2) return { label: 'Learning', bg: '#FEF3C7', color: '#92400E' };
-  return { label: 'Struggling', bg: '#FEE2E2', color: '#991B1B' };
+  if (interval >= 8) return { label: 'Strong',     bg: '#D1FAE5', color: '#065F46' };
+  if (interval >= 4) return { label: 'Familiar',   bg: '#EEF2FF', color: '#4338CA' };
+  if (interval >= 2) return { label: 'Learning',   bg: '#FEF3C7', color: '#92400E' };
+  return               { label: 'Struggling', bg: '#FEE2E2', color: '#991B1B' };
 }
 
 function daysUntilLabel(dateStr: string): string {
@@ -88,29 +101,33 @@ function daysUntilLabel(dateStr: string): string {
 }
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }
 
 export default function ReviewScreen() {
   const { c } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const [phase, setPhase] = useState<ReviewPhase>('list');
-  const [dueWords, setDueWords] = useState<DueWord[]>([]);
-  const [totalScheduled, setTotalScheduled] = useState(0);
-  const [nextScheduledDate, setNextScheduledDate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [typedAnswer, setTypedAnswer] = useState('');
-  const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState<ReviewResult[]>([]);
-  const [ttsRate, setTtsRate] = useState(0.8);
 
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const [reviewMode, setReviewMode] = useState<ReviewMode>('weakWords');
+  const [phase, setPhase]           = useState<ReviewPhase>('list');
+  const [isPractice, setIsPractice] = useState(false);
+  const [practiceLabel, setPracticeLabel] = useState('');
+
+  const [dueWords, setDueWords]             = useState<DueWord[]>([]);
+  const [nextScheduledDate, setNextDate]    = useState<string | null>(null);
+  const [loading, setLoading]               = useState(true);
+
+  const [questions, setQuestions]   = useState<Question[]>([]);
+  const [index, setIndex]           = useState(0);
+  const [selected, setSelected]     = useState<string | null>(null);
+  const [typedAnswer, setTypedAnswer] = useState('');
+  const [revealed, setRevealed]     = useState(false);
+  const [results, setResults]       = useState<ReviewResult[]>([]);
+  const [ttsRate, setTtsRate]       = useState(0.8);
+
+  const shakeAnim    = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
-  const resultsRef = useRef<ReviewResult[]>([]);
+  const resultsRef   = useRef<ReviewResult[]>([]);
 
   const loadState = useCallback(() => {
     (async () => {
@@ -121,8 +138,7 @@ export default function ReviewScreen() {
         getUserProgress(),
       ]);
       setDueWords(due);
-      setNextScheduledDate(nextDate);
-      setTotalScheduled(due.length + (nextDate ? 1 : 0));
+      setNextDate(nextDate);
       setTtsRate(progress.ttsRate);
       setLoading(false);
     })();
@@ -132,15 +148,16 @@ export default function ReviewScreen() {
 
   const shake = () => {
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10,  duration: 60, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6,   duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0,   duration: 60, useNativeDriver: true }),
     ]).start();
   };
 
-  const startSession = () => {
-    const qs = buildReviewQuestions(dueWords.map((w) => w.wordId));
+  const beginSession = (wordIds: string[], practice: boolean, label = '') => {
+    const qs = buildReviewQuestions(wordIds);
+    if (qs.length === 0) return;
     setQuestions(qs);
     setIndex(0);
     setSelected(null);
@@ -149,7 +166,18 @@ export default function ReviewScreen() {
     setResults([]);
     resultsRef.current = [];
     progressAnim.setValue(0);
+    setIsPractice(practice);
+    setPracticeLabel(label);
     setPhase('session');
+  };
+
+  const startWeakWords = () => beginSession(dueWords.map((w) => w.wordId), false);
+
+  const startPractice = (unit: typeof UNITS[0]) => {
+    const wordIds = unit.lessonIds.flatMap((lid) => LESSONS_BY_ID[lid]?.wordIds ?? []);
+    const unique  = [...new Set(wordIds)];
+    const shortLabel = unit.id.replace('unit_0', 'Unit ').replace('unit_', 'Unit ');
+    beginSession(unique, true, shortLabel);
   };
 
   const current = questions[index];
@@ -182,38 +210,50 @@ export default function ReviewScreen() {
     setRevealed(false);
 
     if (isLast) {
-      const finalResults = [...resultsRef.current, { wordId: current.wordId ?? '', correct: wasCorrect, mastered: false, newInterval: 1 }];
+      const finalResults: ReviewResult[] = [
+        ...resultsRef.current,
+        { wordId: current.wordId ?? '', correct: wasCorrect, mastered: false, newInterval: 1 },
+      ];
 
       const correctCount = finalResults.filter((r) => r.correct).length;
       if (correctCount > 0) await awardXP(correctCount * XP_PER_CORRECT);
 
-      const scheduled = await Promise.all(
-        finalResults.map((r) => r.wordId ? scheduleWordReview(r.wordId, r.correct) : Promise.resolve({ mastered: false, newInterval: 1 }))
-      );
+      let enriched: ReviewResult[];
 
-      const enriched: ReviewResult[] = finalResults.map((r, i) => ({
-        ...r,
-        mastered: scheduled[i].mastered,
-        newInterval: scheduled[i].newInterval,
-      }));
+      if (!isPractice) {
+        const scheduled = await Promise.all(
+          finalResults.map((r) =>
+            r.wordId
+              ? scheduleWordReview(r.wordId, r.correct)
+              : Promise.resolve({ mastered: false, newInterval: 1 })
+          )
+        );
+        enriched = finalResults.map((r, i) => ({
+          ...r,
+          mastered: scheduled[i].mastered,
+          newInterval: scheduled[i].newInterval,
+        }));
 
-      const [totalWordsMastered, alreadyUnlocked] = await Promise.all([
-        getWordsMastered(),
-        getUnlockedAchievements(),
-      ]);
-      const newBadges = checkAchievements(
-        { type: 'review', totalWordsMastered },
-        alreadyUnlocked.map((b) => b.badgeId)
-      );
-      await Promise.all(newBadges.map((id) => unlockAchievement(id)));
-      if (newBadges.length > 0) fireAchievementToast(newBadges);
+        const [totalWordsMastered, alreadyUnlocked] = await Promise.all([
+          getWordsMastered(),
+          getUnlockedAchievements(),
+        ]);
+        const newBadges = checkAchievements(
+          { type: 'review', totalWordsMastered },
+          alreadyUnlocked.map((b) => b.badgeId)
+        );
+        await Promise.all(newBadges.map((id) => unlockAchievement(id)));
+        if (newBadges.length > 0) fireAchievementToast(newBadges);
 
-      const [freshDue, freshNext] = await Promise.all([
-        getDueReviewWords(),
-        getNextScheduledReview(),
-      ]);
-      setDueWords(freshDue);
-      setNextScheduledDate(freshNext);
+        const [freshDue, freshNext] = await Promise.all([
+          getDueReviewWords(),
+          getNextScheduledReview(),
+        ]);
+        setDueWords(freshDue);
+        setNextDate(freshNext);
+      } else {
+        enriched = finalResults;
+      }
 
       setResults(enriched);
       playSound('complete');
@@ -242,65 +282,13 @@ export default function ReviewScreen() {
       );
     }
 
-    const heroSub = dueWords.length === 0
-      ? nextScheduledDate ? 'All caught up!' : 'No words yet'
-      : `${dueWords.length} word${dueWords.length !== 1 ? 's' : ''} due today`;
+    const heroSub =
+      reviewMode === 'practice'
+        ? 'Choose a topic to drill'
+        : dueWords.length === 0
+        ? nextScheduledDate ? 'All caught up!' : 'No words yet'
+        : `${dueWords.length} word${dueWords.length !== 1 ? 's' : ''} due today`;
 
-    // No weak words at all
-    if (dueWords.length === 0 && !nextScheduledDate) {
-      return (
-        <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
-          <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.reviewHero}>
-            <Text style={styles.reviewHeroTitle}>Review</Text>
-            <Text style={styles.reviewHeroSub}>{heroSub}</Text>
-          </LinearGradient>
-          <View style={[styles.contentWrapper, styles.contentFlex]}>
-            <ScrollView
-              contentContainerStyle={[styles.listScroll, styles.listScrollGrow]}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconCircle}>
-                  <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
-                </View>
-                <Text style={styles.emptyTitle}>Nothing to review yet</Text>
-                <Text style={styles.emptyDesc}>
-                  Complete lessons — any words you find difficult will appear here for extra practice.
-                </Text>
-              </View>
-            </ScrollView>
-          </View>
-        </SafeAreaView>
-      );
-    }
-
-    // All words scheduled for future — nothing due today
-    if (dueWords.length === 0 && nextScheduledDate) {
-      return (
-        <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
-          <LinearGradient colors={gradients.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.reviewHero}>
-            <Text style={styles.reviewHeroTitle}>Review</Text>
-            <Text style={styles.reviewHeroSub}>{heroSub}</Text>
-          </LinearGradient>
-          <View style={[styles.contentWrapper, styles.contentFlex]}>
-            <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
-              <View style={styles.caughtUpCard}>
-                <Image source={TICK_ICON} style={styles.caughtUpIcon} resizeMode="contain" />
-                <Text style={styles.caughtUpTitle}>All caught up for today!</Text>
-                <Text style={styles.caughtUpDesc}>
-                  Next review {daysUntilLabel(nextScheduledDate)} · {formatDate(nextScheduledDate)}
-                </Text>
-              </View>
-              <Text style={styles.caughtUpHint}>
-                Keep completing lessons to add more words to your review queue.
-              </Text>
-            </ScrollView>
-          </View>
-        </SafeAreaView>
-      );
-    }
-
-    // Words due today
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: '#4338CA' }]}>
         <LinearGradient
@@ -310,52 +298,143 @@ export default function ReviewScreen() {
           style={styles.reviewHero}
         >
           <Text style={styles.reviewHeroTitle}>Review</Text>
-          <Text style={styles.reviewHeroSub}>
-            {dueWords.length} word{dueWords.length !== 1 ? 's' : ''} due today
-          </Text>
+          <Text style={styles.reviewHeroSub}>{heroSub}</Text>
         </LinearGradient>
-        <View style={styles.contentWrapper}>
-        <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
 
-          <FadeSlideIn index={0}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryCount}>{dueWords.length}</Text>
-            <Text style={styles.summaryLabel}>
-              {dueWords.length === 1 ? 'word due today' : 'words due today'}
-            </Text>
-            {nextScheduledDate && (
-              <Text style={styles.summaryNext}>
-                More coming {daysUntilLabel(nextScheduledDate)}
+        <View style={[styles.contentWrapper, styles.contentFlex]}>
+          {/* ── Mode tabs ── */}
+          <View style={styles.modeTabs}>
+            <TouchableOpacity
+              style={[styles.modeTab, reviewMode === 'weakWords' && styles.modeTabActive]}
+              onPress={() => setReviewMode('weakWords')}
+            >
+              <Text style={[styles.modeTabText, reviewMode === 'weakWords' && styles.modeTabTextActive]}>
+                ⚡ Weak Words
               </Text>
-            )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeTab, reviewMode === 'practice' && styles.modeTabActive]}
+              onPress={() => setReviewMode('practice')}
+            >
+              <Text style={[styles.modeTabText, reviewMode === 'practice' && styles.modeTabTextActive]}>
+                📖 Practice
+              </Text>
+            </TouchableOpacity>
           </View>
-          </FadeSlideIn>
 
-          <FadeSlideIn index={1}>
-          <Text style={styles.dueSectionTitle}>Due for review</Text>
-          <View style={styles.wordList}>
-            {dueWords.map((dw) => {
-              const word = WORDS_BY_ID[dw.wordId];
-              if (!word) return null;
-              const level = masteryLevel(dw.interval);
-              return (
-                <View key={dw.wordId} style={styles.wordRow}>
-                  <AudioButton text={word.spanish} rate={ttsRate} size="sm" />
-                  <View style={styles.wordInfo}>
-                    <Text style={styles.wordSpanish}>{word.spanish}</Text>
-                    <Text style={styles.wordEnglish}>{word.english}</Text>
+          {reviewMode === 'weakWords' ? (
+            // ── Weak Words ─────────────────────────────────────────────────
+            dueWords.length === 0 && !nextScheduledDate ? (
+              <ScrollView
+                contentContainerStyle={[styles.listScroll, styles.listScrollGrow]}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyIconCircle}>
+                    <Image source={STAR_ICON} style={styles.emptyIcon} resizeMode="contain" />
                   </View>
-                  <View style={[styles.levelBadge, { backgroundColor: level.bg }]}>
-                    <Text style={[styles.levelBadgeText, { color: level.color }]}>{level.label}</Text>
-                  </View>
+                  <Text style={styles.emptyTitle}>Nothing to review yet</Text>
+                  <Text style={styles.emptyDesc}>
+                    Complete lessons — words you find difficult will appear here for spaced practice.
+                  </Text>
                 </View>
-              );
-            })}
-          </View>
+              </ScrollView>
+            ) : dueWords.length === 0 ? (
+              <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+                <View style={styles.caughtUpCard}>
+                  <Image source={TICK_ICON} style={styles.caughtUpIcon} resizeMode="contain" />
+                  <Text style={styles.caughtUpTitle}>All caught up for today!</Text>
+                  <Text style={styles.caughtUpDesc}>
+                    Next review {daysUntilLabel(nextScheduledDate!)} · {formatDate(nextScheduledDate!)}
+                  </Text>
+                </View>
+                <Text style={styles.caughtUpHint}>
+                  Switch to Practice to keep drilling while you wait.
+                </Text>
+              </ScrollView>
+            ) : (
+              <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+                <FadeSlideIn index={0}>
+                  <View style={styles.summaryCard}>
+                    <Text style={styles.summaryCount}>{dueWords.length}</Text>
+                    <Text style={styles.summaryLabel}>
+                      {dueWords.length === 1 ? 'word due today' : 'words due today'}
+                    </Text>
+                    {nextScheduledDate && (
+                      <Text style={styles.summaryNext}>
+                        More coming {daysUntilLabel(nextScheduledDate)}
+                      </Text>
+                    )}
+                  </View>
+                </FadeSlideIn>
 
-          <PrimaryButton label="Start Review →" onPress={startSession} />
-          </FadeSlideIn>
-        </ScrollView>
+                <FadeSlideIn index={1}>
+                  <Text style={styles.dueSectionTitle}>Due for review</Text>
+                  <View style={styles.wordList}>
+                    {dueWords.map((dw) => {
+                      const word = WORDS_BY_ID[dw.wordId];
+                      if (!word) return null;
+                      const level = masteryLevel(dw.interval);
+                      return (
+                        <View key={dw.wordId} style={styles.wordRow}>
+                          <AudioButton text={word.spanish} rate={ttsRate} size="sm" />
+                          <View style={styles.wordInfo}>
+                            <Text style={styles.wordSpanish}>{word.spanish}</Text>
+                            <Text style={styles.wordEnglish}>{word.english}</Text>
+                          </View>
+                          <View style={[styles.levelBadge, { backgroundColor: level.bg }]}>
+                            <Text style={[styles.levelBadgeText, { color: level.color }]}>
+                              {level.label}
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                  <PrimaryButton label="Start Review →" onPress={startWeakWords} />
+                </FadeSlideIn>
+              </ScrollView>
+            )
+          ) : (
+            // ── Practice ───────────────────────────────────────────────────
+            <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
+              <FadeSlideIn index={0}>
+                <Text style={styles.practiceHint}>
+                  Pick any topic and drill its vocabulary — no scheduling, just practice.
+                </Text>
+                <View style={styles.unitList}>
+                  {UNITS.map((unit) => {
+                    const wordCount = unit.lessonIds.reduce(
+                      (s, lid) => s + (LESSONS_BY_ID[lid]?.wordIds.length ?? 0),
+                      0
+                    );
+                    const emoji = UNIT_EMOJIS[unit.id] ?? '📚';
+                    const disabled = wordCount === 0;
+                    return (
+                      <PressableScale
+                        key={unit.id}
+                        style={[styles.unitCard, disabled && styles.unitCardDisabled]}
+                        onPress={() => !disabled && startPractice(unit)}
+                        disabled={disabled}
+                        scaleTo={0.97}
+                      >
+                        <View style={styles.unitEmojiCircle}>
+                          <Text style={styles.unitEmoji}>{emoji}</Text>
+                        </View>
+                        <View style={styles.unitInfo}>
+                          <Text style={styles.unitTitle}>{unit.title}</Text>
+                          <Text style={styles.unitMeta}>
+                            {wordCount > 0 ? `${wordCount} words` : 'No words yet'}
+                          </Text>
+                        </View>
+                        {!disabled && <Text style={styles.unitArrow}>›</Text>}
+                      </PressableScale>
+                    );
+                  })}
+                </View>
+              </FadeSlideIn>
+            </ScrollView>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -367,17 +446,27 @@ export default function ReviewScreen() {
     const masteredCount = results.filter((r) => r.mastered).length;
     const xpEarned = correctCount * XP_PER_CORRECT;
     const allCorrect = correctCount === results.length;
+    const wrongResults = results.filter((r) => !r.correct);
 
-    const resultIcon = allCorrect ? STAR_ICON : correctCount > results.length / 2 ? TICK_ICON : BOOK_ICON;
+    const resultIcon = allCorrect
+      ? STAR_ICON
+      : correctCount > results.length / 2
+      ? TICK_ICON
+      : BOOK_ICON;
 
     return (
       <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.resultsScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.resultsScroll}
+          showsVerticalScrollIndicator={false}
+        >
           <Image source={resultIcon} style={styles.resultsIcon} resizeMode="contain" />
-          <Text style={styles.resultsTitle}>Review Complete!</Text>
+          <Text style={styles.resultsTitle}>
+            {isPractice ? 'Practice Complete!' : 'Review Complete!'}
+          </Text>
           <Text style={styles.resultsScore}>{correctCount} / {results.length} correct</Text>
 
-          {masteredCount > 0 && (
+          {!isPractice && masteredCount > 0 && (
             <View style={styles.masteredBanner}>
               <Image source={STAR_ICON} style={styles.masteredBannerIcon} resizeMode="contain" />
               <Text style={styles.masteredBannerText}>
@@ -392,6 +481,27 @@ export default function ReviewScreen() {
             </View>
           )}
 
+          {/* Words to study — prominent in practice mode */}
+          {wrongResults.length > 0 && (
+            <View style={styles.studyBox}>
+              <Text style={styles.studyBoxTitle}>Words to study</Text>
+              {wrongResults.map((r) => {
+                const word = WORDS_BY_ID[r.wordId];
+                if (!word) return null;
+                return (
+                  <View key={r.wordId} style={styles.studyRow}>
+                    <View style={styles.studyWordCol}>
+                      <Text style={styles.studySpanish}>{word.spanish}</Text>
+                      <Text style={styles.studyEnglish}>{word.english}</Text>
+                    </View>
+                    <AudioButton text={word.spanish} rate={ttsRate} size="sm" />
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Full result list */}
           <View style={styles.resultWordList}>
             {results.map((r) => {
               const word = WORDS_BY_ID[r.wordId];
@@ -413,7 +523,17 @@ export default function ReviewScreen() {
                     <Text style={styles.resultSpanish}>{word.spanish}</Text>
                     <Text style={styles.resultEnglish}>{word.english}</Text>
                   </View>
-                  {r.mastered ? (
+                  {isPractice ? (
+                    r.correct ? (
+                      <View style={styles.masteredTag}>
+                        <Text style={styles.masteredTagText}>✓</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.dueAgainTag}>
+                        <Text style={styles.dueAgainTagText}>Study</Text>
+                      </View>
+                    )
+                  ) : r.mastered ? (
                     <View style={styles.masteredTag}>
                       <Text style={styles.masteredTagText}>Mastered ✓</Text>
                     </View>
@@ -431,10 +551,32 @@ export default function ReviewScreen() {
             })}
           </View>
 
-          {dueWords.length > 0 && (
-            <PrimaryButton label="Review Again" onPress={startSession} style={{ alignSelf: 'stretch' }} />
-          )}
-          <TouchableOpacity style={styles.doneBtn} onPress={() => { setPhase('list'); loadState(); }}>
+          {isPractice ? (
+            <PrimaryButton
+              label="Practice Again"
+              onPress={() => {
+                const unit = UNITS.find((u) =>
+                  u.id.replace('unit_0', 'Unit ').replace('unit_', 'Unit ') === practiceLabel
+                );
+                if (unit) startPractice(unit);
+              }}
+              style={{ alignSelf: 'stretch' }}
+            />
+          ) : dueWords.length > 0 ? (
+            <PrimaryButton
+              label="Review Again"
+              onPress={startWeakWords}
+              style={{ alignSelf: 'stretch' }}
+            />
+          ) : null}
+
+          <TouchableOpacity
+            style={styles.doneBtn}
+            onPress={() => {
+              setPhase('list');
+              if (!isPractice) loadState();
+            }}
+          >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -479,7 +621,7 @@ export default function ReviewScreen() {
           scrollEnabled={false}
         >
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
-            {/* Type badge */}
+            {/* Type badge + mode pill */}
             <View style={styles.typeBadgeRow}>
               <View style={styles.typeBadgeInner}>
                 <Image
@@ -495,9 +637,14 @@ export default function ReviewScreen() {
                     : 'Listening'}
                 </Text>
               </View>
-              <View style={styles.reviewPillWrap}>
+              <View style={[styles.reviewPillWrap, isPractice && styles.practicePillWrap]}>
                 <Image source={TARGET_ICON} style={styles.reviewPillIcon} resizeMode="contain" />
-                <Text style={styles.reviewPill}>Review</Text>
+                <Text
+                  style={[styles.reviewPill, isPractice && styles.practicePill]}
+                  numberOfLines={1}
+                >
+                  {isPractice ? (practiceLabel || 'Practice') : 'Review'}
+                </Text>
               </View>
             </View>
 
@@ -523,24 +670,41 @@ export default function ReviewScreen() {
               current.options && (
                 <View style={styles.options}>
                   {current.options.map((opt, idx) => {
-                    const isSelected = selected === opt;
-                    const isRight = opt === current.correctAnswer;
-                    const isHighlighted = !revealed ? isSelected : (isRight || isSelected);
-                    const cardBg = !revealed ? (isSelected ? c.indigoSoft : c.card) : (isRight ? c.greenSoft : isSelected ? c.redSoft : c.card);
-                    const cardBorder = !revealed ? (isSelected ? c.indigo : c.border) : (isRight ? c.green : isSelected ? c.red : c.border);
-                    const badgeBg = !revealed ? (isSelected ? c.indigo : c.borderLight) : (isRight ? c.green : isSelected ? c.red : c.borderLight);
-                    const optionTextColor = !revealed ? (isSelected ? c.indigo : c.text) : (isRight ? c.green : isSelected ? c.red : c.text);
+                    const isSelected    = selected === opt;
+                    const isRight       = opt === current.correctAnswer;
+                    const isHighlighted = !revealed ? isSelected : isRight || isSelected;
+                    const cardBg        = !revealed
+                      ? isSelected ? c.indigoSoft : c.card
+                      : isRight ? c.greenSoft : isSelected ? c.redSoft : c.card;
+                    const cardBorder    = !revealed
+                      ? isSelected ? c.indigo : c.border
+                      : isRight ? c.green : isSelected ? c.red : c.border;
+                    const badgeBg       = !revealed
+                      ? isSelected ? c.indigo : c.borderLight
+                      : isRight ? c.green : isSelected ? c.red : c.borderLight;
+                    const textColor     = !revealed
+                      ? isSelected ? c.indigo : c.text
+                      : isRight ? c.green : isSelected ? c.red : c.text;
                     return (
                       <PressableScale key={opt} onPress={() => checkAnswer(opt)} disabled={revealed} scaleTo={0.97}>
                         <View style={[styles.option, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                           <View style={[styles.optionBadge, { backgroundColor: badgeBg }]}>
-                            <Text style={[styles.optionBadgeText, { color: isHighlighted ? '#FFFFFF' : c.textMuted }]}>
+                            <Text
+                              style={[
+                                styles.optionBadgeText,
+                                { color: isHighlighted ? '#FFFFFF' : c.textMuted },
+                              ]}
+                            >
                               {OPTION_LETTERS[idx] ?? String(idx + 1)}
                             </Text>
                           </View>
-                          <Text style={[styles.optionText, { color: optionTextColor }]}>{opt}</Text>
-                          {revealed && isRight && <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />}
-                          {revealed && isSelected && !isRight && <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />}
+                          <Text style={[styles.optionText, { color: textColor }]}>{opt}</Text>
+                          {revealed && isRight && (
+                            <Image source={TICK_ICON} style={styles.optionMark} resizeMode="contain" />
+                          )}
+                          {revealed && isSelected && !isRight && (
+                            <Image source={CROSS_ICON} style={styles.optionMark} resizeMode="contain" />
+                          )}
                         </View>
                       </PressableScale>
                     );
@@ -592,9 +756,20 @@ export default function ReviewScreen() {
           )}
           {revealed && (
             <View style={styles.revealedArea}>
-              <View style={[styles.resultBanner, wasCorrect ? styles.bannerCorrect : styles.bannerWrong]}>
-                <Image source={wasCorrect ? TICK_ICON : CROSS_ICON} style={styles.bannerIcon} resizeMode="contain" />
-                <Text style={[styles.resultBannerText, wasCorrect ? styles.bannerTextCorrect : styles.bannerTextWrong]}>
+              <View
+                style={[styles.resultBanner, wasCorrect ? styles.bannerCorrect : styles.bannerWrong]}
+              >
+                <Image
+                  source={wasCorrect ? TICK_ICON : CROSS_ICON}
+                  style={styles.bannerIcon}
+                  resizeMode="contain"
+                />
+                <Text
+                  style={[
+                    styles.resultBannerText,
+                    wasCorrect ? styles.bannerTextCorrect : styles.bannerTextWrong,
+                  ]}
+                >
                   {wasCorrect ? 'Correct!' : `Answer: ${current.correctAnswer}`}
                 </Text>
               </View>
@@ -614,9 +789,8 @@ export default function ReviewScreen() {
 const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   flex: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  // ─── Review hero ─────────────────────────────────────────────────────────
+  // ─── Hero ─────────────────────────────────────────────────────────────────
   reviewHero: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -624,233 +798,255 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   reviewHeroTitle: { fontSize: 28, fontFamily: fonts.display, color: '#FFFFFF' },
-  reviewHeroSub: { fontSize: 14, color: 'rgba(255,255,255,0.72)' },
+  reviewHeroSub:   { fontSize: 14, color: 'rgba(255,255,255,0.72)' },
+
   contentWrapper: {
-    flex: 1,
     backgroundColor: c.bg,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     overflow: 'hidden',
   },
-
-  // ─── List ─────────────────────────────────────────────────────────────────
-  listScroll: { padding: 20, paddingBottom: 40 },
-  listScrollGrow: { flexGrow: 1 },
-  listTitle: { fontSize: 26, fontFamily: fonts.display, color: c.text, marginBottom: 20 },
   contentFlex: { flex: 1 },
 
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60, paddingHorizontal: 12 },
-  emptyIconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+  // ─── Mode tabs ────────────────────────────────────────────────────────────
+  modeTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 4,
+    gap: 10,
+  },
+  modeTab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: c.borderLight,
+    borderWidth: 1.5,
+    borderColor: c.border,
+  },
+  modeTabActive: {
     backgroundColor: c.indigoSoft,
+    borderColor: c.indigo,
+  },
+  modeTabText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.textSecondary,
+  },
+  modeTabTextActive: { color: c.indigo },
+
+  // ─── List ─────────────────────────────────────────────────────────────────
+  listScroll:     { padding: 20, paddingBottom: 40 },
+  listScrollGrow: { flexGrow: 1 },
+
+  emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 60,
+    paddingHorizontal: 12,
+    paddingTop: 40,
+  },
+  emptyIconCircle: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: c.indigoSoft,
+    alignItems: 'center', justifyContent: 'center',
     marginBottom: 18,
   },
-  emptyIcon: { width: 44, height: 44 },
+  emptyIcon:  { width: 44, height: 44 },
   emptyTitle: { fontSize: 20, fontFamily: fonts.display, color: c.text, marginBottom: 8 },
-  emptyDesc: { fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 21 },
+  emptyDesc:  { fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 21 },
 
   caughtUpCard: {
     backgroundColor: c.greenSoft,
-    borderRadius: 20,
-    padding: 28,
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderRadius: 20, padding: 28,
+    alignItems: 'center', gap: 8,
+    borderWidth: 1, borderColor: '#BBF7D0',
     marginBottom: 16,
     ...shadows.card,
   },
-  caughtUpIcon: { width: 52, height: 52, marginBottom: 4 },
+  caughtUpIcon:  { width: 52, height: 52, marginBottom: 4 },
   caughtUpTitle: { fontSize: 20, fontFamily: fonts.display, color: '#065F46' },
-  caughtUpDesc: { fontSize: 14, color: c.green, fontWeight: '600', textAlign: 'center' },
-  caughtUpHint: { fontSize: 13, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
+  caughtUpDesc:  { fontSize: 14, color: c.green, fontWeight: '600', textAlign: 'center' },
+  caughtUpHint:  { fontSize: 13, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
 
   summaryCard: {
     backgroundColor: c.indigo,
-    borderRadius: radius.lg,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 2,
+    borderRadius: radius.lg, padding: 24,
+    alignItems: 'center', marginBottom: 20, gap: 2,
     ...shadows.glow(c.indigo),
   },
   summaryCount: { fontSize: 50, fontWeight: '900', color: '#FFFFFF' },
   summaryLabel: { fontSize: 15, color: 'rgba(255,255,255,0.92)', fontWeight: '600' },
-  summaryNext: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
+  summaryNext:  { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
 
   dueSectionTitle: { fontSize: 17, fontWeight: '700', color: c.text, marginBottom: 10 },
 
   wordList: {
     backgroundColor: c.card,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: c.border,
+    borderRadius: radius.md, overflow: 'hidden',
+    borderWidth: 1, borderColor: c.border,
     marginBottom: 20,
     ...shadows.card,
   },
   wordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.borderLight,
     gap: 10,
   },
-  wordInfo: { flex: 1 },
-  wordSpanish: { fontSize: 15, fontWeight: '700', color: c.text },
-  wordEnglish: { fontSize: 13, color: c.textSecondary, marginTop: 1 },
-  levelBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-  },
-  levelBadgeText: { fontSize: 11, fontWeight: '700' },
+  wordInfo:      { flex: 1 },
+  wordSpanish:   { fontSize: 15, fontWeight: '700', color: c.text },
+  wordEnglish:   { fontSize: 13, color: c.textSecondary, marginTop: 1 },
+  levelBadge:    { borderRadius: 10, paddingHorizontal: 9, paddingVertical: 3 },
+  levelBadgeText:{ fontSize: 11, fontWeight: '700' },
 
-  startBtn: {
-    backgroundColor: c.indigo,
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-    ...shadows.glow(c.indigo),
+  // ─── Practice ─────────────────────────────────────────────────────────────
+  practiceHint: {
+    fontSize: 13, color: c.textSecondary,
+    marginBottom: 16, lineHeight: 19,
   },
-  startBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  unitList:  { gap: 10 },
+  unitCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: c.card,
+    borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: c.border,
+    ...shadows.card,
+  },
+  unitCardDisabled: { opacity: 0.45 },
+  unitEmojiCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: c.indigoSoft,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  unitEmoji:  { fontSize: 22 },
+  unitInfo:   { flex: 1 },
+  unitTitle:  { fontSize: 15, fontWeight: '700', color: c.text },
+  unitMeta:   { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  unitArrow:  { fontSize: 24, color: c.textMuted, fontWeight: '300' },
 
   // ─── Results ──────────────────────────────────────────────────────────────
   resultsScroll: { padding: 24, alignItems: 'center', paddingBottom: 48 },
-  resultsIcon: { width: 72, height: 72, marginBottom: 12 },
-  resultsTitle: { fontSize: 24, fontFamily: fonts.display, color: c.text, marginBottom: 4 },
-  resultsScore: { fontSize: 15, color: c.textSecondary, marginBottom: 16 },
+  resultsIcon:   { width: 72, height: 72, marginBottom: 12 },
+  resultsTitle:  { fontSize: 24, fontFamily: fonts.display, color: c.text, marginBottom: 4 },
+  resultsScore:  { fontSize: 15, color: c.textSecondary, marginBottom: 16 },
 
   masteredBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#FEF9C3',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: c.amberBorder,
+    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10,
+    marginBottom: 12, borderWidth: 1, borderColor: c.amberBorder,
   },
   masteredBannerIcon: { width: 20, height: 20 },
   masteredBannerText: { fontSize: 14, fontWeight: '700', color: '#78350F' },
 
   xpBadge: {
     backgroundColor: c.greenSoft,
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
+    borderRadius: 24, paddingHorizontal: 24, paddingVertical: 8,
     marginBottom: 20,
   },
   xpBadgeText: { fontSize: 18, fontWeight: '800', color: c.green },
 
+  studyBox: {
+    width: '100%',
+    backgroundColor: c.redSoft,
+    borderRadius: 14, padding: 16,
+    marginBottom: 16,
+    borderWidth: 1, borderColor: c.red + '40',
+  },
+  studyBoxTitle: {
+    fontSize: 13, fontWeight: '800',
+    color: '#991B1B', textTransform: 'uppercase',
+    letterSpacing: 0.7, marginBottom: 10,
+  },
+  studyRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#FCA5A5',
+  },
+  studyWordCol: { flex: 1 },
+  studySpanish: { fontSize: 15, fontWeight: '700', color: c.text },
+  studyEnglish: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
+
   resultWordList: {
     width: '100%',
     backgroundColor: c.card,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: c.border,
+    borderRadius: 14, overflow: 'hidden',
+    borderWidth: 1, borderColor: c.border,
     marginBottom: 20,
   },
   resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.borderLight,
     gap: 10,
   },
   resultRowCorrect: { backgroundColor: c.greenSoft },
-  resultRowWrong: { backgroundColor: '#FFF5F5' },
-  resultMark: { width: 18, height: 18 },
-  resultWordInfo: { flex: 1 },
-  resultSpanish: { fontSize: 14, fontWeight: '700', color: c.text },
-  resultEnglish: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
+  resultRowWrong:   { backgroundColor: '#FFF5F5' },
+  resultMark:       { width: 18, height: 18 },
+  resultWordInfo:   { flex: 1 },
+  resultSpanish:    { fontSize: 14, fontWeight: '700', color: c.text },
+  resultEnglish:    { fontSize: 12, color: c.textSecondary, marginTop: 1 },
 
   masteredTag: {
-    backgroundColor: c.greenSoft,
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    backgroundColor: c.greenSoft, borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 3,
   },
   masteredTagText: { fontSize: 11, fontWeight: '700', color: '#065F46' },
   intervalTag: {
-    backgroundColor: c.indigoSoft,
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    backgroundColor: c.indigoSoft, borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 3,
   },
   intervalTagText: { fontSize: 11, fontWeight: '700', color: c.indigoDark },
   dueAgainTag: {
-    backgroundColor: c.redSoft,
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    backgroundColor: c.redSoft, borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 3,
   },
   dueAgainTagText: { fontSize: 11, fontWeight: '700', color: '#991B1B' },
 
-  doneBtn: { padding: 14 },
+  doneBtn:     { padding: 14 },
   doneBtnText: { fontSize: 14, color: c.textSecondary, textDecorationLine: 'underline' },
 
   // ─── Session ──────────────────────────────────────────────────────────────
   sessionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 12, gap: 12,
   },
-  quitBtn: { padding: 4, width: 32 },
-  quitText: { fontSize: 18, color: c.textMuted },
-  progressTrack: {
-    flex: 1,
-    height: 8,
-    backgroundColor: c.border,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', backgroundColor: c.indigo, borderRadius: 4 },
+  quitBtn:        { padding: 4, width: 32 },
+  quitText:       { fontSize: 18, color: c.textMuted },
+  progressTrack:  { flex: 1, height: 8, backgroundColor: c.border, borderRadius: 4, overflow: 'hidden' },
+  progressFill:   { height: '100%', backgroundColor: c.indigo, borderRadius: 4 },
   sessionCounter: { fontSize: 13, color: c.textMuted, fontWeight: '600', width: 36, textAlign: 'right' },
 
   sessionContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
 
   typeBadgeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 20,
   },
   typeBadgeInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: c.indigoSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
   },
   typeBadgeIcon: { width: 16, height: 16 },
-  typeBadge: { fontSize: 13, color: c.indigo, fontWeight: '600' },
+  typeBadge:     { fontSize: 13, color: c.indigo, fontWeight: '600' },
+
   reviewPillWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: c.amberSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
+    maxWidth: 120,
   },
-  reviewPillIcon: { width: 12, height: 12 },
-  reviewPill: { fontSize: 11, fontWeight: '700', color: c.amber },
+  practicePillWrap: { backgroundColor: c.indigoSoft },
+  reviewPillIcon:   { width: 12, height: 12 },
+  reviewPill:       { fontSize: 11, fontWeight: '700', color: c.amber },
+  practicePill:     { color: c.indigo },
 
   prompt: { fontSize: 22, fontFamily: fonts.bold, color: c.text, marginBottom: 24, lineHeight: 30 },
 
@@ -859,70 +1055,46 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
 
   options: { gap: 10 },
   option: {
-    borderWidth: 2,
-    borderRadius: radius.md,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    borderWidth: 2, borderRadius: radius.md, padding: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     ...shadows.card,
   },
   optionBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
   },
   optionBadgeText: { fontSize: 13, fontWeight: '800' },
-  optionText: { fontSize: 16, color: c.text, fontWeight: '500', flex: 1 },
-  optionMark: { width: 20, height: 20 },
+  optionText:      { fontSize: 16, color: c.text, fontWeight: '500', flex: 1 },
+  optionMark:      { width: 20, height: 20 },
 
   typingArea: { gap: 8 },
   input: {
-    borderWidth: 2,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    padding: 16,
-    fontSize: 18,
-    color: c.text,
-    backgroundColor: c.card,
+    borderWidth: 2, borderColor: c.border,
+    borderRadius: radius.md, padding: 16,
+    fontSize: 18, color: c.text, backgroundColor: c.card,
   },
   inputCorrect: { borderColor: c.green, backgroundColor: c.greenSoft },
-  inputWrong: { borderColor: c.red, backgroundColor: c.redSoft },
+  inputWrong:   { borderColor: c.red,   backgroundColor: c.redSoft },
   correctionBox: {
-    backgroundColor: c.amberSoft,
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: c.amberBorder,
+    backgroundColor: c.amberSoft, borderRadius: 10, padding: 12,
+    borderWidth: 1, borderColor: c.amberBorder,
   },
-  correctionLabel: { fontSize: 11, fontWeight: '700', color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  correctionLabel: {
+    fontSize: 11, fontWeight: '700', color: '#92400E',
+    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2,
+  },
   correctionText: { fontSize: 16, fontWeight: '700', color: '#78350F' },
 
-  footer: { paddingHorizontal: 20, paddingBottom: 32 },
-  revealedArea: { gap: 12 },
+  footer:      { paddingHorizontal: 20, paddingBottom: 32 },
+  revealedArea:{ gap: 12 },
   resultBanner: {
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    borderRadius: 12, padding: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
   },
-  bannerCorrect: { backgroundColor: c.greenSoft },
-  bannerWrong: { backgroundColor: c.redSoft },
-  bannerIcon: { width: 20, height: 20 },
-  resultBannerText: { fontSize: 16, fontWeight: '700', flex: 1 },
+  bannerCorrect:     { backgroundColor: c.greenSoft },
+  bannerWrong:       { backgroundColor: c.redSoft },
+  bannerIcon:        { width: 20, height: 20 },
+  resultBannerText:  { fontSize: 16, fontWeight: '700', flex: 1 },
   bannerTextCorrect: { color: '#065F46' },
-  bannerTextWrong: { color: '#991B1B' },
-  actionBtn: {
-    backgroundColor: c.indigo,
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-    ...shadows.glow(c.indigo),
-  },
-  continueBtn: { backgroundColor: c.green, ...shadows.glow(c.green) },
-  btnDisabled: { backgroundColor: c.indigoBorder },
-  actionBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  bannerTextWrong:   { color: '#991B1B' },
 });
