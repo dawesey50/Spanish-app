@@ -28,34 +28,63 @@ interface Props {
   lessonScores?: Record<string, number>;
 }
 
-const NODE_SIZE    = 58;
-const NODE_RADIUS  = NODE_SIZE / 2;
-const VERT_GAP     = 116; // center-to-center vertical distance
-const SIDE_MARGIN  = 28;  // horizontal padding inside path container
+const NODE_SIZE   = 68;
+const NODE_RADIUS = NODE_SIZE / 2;
+const VERT_GAP    = 136;
+const SIDE_MARGIN = 32;
+const DOT_SIZE    = 7;
+const DOT_GAP     = 18;
 
-function Connector({
+const NODE_GRADS = {
+  done:      ['#10B981', '#059669'] as const,
+  available: ['#6366F1', '#4338CA'] as const,
+  review:    ['#F59E0B', '#D97706'] as const,
+  locked:    ['#CBD5E1', '#94A3B8'] as const,
+};
+
+// ── Dotted connector between two node centres ─────────────────────────────
+function DottedConnector({
   ax, ay, bx, by, done,
 }: { ax: number; ay: number; bx: number; by: number; done: boolean }) {
-  const { c } = useTheme();
-  const dx     = bx - ax;
-  const dy     = by - ay;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  const angle  = Math.atan2(dy, dx) * (180 / Math.PI);
-  const midX   = (ax + bx) / 2;
-  const midY   = (ay + by) / 2;
+  const dx    = bx - ax;
+  const dy    = by - ay;
+  const len   = Math.sqrt(dx * dx + dy * dy);
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const midX  = (ax + bx) / 2;
+  const midY  = (ay + by) / 2;
+
+  const numDots = Math.max(2, Math.floor(len / DOT_GAP));
+  const color   = done ? '#10B981' : '#CBD5E1';
+
   return (
     <View
+      pointerEvents="none"
       style={{
         position: 'absolute',
-        width: length,
-        height: 3,
-        borderRadius: 2,
-        backgroundColor: done ? c.greenBorder : c.border,
-        left: midX - length / 2,
-        top: midY - 1.5,
+        width: len,
+        height: DOT_SIZE,
+        left: midX - len / 2,
+        top: midY - DOT_SIZE / 2,
         transform: [{ rotate: `${angle}deg` }],
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 2,
       }}
-    />
+    >
+      {Array.from({ length: numDots }, (_, i) => (
+        <View
+          key={i}
+          style={{
+            width: DOT_SIZE,
+            height: DOT_SIZE,
+            borderRadius: DOT_SIZE / 2,
+            backgroundColor: color,
+            opacity: done ? 1 : 0.55,
+          }}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -65,41 +94,40 @@ export default function UnitMap({
   unlockAll = false,
   lessonScores = {},
 }: Props) {
-  const styles = useThemedStyles(createStyles);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const { c } = useTheme();
+  const styles     = useThemedStyles(createStyles);
+  const pulseAnim  = useRef(new Animated.Value(1)).current;
   const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.18, duration: 750, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1,    duration: 750, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.22, duration: 850, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 850, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
   const leftX  = containerWidth > 0 ? SIDE_MARGIN + NODE_RADIUS : 0;
   const rightX = containerWidth > 0 ? containerWidth - SIDE_MARGIN - NODE_RADIUS : 0;
-
-  // Zigzag: right, left, right, left …
-  const xPos = (i: number) => (i % 2 === 0 ? rightX : leftX);
+  const xPos   = (i: number) => (i % 2 === 0 ? rightX : leftX);
 
   return (
-    <View
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-    >
+    <View onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
       {UNITS.map((unit) => {
         const unitUnlocked = unlockAll || isUnitUnlocked(unit.id, completedLessons);
-        const allDone      = unit.lessonIds.every((id) => completedLessons.includes(id));
+        const doneCount    = unit.lessonIds.filter((id) => completedLessons.includes(id)).length;
+        const allDone      = doneCount === unit.lessonIds.length && unit.lessonIds.length > 0;
 
         const pathHeight =
           unit.lessonIds.length > 0
-            ? (unit.lessonIds.length - 1) * VERT_GAP + NODE_SIZE + 56
-            : NODE_SIZE + 56;
+            ? (unit.lessonIds.length - 1) * VERT_GAP + NODE_SIZE + 72
+            : NODE_SIZE + 72;
 
         return (
           <View key={unit.id} style={styles.unitSection}>
-            {/* ── Unit banner ─────────────────────────────────────────── */}
+
+            {/* ── Unit banner ─────────────────────────────────────── */}
             <LinearGradient
               colors={unitUnlocked ? gradients.hero : gradients.locked}
               start={{ x: 0, y: 0 }}
@@ -117,99 +145,160 @@ export default function UnitMap({
                 <Text style={[styles.bannerTitle, !unitUnlocked && styles.lockedText]}>
                   {unit.title}
                 </Text>
-                <Text style={[styles.bannerDesc, !unitUnlocked && styles.lockedText]} numberOfLines={1}>
-                  {unitUnlocked ? unit.description : 'Complete previous unit to unlock'}
+                <Text
+                  style={[styles.bannerDesc, !unitUnlocked && styles.lockedDesc]}
+                  numberOfLines={1}
+                >
+                  {unitUnlocked
+                    ? `${doneCount}/${unit.lessonIds.length} lessons · ${unit.description}`
+                    : 'Complete previous unit to unlock'}
                 </Text>
               </View>
               {allDone && (
-                <Image source={CHECK_ICON} style={styles.allDoneBadge} resizeMode="contain" />
+                <View style={styles.allDoneWrap}>
+                  <Image source={CHECK_ICON} style={styles.allDoneBadge} resizeMode="contain" />
+                </View>
               )}
             </LinearGradient>
 
-            {/* ── Winding path ────────────────────────────────────────── */}
+            {/* ── Winding path ────────────────────────────────────── */}
             {containerWidth > 0 && (
               <View style={[styles.pathContainer, { height: pathHeight }]}>
                 {unit.lessonIds.map((lessonId, i) => {
-                  const lesson        = LESSONS_BY_ID[lessonId];
-                  const lessonDone    = completedLessons.includes(lessonId);
+                  const lesson         = LESSONS_BY_ID[lessonId];
+                  const lessonDone     = completedLessons.includes(lessonId);
                   const lessonUnlocked = unlockAll || isLessonUnlocked(lessonId, completedLessons);
-                  const isNext        = lessonUnlocked && !lessonDone;
-                  const score         = lessonScores[lessonId];
+                  const isNext         = lessonUnlocked && !lessonDone;
+                  const score          = lessonScores[lessonId];
+                  const isReview       = lesson?.lessonType === 'review';
 
                   const cx = xPos(i);
                   const cy = i * VERT_GAP + NODE_RADIUS;
 
-                  // Connector to previous node
-                  const showConnector = i > 0;
-                  const prevCx = xPos(i - 1);
-                  const prevCy = (i - 1) * VERT_GAP + NODE_RADIUS;
-                  const connectorDone = lessonDone && completedLessons.includes(unit.lessonIds[i - 1]);
+                  const prevCx = i > 0 ? xPos(i - 1) : cx;
+                  const prevCy = i > 0 ? (i - 1) * VERT_GAP + NODE_RADIUS : cy;
+                  const connectorDone =
+                    lessonDone &&
+                    i > 0 &&
+                    completedLessons.includes(unit.lessonIds[i - 1]);
 
-                  const isReview = lesson?.lessonType === 'review';
-                  const nodeStyle = lessonDone
-                    ? styles.nodeDone
-                    : lessonUnlocked
-                    ? (isReview ? styles.nodeReview : styles.nodeAvailable)
-                    : styles.nodeLocked;
+                  const nodeGrads = lessonDone
+                    ? NODE_GRADS.done
+                    : !lessonUnlocked
+                    ? NODE_GRADS.locked
+                    : isReview
+                    ? NODE_GRADS.review
+                    : NODE_GRADS.available;
 
-                  const labelLeft = cx - 54;
-                  const labelTop  = cy + NODE_RADIUS + 6;
+                  const shadowColor = lessonDone
+                    ? '#10B981'
+                    : !lessonUnlocked
+                    ? '#000'
+                    : isReview
+                    ? '#F59E0B'
+                    : '#4F46E5';
+
+                  const labelWidth = 108;
+                  const labelLeft  = cx - labelWidth / 2;
+
+                  // Score pill colour
+                  const scoreBg    = score >= 80 ? c.greenSoft : score >= 60 ? c.amberSoft : c.redSoft;
+                  const scoreColor = score >= 80 ? c.green     : score >= 60 ? c.amber     : c.red;
 
                   return (
                     <React.Fragment key={lessonId}>
-                      {showConnector && (
-                        <Connector
+                      {/* Dotted connector */}
+                      {i > 0 && (
+                        <DottedConnector
                           ax={prevCx} ay={prevCy}
                           bx={cx}     by={cy}
                           done={connectorDone}
                         />
                       )}
 
-                      {/* Pulse ring for current lesson */}
+                      {/* Double pulse ring (next unlocked lesson only) */}
                       {isNext && (
-                        <Animated.View
-                          style={[
-                            styles.pulseRing,
-                            {
-                              left: cx - NODE_RADIUS - 8,
-                              top:  cy - NODE_RADIUS - 8,
-                              transform: [{ scale: pulseAnim }],
-                            },
-                          ]}
-                        />
+                        <>
+                          <Animated.View
+                            style={[
+                              styles.pulseRingOuter,
+                              {
+                                left: cx - NODE_RADIUS - 13,
+                                top:  cy - NODE_RADIUS - 13,
+                                transform: [{ scale: pulseAnim }],
+                              },
+                            ]}
+                          />
+                          <Animated.View
+                            style={[
+                              styles.pulseRingInner,
+                              {
+                                left: cx - NODE_RADIUS - 7,
+                                top:  cy - NODE_RADIUS - 7,
+                                transform: [{ scale: pulseAnim }],
+                              },
+                            ]}
+                          />
+                        </>
                       )}
 
+                      {/* Node */}
                       <TouchableOpacity
                         style={[
                           styles.node,
-                          nodeStyle,
                           {
                             left: cx - NODE_RADIUS,
                             top:  cy - NODE_RADIUS,
+                            shadowColor,
+                            shadowOpacity: lessonUnlocked ? 0.45 : 0.08,
+                            elevation: lessonUnlocked ? 6 : 1,
+                            opacity: !unitUnlocked ? 0.45 : 1,
                           },
                         ]}
                         onPress={() => lessonUnlocked && onLessonPress(lessonId)}
                         disabled={!lessonUnlocked}
-                        activeOpacity={lessonUnlocked ? 0.75 : 1}
+                        activeOpacity={lessonUnlocked ? 0.78 : 1}
                       >
-                        {!unitUnlocked || (!lessonUnlocked) ? (
-                          <Image source={LOCK_ICON} style={styles.nodeIcon} resizeMode="contain" />
-                        ) : lessonDone ? (
-                          <Image source={CHECK_ICON} style={styles.nodeIcon} resizeMode="contain" />
-                        ) : isReview ? (
-                          <Text style={styles.nodeReviewIcon}>★</Text>
-                        ) : (
-                          <Text style={styles.nodeNum}>{i + 1}</Text>
-                        )}
+                        <LinearGradient
+                          colors={nodeGrads}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.nodeGradient}
+                        >
+                          {!lessonUnlocked ? (
+                            <Image source={LOCK_ICON} style={styles.nodeIcon} resizeMode="contain" />
+                          ) : lessonDone ? (
+                            <Image source={CHECK_ICON} style={styles.nodeIcon} resizeMode="contain" />
+                          ) : isReview ? (
+                            <Text style={styles.nodeReviewIcon}>★</Text>
+                          ) : (
+                            <Text style={styles.nodeNum}>{i + 1}</Text>
+                          )}
+                        </LinearGradient>
                       </TouchableOpacity>
 
-                      {/* Label below node */}
-                      <View style={[styles.nodeLabel, { left: labelLeft, top: labelTop }]}>
-                        <Text style={[styles.nodeLabelTitle, !lessonUnlocked && styles.lockedLabelText]} numberOfLines={2}>
+                      {/* Label + score badge */}
+                      <View
+                        style={[
+                          styles.nodeLabel,
+                          { left: labelLeft, top: cy + NODE_RADIUS + 8, width: labelWidth },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.nodeLabelTitle,
+                            !lessonUnlocked && styles.lockedLabelText,
+                          ]}
+                          numberOfLines={2}
+                        >
                           {lesson?.title ?? lessonId}
                         </Text>
                         {lessonDone && score !== undefined && (
-                          <Text style={styles.nodeLabelScore}>{score}%</Text>
+                          <View style={[styles.scorePill, { backgroundColor: scoreBg }]}>
+                            <Text style={[styles.scorePillText, { color: scoreColor }]}>
+                              {score}%
+                            </Text>
+                          </View>
                         )}
                       </View>
                     </React.Fragment>
@@ -225,86 +314,73 @@ export default function UnitMap({
 }
 
 const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
-  unitSection: { marginBottom: 32 },
+  unitSection: { marginBottom: 36 },
 
-  // ── Unit banner ──────────────────────────────────────────────────────────
+  // ── Banner ────────────────────────────────────────────────────────────────
   unitBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 14,
   },
-  bannerIcon: { width: 36, height: 36 },
-  bannerEmoji: { fontSize: 28 },
-  bannerText: { flex: 1 },
-  bannerTitle: { fontSize: 15, fontFamily: fonts.display, color: '#FFFFFF', marginBottom: 2 },
-  bannerDesc:  { fontSize: 11, color: 'rgba(255,255,255,0.75)' },
+  bannerIcon:  { width: 38, height: 38 },
+  bannerEmoji: { fontSize: 30 },
+  bannerText:  { flex: 1 },
+  bannerTitle: { fontSize: 15, fontFamily: fonts.display, color: '#FFFFFF', marginBottom: 3 },
+  bannerDesc:  { fontSize: 11, color: 'rgba(255,255,255,0.82)', lineHeight: 15 },
   lockedText:  { color: 'rgba(255,255,255,0.55)' },
-  allDoneBadge: { width: 24, height: 24 },
+  lockedDesc:  { color: 'rgba(255,255,255,0.42)' },
+  allDoneWrap: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  allDoneBadge: { width: 22, height: 22 },
 
-  // ── Path container ───────────────────────────────────────────────────────
+  // ── Path ─────────────────────────────────────────────────────────────────
   pathContainer: { position: 'relative', width: '100%' },
 
-  // ── Nodes ────────────────────────────────────────────────────────────────
+  // ── Node ─────────────────────────────────────────────────────────────────
   node: {
     position: 'absolute',
+    width: NODE_SIZE,
+    height: NODE_SIZE,
+    borderRadius: NODE_RADIUS,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+  },
+  nodeGradient: {
     width: NODE_SIZE,
     height: NODE_SIZE,
     borderRadius: NODE_RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nodeDone: {
-    backgroundColor: c.green,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  nodeAvailable: {
-    backgroundColor: c.indigo,
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  nodeLocked: {
-    backgroundColor: c.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  nodeReview: {
-    backgroundColor: '#D97706',
-    shadowColor: '#D97706',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  nodeIcon: { width: 24, height: 24 },
-  nodeNum:  { fontSize: 20, fontFamily: fonts.display, color: '#FFFFFF' },
-  nodeReviewIcon: { fontSize: 22, color: '#FFFFFF' },
+  nodeIcon:       { width: 28, height: 28 },
+  nodeNum:        { fontSize: 22, fontFamily: fonts.display, color: '#FFFFFF' },
+  nodeReviewIcon: { fontSize: 26, color: '#FFFFFF' },
 
-  // ── Pulse ring ───────────────────────────────────────────────────────────
-  pulseRing: {
+  // ── Pulse rings ───────────────────────────────────────────────────────────
+  pulseRingOuter: {
     position: 'absolute',
-    width: NODE_SIZE + 16,
-    height: NODE_SIZE + 16,
-    borderRadius: (NODE_SIZE + 16) / 2,
-    backgroundColor: 'rgba(79,70,229,0.18)',
+    width:  NODE_SIZE + 26,
+    height: NODE_SIZE + 26,
+    borderRadius: (NODE_SIZE + 26) / 2,
+    backgroundColor: 'rgba(99,102,241,0.10)',
+  },
+  pulseRingInner: {
+    position: 'absolute',
+    width:  NODE_SIZE + 14,
+    height: NODE_SIZE + 14,
+    borderRadius: (NODE_SIZE + 14) / 2,
+    backgroundColor: 'rgba(99,102,241,0.20)',
   },
 
-  // ── Labels ───────────────────────────────────────────────────────────────
+  // ── Labels ────────────────────────────────────────────────────────────────
   nodeLabel: {
     position: 'absolute',
-    width: 108,
     alignItems: 'center',
   },
   nodeLabelTitle: {
@@ -315,10 +391,11 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     lineHeight: 15,
   },
   lockedLabelText: { color: c.textMuted },
-  nodeLabelScore: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.green,
-    marginTop: 2,
+  scorePill: {
+    marginTop: 4,
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
+  scorePillText: { fontSize: 10, fontWeight: '800' },
 });
