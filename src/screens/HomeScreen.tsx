@@ -21,6 +21,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, UserProgress } from '../types';
 import { getUserProgress } from '../database/db';
 import { WORDS } from '../data/words';
+import { UNITS, LESSONS_BY_ID, isLessonUnlocked } from '../data/units';
 import AudioButton from '../components/AudioButton';
 import { getUserLevel } from '../utils/level';
 import UnitMap from '../components/UnitMap';
@@ -98,6 +99,26 @@ export default function HomeScreen() {
   const shieldRechargesIn = !progress.streakShieldAvailable && progress.shieldUsedDate
     ? Math.max(0, 7 - Math.floor((Date.now() - new Date(progress.shieldUsedDate + 'T00:00:00').getTime()) / 86400000))
     : 0;
+
+  // Next unlocked lesson to continue
+  const totalLessons = UNITS.reduce((s, u) => s + u.lessonIds.length, 0);
+  let nextLessonId: string | null = null;
+  let nextUnitTitle = '';
+  let nextLessonTitle = '';
+  let nextLessonIndex = 0;
+  outer: for (const unit of UNITS) {
+    for (let i = 0; i < unit.lessonIds.length; i++) {
+      const id = unit.lessonIds[i];
+      if (!progress.completedLessons.includes(id) &&
+          (progress.developerMode || isLessonUnlocked(id, progress.completedLessons))) {
+        nextLessonId = id;
+        nextUnitTitle = unit.title;
+        nextLessonTitle = LESSONS_BY_ID[id]?.title ?? id;
+        nextLessonIndex = i;
+        break outer;
+      }
+    }
+  }
 
   const initials = progress.profileName
     ? progress.profileName.slice(0, 2).toUpperCase()
@@ -187,18 +208,64 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
         >
-          {/* Daily challenge */}
+          {/* ── Continue CTA ─────────────────────────────────────────── */}
           <FadeSlideIn index={0}>
+            {nextLessonId ? (
+              <PressableScale
+                onPress={() => navigation.navigate('Lesson', { lessonId: nextLessonId! })}
+                style={styles.continueCard}
+              >
+                <LinearGradient
+                  colors={gradients.hero}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.continueGradient}
+                >
+                  <View style={styles.continueLeft}>
+                    <Text style={styles.continueUnitLabel}>{nextUnitTitle.toUpperCase()}</Text>
+                    <Text style={styles.continueTitle}>{nextLessonTitle}</Text>
+                    <Text style={styles.continueSub}>
+                      Lesson {nextLessonIndex + 1} · {progress.completedLessons.length}/{totalLessons} complete
+                    </Text>
+                  </View>
+                  <View style={styles.continueBtn}>
+                    <Text style={styles.continueBtnText}>▶</Text>
+                  </View>
+                </LinearGradient>
+              </PressableScale>
+            ) : (
+              <View style={styles.allDoneCard}>
+                <Text style={styles.allDoneEmoji}>🏆</Text>
+                <View>
+                  <Text style={styles.allDoneTitle}>All lessons complete!</Text>
+                  <Text style={styles.allDoneSub}>Keep reviewing and chatting to build fluency</Text>
+                </View>
+              </View>
+            )}
+          </FadeSlideIn>
+
+          {/* ── Your Lessons ─────────────────────────────────────────── */}
+          <FadeSlideIn index={1}>
+            <Text style={styles.sectionTitle}>Your Lessons</Text>
+            <UnitMap
+              completedLessons={progress.completedLessons}
+              onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
+              unlockAll={progress.developerMode}
+              lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
+                acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
+                return acc;
+              }, {})}
+            />
+          </FadeSlideIn>
+
+          {/* ── Today ────────────────────────────────────────────────── */}
+          <FadeSlideIn index={2}>
             <Text style={styles.sectionTitle}>Today</Text>
             <DailyChallengeCard
               completedLessons={progress.completedLessons}
               completedToday={completedToday}
               onStart={() => navigation.navigate('DailyChallenge')}
             />
-          </FadeSlideIn>
-
-          {/* Word of the Day */}
-          <FadeSlideIn index={1}>
             <View style={styles.wotdCard}>
               <View style={styles.wotdHeader}>
                 <Text style={styles.wotdLabel}>Word of the Day</Text>
@@ -218,60 +285,46 @@ export default function HomeScreen() {
             </View>
           </FadeSlideIn>
 
-          {/* AI Conversation button */}
-          <FadeSlideIn index={2}>
-          <PressableScale
-            style={styles.chatCard}
-            onPress={() => navigation.navigate('Conversation', {})}
-          >
-            <View style={styles.chatLeft}>
-              <View style={styles.chatIconWrap}>
-                <Image source={CHAT_ICON} style={styles.chatIcon} resizeMode="contain" />
-              </View>
-              <View>
-                <Text style={styles.chatTitle}>AI Conversation</Text>
-                <Text style={styles.chatDesc}>Practice Spanish with an AI tutor</Text>
-              </View>
-            </View>
-            <Text style={styles.chatArrow}>›</Text>
-          </PressableScale>
-          </FadeSlideIn>
-
-          {/* Stats strip */}
+          {/* ── AI Conversation ──────────────────────────────────────── */}
           <FadeSlideIn index={3}>
-          <View style={styles.statsStrip}>
-            <View style={styles.stripStat}>
-              <Image source={TICK_ICON} style={styles.stripIcon} resizeMode="contain" />
-              <CountUp value={progress.completedLessons.length} style={styles.stripValue} />
-              <Text style={styles.stripLabel}>Lessons</Text>
-            </View>
-            <View style={styles.stripDivider} />
-            <View style={styles.stripStat}>
-              <Image source={TARGET_ICON} style={styles.stripIcon} resizeMode="contain" />
-              <CountUp value={progress.wordsMastered} style={styles.stripValue} />
-              <Text style={styles.stripLabel}>Mastered</Text>
-            </View>
-            <View style={styles.stripDivider} />
-            <View style={styles.stripStat}>
-              <Image source={FIRE_ICON} style={styles.stripIcon} resizeMode="contain" />
-              <CountUp value={Math.max(progress.streak, progress.longestStreak)} style={styles.stripValue} />
-              <Text style={styles.stripLabel}>Best Streak</Text>
-            </View>
-          </View>
+            <PressableScale
+              style={styles.chatCard}
+              onPress={() => navigation.navigate('Conversation', {})}
+            >
+              <View style={styles.chatLeft}>
+                <View style={styles.chatIconWrap}>
+                  <Image source={CHAT_ICON} style={styles.chatIcon} resizeMode="contain" />
+                </View>
+                <View>
+                  <Text style={styles.chatTitle}>AI Conversation</Text>
+                  <Text style={styles.chatDesc}>Practice Spanish with an AI tutor</Text>
+                </View>
+              </View>
+              <Text style={styles.chatArrow}>›</Text>
+            </PressableScale>
           </FadeSlideIn>
 
-          {/* Lessons */}
+          {/* ── Stats ────────────────────────────────────────────────── */}
           <FadeSlideIn index={4}>
-          <Text style={styles.sectionTitle}>Your Lessons</Text>
-          <UnitMap
-            completedLessons={progress.completedLessons}
-            onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
-            unlockAll={progress.developerMode}
-            lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
-              acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
-              return acc;
-            }, {})}
-          />
+            <View style={styles.statsStrip}>
+              <View style={styles.stripStat}>
+                <Image source={TICK_ICON} style={styles.stripIcon} resizeMode="contain" />
+                <CountUp value={progress.completedLessons.length} style={styles.stripValue} />
+                <Text style={styles.stripLabel}>Lessons</Text>
+              </View>
+              <View style={styles.stripDivider} />
+              <View style={styles.stripStat}>
+                <Image source={TARGET_ICON} style={styles.stripIcon} resizeMode="contain" />
+                <CountUp value={progress.wordsMastered} style={styles.stripValue} />
+                <Text style={styles.stripLabel}>Mastered</Text>
+              </View>
+              <View style={styles.stripDivider} />
+              <View style={styles.stripStat}>
+                <Image source={FIRE_ICON} style={styles.stripIcon} resizeMode="contain" />
+                <CountUp value={Math.max(progress.streak, progress.longestStreak)} style={styles.stripValue} />
+                <Text style={styles.stripLabel}>Best Streak</Text>
+              </View>
+            </View>
           </FadeSlideIn>
         </ScrollView>
       </View>
@@ -481,4 +534,55 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     borderTopColor: c.borderLight,
     paddingTop: 8,
   },
+
+  // Continue CTA card
+  continueCard: { marginBottom: 20, borderRadius: 20, overflow: 'hidden' },
+  continueGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+  },
+  continueLeft: { flex: 1 },
+  continueUnitLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  continueTitle: {
+    fontSize: 22,
+    fontFamily: fonts.display,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  continueSub: { fontSize: 12, color: 'rgba(255,255,255,0.72)' },
+  continueBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  continueBtnText: { fontSize: 20, color: '#FFFFFF' },
+
+  // All done card (no more lessons)
+  allDoneCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: c.greenSoft,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: c.greenBorder,
+  },
+  allDoneEmoji: { fontSize: 32 },
+  allDoneTitle: { fontSize: 16, fontFamily: fonts.bold, color: '#065F46' },
+  allDoneSub: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
 });
