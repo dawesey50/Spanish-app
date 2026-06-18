@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getUserProgress, getUnlockedAchievements, setProfileCharacter } from '../database/db';
 import { getUserLevel } from '../utils/level';
 import { ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
-import AvatarPickerModal from '../components/AvatarPickerModal';
+import AvatarPickerModal, { getAvatarGradient } from '../components/AvatarPickerModal';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
 import type { MainTabParamList, RootStackParamList, UserProgress } from '../types';
@@ -32,23 +32,28 @@ type ProfileNav = CompositeNavigationProp<
 >;
 
 function AvatarCircle({ emoji, color, initials, size = 80 }: { emoji: string; color: string; initials: string; size?: number }) {
-  const style = {
+  const circleStyle = {
     width: size,
     height: size,
     borderRadius: size / 2,
-    backgroundColor: emoji ? color : 'rgba(255,255,255,0.22)',
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    borderWidth: emoji ? 0 : 2,
-    borderColor: 'rgba(255,255,255,0.35)',
   };
-  return (
-    <View style={style}>
-      {emoji ? (
+  if (emoji) {
+    return (
+      <LinearGradient
+        colors={getAvatarGradient(color) as unknown as [string, string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={circleStyle}
+      >
         <Text style={{ fontSize: size * 0.5 }}>{emoji}</Text>
-      ) : (
-        <Text style={{ color: '#FFFFFF', fontSize: size * 0.28, fontWeight: '800' }}>{initials}</Text>
-      )}
+      </LinearGradient>
+    );
+  }
+  return (
+    <View style={[circleStyle, { backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' }]}>
+      <Text style={{ color: '#FFFFFF', fontSize: size * 0.28, fontWeight: '800' }}>{initials}</Text>
     </View>
   );
 }

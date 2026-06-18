@@ -33,6 +33,7 @@ import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
 import { fonts, gradients, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
+import { getAvatarGradient } from '../components/AvatarPickerModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -136,13 +137,20 @@ export default function HomeScreen() {
         {/* Row 1: avatar + greeting + streak */}
         <View style={styles.headerTop}>
           <View style={styles.avatarRow}>
-            <View style={[styles.avatar, progress.profileEmoji ? { backgroundColor: progress.profileColor } : {}]}>
-              {progress.profileEmoji ? (
+            {progress.profileEmoji ? (
+              <LinearGradient
+                colors={getAvatarGradient(progress.profileColor) as unknown as [string, string, string]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.avatarGradient}
+              >
                 <Text style={styles.avatarEmoji}>{progress.profileEmoji}</Text>
-              ) : (
+              </LinearGradient>
+            ) : (
+              <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{initials}</Text>
-              )}
-            </View>
+              </View>
+            )}
             <View>
               <Text style={styles.greeting}>
                 {progress.profileName ? `¡Hola, ${progress.profileName}!` : '¡Hola!'}
@@ -362,6 +370,13 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.35)',
+  },
+  avatarGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   avatarEmoji: { fontSize: 22 },
