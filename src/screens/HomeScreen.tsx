@@ -168,11 +168,11 @@ export default function HomeScreen() {
 
         {/* Row 2: level + XP */}
         <View style={styles.xpRow}>
-          <View style={styles.levelBadge}>
+          <View style={[styles.levelBadge, { backgroundColor: lvl.color + 'CC' }]}>
             <Text style={styles.levelText}>Lv.{lvl.level} · {lvl.name}</Text>
           </View>
           <Text style={styles.xpText}>
-            {progress.xp}{lvl.nextLevelXP ? ` / ${lvl.nextLevelXP} XP` : ' XP'}
+            {progress.xp.toLocaleString()}{lvl.nextLevelXP ? ` / ${lvl.nextLevelXP.toLocaleString()} XP` : ' XP (Max)'}
           </Text>
         </View>
 
@@ -180,6 +180,7 @@ export default function HomeScreen() {
         <View style={styles.xpTrack}>
           <Animated.View
             style={[styles.xpFill, {
+              backgroundColor: lvl.color,
               width: xpFillAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
             }]}
           />
