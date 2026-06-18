@@ -15,7 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { getUserProgress, getUnlockedAchievements, setProfileCharacter } from '../database/db';
 import { getUserLevel } from '../utils/level';
-import { ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
+import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
 import AvatarPickerModal, { getAvatarGradient } from '../components/AvatarPickerModal';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
@@ -201,7 +201,7 @@ export default function ProfileScreen() {
                 style={styles.sectionLink}
               >
                 <Text style={styles.sectionLinkText}>
-                  {unlockedCount} / 15
+                  {unlockedCount} / {ACHIEVEMENTS.length}
                 </Text>
                 <Ionicons name="chevron-forward" size={14} color={c.indigo} />
               </TouchableOpacity>
