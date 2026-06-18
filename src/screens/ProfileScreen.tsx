@@ -17,6 +17,7 @@ import { getUserProgress, getUnlockedAchievements, setProfileCharacter } from '.
 import { getUserLevel } from '../utils/level';
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID, ACHIEVEMENT_ICONS } from '../data/achievements';
 import AvatarPickerModal, { getAvatarGradient } from '../components/AvatarPickerModal';
+import { AvatarSvg, isCustomAvatar } from '../components/AvatarCharacters';
 import FadeSlideIn from '../components/FadeSlideIn';
 import { ScreenSkeleton } from '../components/Skeleton';
 import type { MainTabParamList, RootStackParamList, UserProgress } from '../types';
@@ -38,8 +39,9 @@ function AvatarCircle({ emoji, color, initials, size = 80 }: { emoji: string; co
     borderRadius: size / 2,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+    overflow: 'hidden' as const,
   };
-  if (emoji) {
+  if (isCustomAvatar(emoji)) {
     return (
       <LinearGradient
         colors={getAvatarGradient(color) as unknown as [string, string, string]}
@@ -47,7 +49,7 @@ function AvatarCircle({ emoji, color, initials, size = 80 }: { emoji: string; co
         end={{ x: 1, y: 1 }}
         style={circleStyle}
       >
-        <Text style={{ fontSize: size * 0.5 }}>{emoji}</Text>
+        <AvatarSvg id={emoji} size={size} />
       </LinearGradient>
     );
   }

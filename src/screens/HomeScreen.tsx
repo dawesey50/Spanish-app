@@ -34,6 +34,7 @@ import { ScreenSkeleton } from '../components/Skeleton';
 import { fonts, gradients, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import { getAvatarGradient } from '../components/AvatarPickerModal';
+import { AvatarSvg, isCustomAvatar } from '../components/AvatarCharacters';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -137,14 +138,14 @@ export default function HomeScreen() {
         {/* Row 1: avatar + greeting + streak */}
         <View style={styles.headerTop}>
           <View style={styles.avatarRow}>
-            {progress.profileEmoji ? (
+            {isCustomAvatar(progress.profileEmoji) ? (
               <LinearGradient
                 colors={getAvatarGradient(progress.profileColor) as unknown as [string, string, string]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.avatarGradient}
               >
-                <Text style={styles.avatarEmoji}>{progress.profileEmoji}</Text>
+                <AvatarSvg id={progress.profileEmoji} size={40} />
               </LinearGradient>
             ) : (
               <View style={styles.avatar}>
@@ -379,7 +380,6 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  avatarEmoji: { fontSize: 22 },
   greeting: { fontSize: 20, fontFamily: fonts.display, color: '#FFFFFF' },
   subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 1 },
 

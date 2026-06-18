@@ -10,8 +10,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts, radius, spacing, type ThemeColors } from '../theme';
 import { useThemedStyles } from '../ThemeContext';
+import {
+  AVATAR_CHARACTERS,
+  AVATAR_CHARACTER_IDS,
+  AvatarSvg,
+  isCustomAvatar,
+} from './AvatarCharacters';
 
-// Each palette entry: a primary colour + a 3-stop gradient derived from it
 export const AVATAR_PALETTE: {
   color: string;
   gradient: readonly [string, string, string];
@@ -41,37 +46,14 @@ export function getAvatarGradient(
   );
 }
 
-const EMOJI_CATEGORIES = [
-  {
-    icon: '🐾',
-    name: 'Animals',
-    emojis: ['🦊', '🐸', '🦉', '🐱', '🦁', '🐯', '🐧', '🦋', '🐺', '🐼', '🦝', '🦜'],
-  },
-  {
-    icon: '🧑',
-    name: 'People',
-    emojis: ['🧑‍🎓', '🧙', '🦸', '😎', '🤩', '🥳', '🤓', '🎭', '💃', '🕺', '👑', '🦄'],
-  },
-  {
-    icon: '⚡',
-    name: 'Icons',
-    emojis: ['🚀', '⚡', '🌈', '🎯', '🎸', '⭐', '💎', '🔥', '🏆', '🎮', '🛸', '🎪'],
-  },
-  {
-    icon: '🌮',
-    name: 'España',
-    emojis: ['🌮', '🌺', '🌹', '🌵', '🦅', '🌞', '🥁', '🏔️', '⛵', '🎵', '🌻', '🌴'],
-  },
-];
-
-// Backwards-compatible export used by any older code
-export const AVATAR_EMOJIS = EMOJI_CATEGORIES.flatMap((c) => c.emojis);
+// Kept for backward compatibility — new code uses AVATAR_CHARACTER_IDS
+export const AVATAR_EMOJIS = AVATAR_CHARACTER_IDS;
 
 interface Props {
   visible: boolean;
   currentEmoji: string;
   currentColor: string;
-  onSave: (emoji: string, color: string) => void;
+  onSave: (avatarId: string, color: string) => void;
   onClose: () => void;
 }
 
@@ -83,14 +65,14 @@ export default function AvatarPickerModal({
   onClose,
 }: Props) {
   const styles = useThemedStyles(createStyles);
-  const [selEmoji, setSelEmoji]       = useState(currentEmoji || EMOJI_CATEGORIES[0].emojis[0]);
-  const [selColor, setSelColor]       = useState(currentColor || AVATAR_COLORS[0]);
-  const [catIdx,   setCatIdx]         = useState(0);
+
+  const resolvedId = isCustomAvatar(currentEmoji) ? currentEmoji : AVATAR_CHARACTER_IDS[0];
+  const [selId,    setSelId]    = useState(resolvedId);
+  const [selColor, setSelColor] = useState(currentColor || AVATAR_COLORS[0]);
 
   const handleOpen = () => {
-    setSelEmoji(currentEmoji || EMOJI_CATEGORIES[0].emojis[0]);
+    setSelId(isCustomAvatar(currentEmoji) ? currentEmoji : AVATAR_CHARACTER_IDS[0]);
     setSelColor(currentColor || AVATAR_COLORS[0]);
-    setCatIdx(0);
   };
 
   const gradient = getAvatarGradient(selColor);
@@ -106,7 +88,7 @@ export default function AvatarPickerModal({
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Customise your avatar</Text>
+          <Text style={styles.title}>Choose your character</Text>
 
           {/* ── Live preview ─────────────────────────────────────── */}
           <View style={styles.previewWrap}>
@@ -116,49 +98,36 @@ export default function AvatarPickerModal({
               end={{ x: 1, y: 1 }}
               style={styles.preview}
             >
-              <Text style={styles.previewEmoji}>{selEmoji}</Text>
+              <AvatarSvg id={selId} size={84} />
             </LinearGradient>
           </View>
 
-          {/* ── Category tabs ─────────────────────────────────────── */}
-          <View style={styles.catTabs}>
-            {EMOJI_CATEGORIES.map((cat, i) => (
-              <TouchableOpacity
-                key={i}
-                style={[
-                  styles.catTab,
-                  catIdx === i && { borderColor: selColor, backgroundColor: selColor + '22' },
-                ]}
-                onPress={() => setCatIdx(i)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.catTabIcon}>{cat.icon}</Text>
-                <Text style={[styles.catTabName, catIdx === i && { color: selColor }]}>
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* ── Emoji grid ────────────────────────────────────────── */}
-          <View style={styles.emojiGrid}>
-            {EMOJI_CATEGORIES[catIdx].emojis.map((e) => (
-              <TouchableOpacity
-                key={e}
-                style={[
-                  styles.emojiBtn,
-                  selEmoji === e && {
-                    backgroundColor: selColor + '28',
-                    borderColor: selColor,
-                    transform: [{ scale: 1.08 }],
-                  },
-                ]}
-                onPress={() => setSelEmoji(e)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.emojiItem}>{e}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* ── Character grid ───────────────────────────────────── */}
+          <Text style={styles.sectionLabel}>Character</Text>
+          <View style={styles.characterGrid}>
+            {AVATAR_CHARACTERS.map((char) => {
+              const active = selId === char.id;
+              return (
+                <TouchableOpacity
+                  key={char.id}
+                  style={[
+                    styles.charBtn,
+                    active && {
+                      borderColor: selColor,
+                      backgroundColor: selColor + '1A',
+                      transform: [{ scale: 1.06 }],
+                    },
+                  ]}
+                  onPress={() => setSelId(char.id)}
+                  activeOpacity={0.75}
+                >
+                  <AvatarSvg id={char.id} size={50} />
+                  <Text style={[styles.charLabel, active && { color: selColor }]}>
+                    {char.spanish}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* ── Gradient palette ──────────────────────────────────── */}
@@ -187,7 +156,7 @@ export default function AvatarPickerModal({
           {/* ── Save ─────────────────────────────────────────────── */}
           <TouchableOpacity
             style={styles.saveBtn}
-            onPress={() => { onSave(selEmoji, selColor); onClose(); }}
+            onPress={() => { onSave(selId, selColor); onClose(); }}
             activeOpacity={0.85}
           >
             <LinearGradient
@@ -205,7 +174,7 @@ export default function AvatarPickerModal({
   );
 }
 
-const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -241,42 +210,42 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   preview: {
     width: 100, height: 100, borderRadius: 50,
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
-  previewEmoji: { fontSize: 50 },
 
-  // Category tabs
-  catTabs: {
-    flexDirection: 'row', gap: 8,
-    marginBottom: spacing.lg, width: '100%',
-  },
-  catTab: {
-    flex: 1, alignItems: 'center', paddingVertical: 8,
-    borderRadius: radius.sm, borderWidth: 1.5, borderColor: c.border,
-    backgroundColor: c.bg, gap: 2,
-  },
-  catTabIcon: { fontSize: 16 },
-  catTabName: { fontSize: 10, fontWeight: '700', color: c.textMuted },
-
-  // Emoji grid (3 columns × 4 rows)
-  emojiGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    gap: 8, marginBottom: spacing.xl, width: '100%',
-    justifyContent: 'center',
-  },
-  emojiBtn: {
-    width: 52, height: 52, borderRadius: radius.sm,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: 'transparent',
-    backgroundColor: c.bg,
-  },
-  emojiItem: { fontSize: 26 },
-
-  // Gradient palette
   sectionLabel: {
     alignSelf: 'flex-start', fontSize: 12, fontWeight: '700',
     color: c.textMuted, textTransform: 'uppercase',
     letterSpacing: 0.8, marginBottom: spacing.sm,
   },
+
+  // Character grid — 4 per row
+  characterGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: spacing.xl,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  charBtn: {
+    width: 72,
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    gap: 3,
+  },
+  charLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: c.textMuted,
+    textAlign: 'center',
+  },
+
+  // Gradient palette
   paletteGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
     gap: 10, marginBottom: spacing.xl, width: '100%',
