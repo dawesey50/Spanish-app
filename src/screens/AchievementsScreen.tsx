@@ -84,15 +84,21 @@ export default function AchievementsScreen() {
                 key={badge.id}
                 style={[styles.badgeCard, isUnlocked ? styles.cardUnlocked : styles.cardLocked]}
               >
-                <View style={styles.iconWrap}>
-                  <Image
-                    source={icon}
-                    style={[styles.badgeIcon, !isUnlocked && styles.badgeIconLocked]}
-                    resizeMode="contain"
-                  />
+                <View style={[styles.iconWrap, isUnlocked ? styles.iconWrapUnlocked : styles.iconWrapLocked]}>
+                  {icon ? (
+                    <Image
+                      source={icon}
+                      style={[styles.badgeIcon, !isUnlocked && styles.badgeIconLocked]}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Text style={[styles.badgeEmoji, !isUnlocked && styles.badgeIconLocked]}>
+                      {badge.emoji}
+                    </Text>
+                  )}
                   {!isUnlocked && (
                     <View style={styles.lockOverlay}>
-                      <Ionicons name="lock-closed" size={14} color="#FFFFFF" />
+                      <Ionicons name="lock-closed" size={12} color="#FFFFFF" />
                     </View>
                   )}
                 </View>
@@ -191,30 +197,33 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   },
 
   iconWrap: {
-    width: 80,
-    height: 80,
-    marginBottom: 4,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginBottom: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconWrapUnlocked: { backgroundColor: 'rgba(251,191,36,0.18)' },
+  iconWrapLocked:   { backgroundColor: c.borderLight },
   badgeIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: radius.sm,
+    width: 40,
+    height: 40,
   },
-  badgeIconLocked: { opacity: 0.2 },
+  badgeEmoji:       { fontSize: 32 },
+  badgeIconLocked:  { opacity: 0.3 },
   lockOverlay: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#9CA3AF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: c.bg,
   },
 
   badgeTitle: {

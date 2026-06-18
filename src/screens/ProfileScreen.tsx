@@ -215,9 +215,9 @@ export default function ProfileScreen() {
                 contentContainerStyle={styles.achievementScroll}
               >
                 {unlocked.map(({ badgeId }) => {
-                  const icon = ACHIEVEMENT_ICONS[badgeId];
+                  const icon  = ACHIEVEMENT_ICONS[badgeId];
                   const badge = ACHIEVEMENTS_BY_ID[badgeId];
-                  if (!icon || !badge) return null;
+                  if (!badge) return null;
                   return (
                     <TouchableOpacity
                       key={badgeId}
@@ -225,7 +225,13 @@ export default function ProfileScreen() {
                       onPress={() => navigation.navigate('Achievements')}
                       activeOpacity={0.8}
                     >
-                      <Image source={icon} style={styles.achievementIcon} resizeMode="contain" />
+                      <View style={styles.achievementIconWrap}>
+                        {icon ? (
+                          <Image source={icon} style={styles.achievementIcon} resizeMode="contain" />
+                        ) : (
+                          <Text style={styles.achievementEmoji}>{badge.emoji}</Text>
+                        )}
+                      </View>
                       <Text style={styles.achievementLabel} numberOfLines={1}>{badge.title}</Text>
                     </TouchableOpacity>
                   );
@@ -396,11 +402,16 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     gap: 4,
     width: 68,
   },
-  achievementIcon: {
+  achievementIconWrap: {
     width: 56,
     height: 56,
-    borderRadius: radius.sm,
+    borderRadius: 28,
+    backgroundColor: 'rgba(251,191,36,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  achievementIcon:  { width: 36, height: 36 },
+  achievementEmoji: { fontSize: 28 },
   achievementLabel: {
     fontSize: 10,
     fontWeight: '700',

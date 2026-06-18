@@ -215,7 +215,7 @@ export default function LessonScreen() {
         getUnlockedAchievements(),
       ]);
       const newBadges = checkAchievements(
-        { type: 'lesson', score, streak: updatedProgress.streak, totalXP: updatedProgress.xp, completedLessons: updatedProgress.completedLessons },
+        { type: 'lesson', score, streak: updatedProgress.streak, totalXP: updatedProgress.xp, completedLessons: updatedProgress.completedLessons, history: updatedProgress.history },
         alreadyUnlocked.map((b) => b.badgeId)
       );
       await Promise.all(newBadges.map((id) => unlockAchievement(id)));
