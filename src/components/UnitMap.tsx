@@ -10,7 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts, gradients, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
-import { UNITS, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/units';
+import { UNITS_BY_ID, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/units';
 
 const UNIT_IMAGES: Record<string, ReturnType<typeof require>> = {
   unit_01: require('../../assets/units/Greetings.png'),
@@ -28,6 +28,47 @@ interface Props {
   lessonScores?: Record<string, number>;
 }
 
+// Curriculum sections — groups 12 units by CEFR level
+const SECTIONS = [
+  {
+    id: 's1',
+    label: 'Beginner',
+    cefr: 'A1',
+    color: '#10B981',
+    grad: ['#34D399', '#10B981', '#059669'] as const,
+    unitIds: ['unit_01', 'unit_02', 'unit_03'],
+    desc: 'Core vocabulary and essential phrases',
+  },
+  {
+    id: 's2',
+    label: 'Elementary',
+    cefr: 'A2',
+    color: '#3B82F6',
+    grad: ['#60A5FA', '#3B82F6', '#1D4ED8'] as const,
+    unitIds: ['unit_04', 'unit_05', 'unit_06'],
+    desc: 'Family, shopping, and daily life',
+  },
+  {
+    id: 's3',
+    label: 'Intermediate',
+    cefr: 'B1',
+    color: '#8B5CF6',
+    grad: ['#A78BFA', '#8B5CF6', '#6D28D9'] as const,
+    unitIds: ['unit_07', 'unit_08', 'unit_09'],
+    desc: 'Health, hobbies, and professional life',
+  },
+  {
+    id: 's4',
+    label: 'Upper Intermediate',
+    cefr: 'B2',
+    color: '#F59E0B',
+    grad: ['#FCD34D', '#F59E0B', '#D97706'] as const,
+    unitIds: ['unit_10', 'unit_11', 'unit_12'],
+    desc: 'Home, emotions, and Spanish culture',
+  },
+];
+
+const DONE_GRAD  = ['#34D399', '#10B981', '#059669'] as const;
 const NODE_SIZE   = 68;
 const NODE_RADIUS = NODE_SIZE / 2;
 const VERT_GAP    = 136;
@@ -95,8 +136,8 @@ export default function UnitMap({
   lessonScores = {},
 }: Props) {
   const { c } = useTheme();
-  const styles     = useThemedStyles(createStyles);
-  const pulseAnim  = useRef(new Animated.Value(1)).current;
+  const styles    = useThemedStyles(createStyles);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
@@ -114,204 +155,261 @@ export default function UnitMap({
 
   return (
     <View onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
-      {UNITS.map((unit) => {
-        const unitUnlocked = unlockAll || isUnitUnlocked(unit.id, completedLessons);
-        const doneCount    = unit.lessonIds.filter((id) => completedLessons.includes(id)).length;
-        const allDone      = doneCount === unit.lessonIds.length && unit.lessonIds.length > 0;
-
-        const pathHeight =
-          unit.lessonIds.length > 0
-            ? (unit.lessonIds.length - 1) * VERT_GAP + NODE_SIZE + 72
-            : NODE_SIZE + 72;
+      {SECTIONS.map((section) => {
+        const sectionUnits = section.unitIds.map((id) => UNITS_BY_ID[id]).filter(Boolean);
+        const doneUnits    = section.unitIds.reduce((n, uId) => {
+          const u = UNITS_BY_ID[uId];
+          return u && u.lessonIds.every((lId) => completedLessons.includes(lId)) ? n + 1 : n;
+        }, 0);
+        const sectionDone  = doneUnits === section.unitIds.length;
 
         return (
-          <View key={unit.id} style={styles.unitSection}>
+          <View key={section.id}>
 
-            {/* ── Unit banner ─────────────────────────────────────── */}
-            <LinearGradient
-              colors={unitUnlocked ? gradients.hero : gradients.locked}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.unitBanner}
-            >
-              {!unitUnlocked ? (
-                <Image source={LOCK_ICON} style={styles.bannerIcon} resizeMode="contain" />
-              ) : UNIT_IMAGES[unit.id] ? (
-                <Image source={UNIT_IMAGES[unit.id]} style={styles.bannerIcon} resizeMode="contain" />
-              ) : (
-                <Text style={styles.bannerEmoji}>{unit.icon}</Text>
-              )}
-              <View style={styles.bannerText}>
-                <Text style={[styles.bannerTitle, !unitUnlocked && styles.lockedText]}>
-                  {unit.title}
-                </Text>
-                <Text
-                  style={[styles.bannerDesc, !unitUnlocked && styles.lockedDesc]}
-                  numberOfLines={1}
-                >
-                  {unitUnlocked
-                    ? `${doneCount}/${unit.lessonIds.length} lessons · ${unit.description}`
-                    : 'Complete previous unit to unlock'}
-                </Text>
+            {/* ── Section header ──────────────────────────────────────── */}
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={section.grad}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.cefrBadge}
+              >
+                <Text style={styles.cefrText}>{section.cefr}</Text>
+              </LinearGradient>
+              <View style={styles.sectionTextArea}>
+                <Text style={styles.sectionName}>{section.label}</Text>
+                <Text style={styles.sectionDesc} numberOfLines={1}>{section.desc}</Text>
               </View>
-              {allDone && (
-                <View style={styles.allDoneWrap}>
-                  <Image source={CHECK_ICON} style={styles.allDoneBadge} resizeMode="contain" />
-                </View>
-              )}
-              {!unitUnlocked && (
-                <View style={styles.lockedPill}>
-                  <Image source={LOCK_ICON} style={styles.lockedPillIcon} resizeMode="contain" />
-                  <Text style={styles.lockedPillText}>LOCKED</Text>
-                </View>
-              )}
-            </LinearGradient>
+              <View style={[
+                styles.sectionCounter,
+                sectionDone && { backgroundColor: section.color },
+              ]}>
+                {sectionDone
+                  ? <Image source={CHECK_ICON} style={styles.sectionCheckIcon} resizeMode="contain" />
+                  : <Text style={styles.sectionCounterText}>{doneUnits}/{section.unitIds.length}</Text>
+                }
+              </View>
+            </View>
 
-            {/* ── Winding path ────────────────────────────────────── */}
-            {containerWidth > 0 && (
-              <View style={[styles.pathContainer, { height: pathHeight }]}>
-                {unit.lessonIds.map((lessonId, i) => {
-                  const lesson         = LESSONS_BY_ID[lessonId];
-                  const lessonDone     = completedLessons.includes(lessonId);
-                  const lessonUnlocked = unlockAll || isLessonUnlocked(lessonId, completedLessons);
-                  const isNext         = lessonUnlocked && !lessonDone;
-                  const score          = lessonScores[lessonId];
-                  const isReview       = lesson?.lessonType === 'review';
+            {/* ── Units in section ────────────────────────────────────── */}
+            {sectionUnits.map((unit) => {
+              const unitUnlocked = unlockAll || isUnitUnlocked(unit.id, completedLessons);
+              const doneCount    = unit.lessonIds.filter((id) => completedLessons.includes(id)).length;
+              const allDone      = doneCount === unit.lessonIds.length && unit.lessonIds.length > 0;
+              const pct          = unit.lessonIds.length > 0 ? doneCount / unit.lessonIds.length : 0;
 
-                  const cx = xPos(i);
-                  const cy = i * VERT_GAP + NODE_RADIUS;
+              const pathHeight =
+                unit.lessonIds.length > 0
+                  ? (unit.lessonIds.length - 1) * VERT_GAP + NODE_SIZE + 72
+                  : NODE_SIZE + 72;
 
-                  const prevCx = i > 0 ? xPos(i - 1) : cx;
-                  const prevCy = i > 0 ? (i - 1) * VERT_GAP + NODE_RADIUS : cy;
-                  const connectorDone =
-                    lessonDone &&
-                    i > 0 &&
-                    completedLessons.includes(unit.lessonIds[i - 1]);
+              const bannerGrad = allDone
+                ? DONE_GRAD
+                : unitUnlocked
+                ? gradients.hero
+                : gradients.locked;
 
-                  const nodeGrads = lessonDone
-                    ? NODE_GRADS.done
-                    : !lessonUnlocked
-                    ? NODE_GRADS.locked
-                    : isReview
-                    ? NODE_GRADS.review
-                    : NODE_GRADS.available;
+              return (
+                <View key={unit.id} style={styles.unitSection}>
 
-                  const shadowColor = lessonDone
-                    ? '#10B981'
-                    : !lessonUnlocked
-                    ? '#000'
-                    : isReview
-                    ? '#F59E0B'
-                    : '#4F46E5';
-
-                  const labelWidth = 108;
-                  const labelLeft  = cx - labelWidth / 2;
-
-                  // Score pill colour
-                  const scoreBg    = score >= 80 ? c.greenSoft : score >= 60 ? c.amberSoft : c.redSoft;
-                  const scoreColor = score >= 80 ? c.green     : score >= 60 ? c.amber     : c.red;
-
-                  return (
-                    <React.Fragment key={lessonId}>
-                      {/* Dotted connector */}
-                      {i > 0 && (
-                        <DottedConnector
-                          ax={prevCx} ay={prevCy}
-                          bx={cx}     by={cy}
-                          done={connectorDone}
-                        />
+                  {/* ── Unit banner ─────────────────────────────────── */}
+                  <LinearGradient
+                    colors={bannerGrad as any}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.unitBanner}
+                  >
+                    <View style={styles.bannerRow}>
+                      {!unitUnlocked ? (
+                        <Image source={LOCK_ICON} style={styles.bannerIcon} resizeMode="contain" />
+                      ) : UNIT_IMAGES[unit.id] ? (
+                        <Image source={UNIT_IMAGES[unit.id]} style={styles.bannerIcon} resizeMode="contain" />
+                      ) : (
+                        <Text style={styles.bannerEmoji}>{unit.icon}</Text>
                       )}
-
-                      {/* Double pulse ring (next unlocked lesson only) */}
-                      {isNext && (
-                        <>
-                          <Animated.View
-                            style={[
-                              styles.pulseRingOuter,
-                              {
-                                left: cx - NODE_RADIUS - 13,
-                                top:  cy - NODE_RADIUS - 13,
-                                transform: [{ scale: pulseAnim }],
-                              },
-                            ]}
-                          />
-                          <Animated.View
-                            style={[
-                              styles.pulseRingInner,
-                              {
-                                left: cx - NODE_RADIUS - 7,
-                                top:  cy - NODE_RADIUS - 7,
-                                transform: [{ scale: pulseAnim }],
-                              },
-                            ]}
-                          />
-                        </>
-                      )}
-
-                      {/* Node */}
-                      <TouchableOpacity
-                        style={[
-                          styles.node,
-                          {
-                            left: cx - NODE_RADIUS,
-                            top:  cy - NODE_RADIUS,
-                            shadowColor,
-                            shadowOpacity: lessonUnlocked ? 0.45 : 0.08,
-                            elevation: lessonUnlocked ? 6 : 1,
-                            opacity: !unitUnlocked ? 0.28 : 1,
-                          },
-                        ]}
-                        onPress={() => lessonUnlocked && onLessonPress(lessonId)}
-                        disabled={!lessonUnlocked}
-                        activeOpacity={lessonUnlocked ? 0.78 : 1}
-                      >
-                        <LinearGradient
-                          colors={nodeGrads}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.nodeGradient}
-                        >
-                          {!lessonUnlocked ? (
-                            <Image source={LOCK_ICON} style={styles.nodeIcon} resizeMode="contain" />
-                          ) : lessonDone ? (
-                            <Image source={CHECK_ICON} style={styles.nodeIcon} resizeMode="contain" />
-                          ) : isReview ? (
-                            <Text style={styles.nodeReviewIcon}>★</Text>
-                          ) : (
-                            <Text style={styles.nodeNum}>{i + 1}</Text>
-                          )}
-                        </LinearGradient>
-                      </TouchableOpacity>
-
-                      {/* Label + score badge */}
-                      <View
-                        style={[
-                          styles.nodeLabel,
-                          { left: labelLeft, top: cy + NODE_RADIUS + 8, width: labelWidth },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.nodeLabelTitle,
-                            !lessonUnlocked && styles.lockedLabelText,
-                          ]}
-                          numberOfLines={2}
-                        >
-                          {lesson?.title ?? lessonId}
+                      <View style={styles.bannerText}>
+                        <Text style={[styles.bannerTitle, !unitUnlocked && styles.lockedText]}>
+                          {unit.title}
                         </Text>
-                        {lessonDone && score !== undefined && (
-                          <View style={[styles.scorePill, { backgroundColor: scoreBg }]}>
-                            <Text style={[styles.scorePillText, { color: scoreColor }]}>
-                              {score}%
-                            </Text>
-                          </View>
-                        )}
+                        <Text
+                          style={[styles.bannerDesc, !unitUnlocked && styles.lockedDesc]}
+                          numberOfLines={1}
+                        >
+                          {unitUnlocked ? unit.description : 'Complete previous unit to unlock'}
+                        </Text>
                       </View>
-                    </React.Fragment>
-                  );
-                })}
-              </View>
-            )}
+                      {allDone && (
+                        <View style={styles.allDoneWrap}>
+                          <Image source={CHECK_ICON} style={styles.allDoneBadge} resizeMode="contain" />
+                        </View>
+                      )}
+                      {!unitUnlocked && (
+                        <View style={styles.lockedPill}>
+                          <Image source={LOCK_ICON} style={styles.lockedPillIcon} resizeMode="contain" />
+                          <Text style={styles.lockedPillText}>LOCKED</Text>
+                        </View>
+                      )}
+                    </View>
+                    {unitUnlocked && (
+                      <View style={styles.bannerProgressRow}>
+                        <View style={styles.bannerProgressTrack}>
+                          <View
+                            style={[
+                              styles.bannerProgressFill,
+                              { width: `${Math.round(pct * 100)}%` as any },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.bannerProgressLabel}>
+                          {doneCount}/{unit.lessonIds.length}
+                        </Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+
+                  {/* ── Winding path ────────────────────────────────── */}
+                  {containerWidth > 0 && (
+                    <View style={[styles.pathContainer, { height: pathHeight }]}>
+                      {unit.lessonIds.map((lessonId, i) => {
+                        const lesson         = LESSONS_BY_ID[lessonId];
+                        const lessonDone     = completedLessons.includes(lessonId);
+                        const lessonUnlocked = unlockAll || isLessonUnlocked(lessonId, completedLessons);
+                        const isNext         = lessonUnlocked && !lessonDone;
+                        const score          = lessonScores[lessonId];
+                        const isReview       = lesson?.lessonType === 'review';
+
+                        const cx = xPos(i);
+                        const cy = i * VERT_GAP + NODE_RADIUS;
+
+                        const prevCx = i > 0 ? xPos(i - 1) : cx;
+                        const prevCy = i > 0 ? (i - 1) * VERT_GAP + NODE_RADIUS : cy;
+                        const connectorDone =
+                          lessonDone &&
+                          i > 0 &&
+                          completedLessons.includes(unit.lessonIds[i - 1]);
+
+                        const nodeGrads = lessonDone
+                          ? NODE_GRADS.done
+                          : !lessonUnlocked
+                          ? NODE_GRADS.locked
+                          : isReview
+                          ? NODE_GRADS.review
+                          : NODE_GRADS.available;
+
+                        const shadowColor = lessonDone
+                          ? '#10B981'
+                          : !lessonUnlocked
+                          ? '#000'
+                          : isReview
+                          ? '#F59E0B'
+                          : '#4F46E5';
+
+                        const labelWidth = 108;
+                        const labelLeft  = cx - labelWidth / 2;
+
+                        const scoreBg    = score >= 80 ? c.greenSoft : score >= 60 ? c.amberSoft : c.redSoft;
+                        const scoreColor = score >= 80 ? c.green     : score >= 60 ? c.amber     : c.red;
+
+                        return (
+                          <React.Fragment key={lessonId}>
+                            {i > 0 && (
+                              <DottedConnector
+                                ax={prevCx} ay={prevCy}
+                                bx={cx}     by={cy}
+                                done={connectorDone}
+                              />
+                            )}
+
+                            {isNext && (
+                              <>
+                                <Animated.View
+                                  style={[
+                                    styles.pulseRingOuter,
+                                    {
+                                      left: cx - NODE_RADIUS - 13,
+                                      top:  cy - NODE_RADIUS - 13,
+                                      transform: [{ scale: pulseAnim }],
+                                    },
+                                  ]}
+                                />
+                                <Animated.View
+                                  style={[
+                                    styles.pulseRingInner,
+                                    {
+                                      left: cx - NODE_RADIUS - 7,
+                                      top:  cy - NODE_RADIUS - 7,
+                                      transform: [{ scale: pulseAnim }],
+                                    },
+                                  ]}
+                                />
+                              </>
+                            )}
+
+                            <TouchableOpacity
+                              style={[
+                                styles.node,
+                                {
+                                  left: cx - NODE_RADIUS,
+                                  top:  cy - NODE_RADIUS,
+                                  shadowColor,
+                                  shadowOpacity: lessonUnlocked ? 0.45 : 0.08,
+                                  elevation: lessonUnlocked ? 6 : 1,
+                                  opacity: !unitUnlocked ? 0.28 : 1,
+                                },
+                              ]}
+                              onPress={() => lessonUnlocked && onLessonPress(lessonId)}
+                              disabled={!lessonUnlocked}
+                              activeOpacity={lessonUnlocked ? 0.78 : 1}
+                            >
+                              <LinearGradient
+                                colors={nodeGrads}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.nodeGradient}
+                              >
+                                {!lessonUnlocked ? (
+                                  <Image source={LOCK_ICON} style={styles.nodeIcon} resizeMode="contain" />
+                                ) : lessonDone ? (
+                                  <Image source={CHECK_ICON} style={styles.nodeIcon} resizeMode="contain" />
+                                ) : isReview ? (
+                                  <Text style={styles.nodeReviewIcon}>★</Text>
+                                ) : (
+                                  <Text style={styles.nodeNum}>{i + 1}</Text>
+                                )}
+                              </LinearGradient>
+                            </TouchableOpacity>
+
+                            <View
+                              style={[
+                                styles.nodeLabel,
+                                { left: labelLeft, top: cy + NODE_RADIUS + 8, width: labelWidth },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.nodeLabelTitle,
+                                  !lessonUnlocked && styles.lockedLabelText,
+                                ]}
+                                numberOfLines={2}
+                              >
+                                {lesson?.title ?? lessonId}
+                              </Text>
+                              {lessonDone && score !== undefined && (
+                                <View style={[styles.scorePill, { backgroundColor: scoreBg }]}>
+                                  <Text style={[styles.scorePillText, { color: scoreColor }]}>
+                                    {score}%
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          </React.Fragment>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         );
       })}
@@ -320,16 +418,61 @@ export default function UnitMap({
 }
 
 const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
-  unitSection: { marginBottom: 36 },
+
+  // ── Section headers ───────────────────────────────────────────────────────
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  cefrBadge: {
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  cefrText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  sectionTextArea: { flex: 1 },
+  sectionName: {
+    fontSize: 15,
+    fontFamily: fonts.display,
+    color: c.text,
+    marginBottom: 1,
+  },
+  sectionDesc: { fontSize: 11, color: c.textMuted, lineHeight: 15 },
+  sectionCounter: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionCheckIcon: { width: 20, height: 20 },
+  sectionCounterText: { fontSize: 11, fontWeight: '800', color: c.textMuted },
+
+  // ── Unit section ──────────────────────────────────────────────────────────
+  unitSection: { marginBottom: 28 },
 
   // ── Banner ────────────────────────────────────────────────────────────────
   unitBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderRadius: 18,
     padding: 14,
-    gap: 12,
     marginBottom: 14,
+    gap: 10,
+  },
+  bannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   bannerIcon:  { width: 38, height: 38 },
   bannerEmoji: { fontSize: 30 },
@@ -359,6 +502,30 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     fontWeight: '800',
     color: 'rgba(255,255,255,0.75)',
     letterSpacing: 0.6,
+  },
+  bannerProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bannerProgressTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  bannerProgressFill: {
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 2,
+  },
+  bannerProgressLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.75)',
+    minWidth: 28,
+    textAlign: 'right',
   },
 
   // ── Path ─────────────────────────────────────────────────────────────────
