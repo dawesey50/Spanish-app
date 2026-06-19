@@ -159,6 +159,12 @@ export default function UnitMap({
                   <Image source={CHECK_ICON} style={styles.allDoneBadge} resizeMode="contain" />
                 </View>
               )}
+              {!unitUnlocked && (
+                <View style={styles.lockedPill}>
+                  <Image source={LOCK_ICON} style={styles.lockedPillIcon} resizeMode="contain" />
+                  <Text style={styles.lockedPillText}>LOCKED</Text>
+                </View>
+              )}
             </LinearGradient>
 
             {/* ── Winding path ────────────────────────────────────── */}
@@ -252,7 +258,7 @@ export default function UnitMap({
                             shadowColor,
                             shadowOpacity: lessonUnlocked ? 0.45 : 0.08,
                             elevation: lessonUnlocked ? 6 : 1,
-                            opacity: !unitUnlocked ? 0.45 : 1,
+                            opacity: !unitUnlocked ? 0.28 : 1,
                           },
                         ]}
                         onPress={() => lessonUnlocked && onLessonPress(lessonId)}
@@ -338,6 +344,22 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   allDoneBadge: { width: 22, height: 22 },
+  lockedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  lockedPillIcon: { width: 11, height: 11, opacity: 0.8 },
+  lockedPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 0.6,
+  },
 
   // ── Path ─────────────────────────────────────────────────────────────────
   pathContainer: { position: 'relative', width: '100%' },

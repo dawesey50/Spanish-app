@@ -31,10 +31,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heart: {
-    width: 22,
-    height: 22,
+    width: 26,
+    height: 26,
   },
   empty: {
-    opacity: 0.35,
+    opacity: 0.4,
   },
 });

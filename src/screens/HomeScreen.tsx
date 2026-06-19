@@ -26,7 +26,6 @@ import { UNITS, LESSONS_BY_ID, isLessonUnlocked } from '../data/units';
 import AudioButton from '../components/AudioButton';
 import { getUserLevel } from '../utils/level';
 import UnitMap from '../components/UnitMap';
-import DailyChallengeCard from '../components/DailyChallengeCard';
 import PressableScale from '../components/PressableScale';
 import PulseImage from '../components/PulseImage';
 import CountUp from '../components/CountUp';
@@ -258,28 +257,54 @@ export default function HomeScreen() {
             )}
           </FadeSlideIn>
 
-          {/* ── Your Lessons ─────────────────────────────────────────── */}
+          {/* ── Quick Actions ─────────────────────────────────────────── */}
           <FadeSlideIn index={1}>
-            <Text style={styles.sectionTitle}>Your Lessons</Text>
-            <UnitMap
-              completedLessons={progress.completedLessons}
-              onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
-              unlockAll={progress.developerMode}
-              lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
-                acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
-                return acc;
-              }, {})}
-            />
+            <View style={styles.quickRow}>
+              <PressableScale
+                style={[
+                  styles.quickPill,
+                  completedToday
+                    ? styles.quickPillDone
+                    : progress.completedLessons.length > 0
+                    ? styles.quickPillChallenge
+                    : styles.quickPillLocked,
+                ]}
+                onPress={() => {
+                  if (!completedToday && progress.completedLessons.length > 0) {
+                    navigation.navigate('DailyChallenge');
+                  }
+                }}
+              >
+                <Image
+                  source={completedToday ? TICK_ICON : TARGET_ICON}
+                  style={styles.quickPillIcon}
+                  resizeMode="contain"
+                />
+                <Text style={[styles.quickPillTitle, completedToday && styles.quickPillTitleDark]}>
+                  {completedToday ? 'Challenge Done' : 'Daily Challenge'}
+                </Text>
+                <Text style={[styles.quickPillDesc, completedToday && styles.quickPillDescDark]}>
+                  {completedToday
+                    ? 'Resets at midnight'
+                    : progress.completedLessons.length === 0
+                    ? 'Finish a lesson first'
+                    : '+25 XP · 5 questions'}
+                </Text>
+              </PressableScale>
+
+              <PressableScale
+                style={[styles.quickPill, styles.quickPillChat]}
+                onPress={() => navigation.navigate('Conversation', {})}
+              >
+                <Image source={CHAT_ICON} style={styles.quickPillIcon} resizeMode="contain" />
+                <Text style={styles.quickPillTitle}>AI Chat</Text>
+                <Text style={styles.quickPillDesc}>Practice Spanish</Text>
+              </PressableScale>
+            </View>
           </FadeSlideIn>
 
-          {/* ── Today ────────────────────────────────────────────────── */}
+          {/* ── Word of the Day ───────────────────────────────────────── */}
           <FadeSlideIn index={2}>
-            <Text style={styles.sectionTitle}>Today</Text>
-            <DailyChallengeCard
-              completedLessons={progress.completedLessons}
-              completedToday={completedToday}
-              onStart={() => navigation.navigate('DailyChallenge')}
-            />
             <View style={styles.wotdCard}>
               <View style={styles.wotdHeader}>
                 <Text style={styles.wotdLabel}>Word of the Day</Text>
@@ -299,23 +324,18 @@ export default function HomeScreen() {
             </View>
           </FadeSlideIn>
 
-          {/* ── AI Conversation ──────────────────────────────────────── */}
+          {/* ── Your Lessons ─────────────────────────────────────────── */}
           <FadeSlideIn index={3}>
-            <PressableScale
-              style={styles.chatCard}
-              onPress={() => navigation.navigate('Conversation', {})}
-            >
-              <View style={styles.chatLeft}>
-                <View style={styles.chatIconWrap}>
-                  <Image source={CHAT_ICON} style={styles.chatIcon} resizeMode="contain" />
-                </View>
-                <View>
-                  <Text style={styles.chatTitle}>AI Conversation</Text>
-                  <Text style={styles.chatDesc}>Practice Spanish with an AI tutor</Text>
-                </View>
-              </View>
-              <Text style={styles.chatArrow}>›</Text>
-            </PressableScale>
+            <Text style={styles.sectionTitle}>Your Lessons</Text>
+            <UnitMap
+              completedLessons={progress.completedLessons}
+              onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
+              unlockAll={progress.developerMode}
+              lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
+                acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
+                return acc;
+              }, {})}
+            />
           </FadeSlideIn>
 
           {/* ── Stats ────────────────────────────────────────────────── */}
@@ -457,34 +477,52 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   },
   scroll: { padding: 20, paddingBottom: 40 },
 
-  // AI chat card
-  chatCard: {
-    backgroundColor: c.indigo,
-    borderRadius: 16,
-    padding: 16,
+  // Quick Actions row
+  quickRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 16,
+    alignItems: 'stretch',
+  },
+  quickPill: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 14,
+    gap: 5,
+    minHeight: 90,
+  },
+  quickPillChallenge: {
+    backgroundColor: c.indigo,
     shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  chatLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  chatIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  quickPillDone: {
+    backgroundColor: c.greenSoft,
+    borderWidth: 1,
+    borderColor: c.greenBorder,
   },
-  chatIcon: { width: 22, height: 22 },
-  chatTitle: { fontSize: 16, fontFamily: fonts.bold, color: '#FFFFFF' },
-  chatDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  chatArrow: { fontSize: 26, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
+  quickPillLocked: {
+    backgroundColor: isDark ? c.card : '#F1F5F9',
+    borderWidth: 1,
+    borderColor: c.border,
+    opacity: 0.65,
+  },
+  quickPillChat: {
+    backgroundColor: '#7C3AED',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  quickPillIcon: { width: 26, height: 26 },
+  quickPillTitle: { fontSize: 13, fontWeight: '800', color: '#FFFFFF', marginTop: 2 },
+  quickPillDesc: { fontSize: 11, color: 'rgba(255,255,255,0.72)' },
+  quickPillTitleDark: { color: '#065F46' },
+  quickPillDescDark: { color: c.textSecondary },
 
   // Stats strip
   statsStrip: {
