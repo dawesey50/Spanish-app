@@ -9,6 +9,7 @@ import {
   Image,
   Animated,
 } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const FIRE_ICON   = require('../../assets/icons/fire.png');
@@ -46,6 +47,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const xpFillAnim = useRef(new Animated.Value(0)).current;
+  const scrollRef  = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
 
   useEffect(() => {
     if (!progress) return;
@@ -214,6 +217,7 @@ export default function HomeScreen() {
       {/* ─── White content area ────────────────────────────────────────── */}
       <View style={styles.contentWrapper}>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
