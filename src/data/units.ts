@@ -876,6 +876,120 @@ export const LESSONS: Lesson[] = [
       ],
     },
   },
+
+  // ── New lessons: Units 3, 5, 6, 7 expansion ──────────────────────────────
+  {
+    id: 'lesson_61',
+    unitId: 'unit_03',
+    title: 'At the Hotel',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w265', 'w266', 'w267', 'w268', 'w269', 'w270'],
+    grammarNote: {
+      tip: "Use 'quiero' + noun to make requests: 'Quiero una habitación doble.' For needs use 'necesito': 'Necesito una llave.' Ask politely with '¿Tiene...?' — 'Tiene una habitación libre?'",
+      examples: [
+        { spanish: 'Quiero una habitación doble con baño.', english: 'I would like a double room with a bathroom.' },
+        { spanish: 'He perdido la llave de mi habitación.', english: 'I have lost my room key.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_62',
+    unitId: 'unit_03',
+    title: 'Transport & Tickets',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w271', 'w272', 'w273', 'w274', 'w275', 'w276'],
+    grammarNote: {
+      tip: "Tickets and schedules use 'a las' + time for departures/arrivals: 'La salida es a las diez.' For delays use 'tiene un retraso de': 'El tren tiene un retraso de media hora.'",
+      examples: [
+        { spanish: 'El tren sale del andén tres a las nueve.', english: 'The train leaves from platform three at nine.' },
+        { spanish: 'Tenemos que facturar el equipaje antes de las ocho.', english: 'We have to check in our luggage before eight.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_63',
+    unitId: 'unit_05',
+    title: 'At the Market',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w277', 'w278', 'w279', 'w280', 'w281', 'w282'],
+    grammarNote: {
+      tip: "Prices and quantities: 'Póngame un kilo de...' (give me a kilo of...). Compare prices with 'más barato/caro que': 'Este es más barato que aquel.' Use 'demasiado' for too expensive/cheap.",
+      examples: [
+        { spanish: 'Póngame dos kilos de manzanas, por favor.', english: 'Give me two kilos of apples, please.' },
+        { spanish: 'Este mercado tiene fruta muy fresca y barata.', english: 'This market has very fresh and cheap fruit.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_64',
+    unitId: 'unit_05',
+    title: 'Clothes & Sizes',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w283', 'w284', 'w285', 'w286', 'w287', 'w288'],
+    grammarNote: {
+      tip: "Shopping for clothes: '¿Tiene esto en talla...?' (Do you have this in size...?). Use 'probarse' for trying on: '¿Puedo probarme...?' Compliment with 'te queda bien/mal' (it suits you / doesn't suit you).",
+      examples: [
+        { spanish: '¿Puedo probarme esta camisa en talla mediana?', english: 'Can I try on this shirt in medium size?' },
+        { spanish: 'Ese pantalón azul te queda muy bien.', english: 'Those blue trousers suit you very well.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_65',
+    unitId: 'unit_06',
+    title: 'Geography & Landscape',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w289', 'w290', 'w291', 'w292', 'w293', 'w294'],
+    grammarNote: {
+      tip: "Describe landscape with 'hay' (there is/are): 'Hay montañas en el norte.' Use 'estar rodeado de' (to be surrounded by): 'El lago está rodeado de bosques.' Articles: el río, la montaña, el bosque, la isla.",
+      examples: [
+        { spanish: 'En España hay playas en el sur y montañas en el norte.', english: 'In Spain there are beaches in the south and mountains in the north.' },
+        { spanish: 'La isla está rodeada de un mar cristalino.', english: 'The island is surrounded by a crystal-clear sea.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_66',
+    unitId: 'unit_06',
+    title: 'Animals',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w295', 'w296', 'w297', 'w298', 'w299', 'w300'],
+    grammarNote: {
+      tip: "Talk about pets with 'tener': 'Tengo un perro.' Describe animals with 'ser': 'El caballo es rápido.' Use 'hay' for animals in nature: 'Hay muchos pájaros en el jardín.'",
+      examples: [
+        { spanish: 'Tengo un gato y dos peces en casa.', english: 'I have a cat and two fish at home.' },
+        { spanish: 'En el campo hay vacas y caballos.', english: 'In the countryside there are cows and horses.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_67',
+    unitId: 'unit_07',
+    title: 'Healthy Habits',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w301', 'w302', 'w303', 'w304', 'w305', 'w306'],
+    grammarNote: {
+      tip: "Talk about health habits with 'es importante + infinitive': 'Es importante dormir bien.' Use 'demasiado' for excess: 'Tengo demasiado estrés.' Reflexive 'relajarse' — me relajo, te relajas.",
+      examples: [
+        { spanish: 'Es importante llevar una dieta saludable y hacer ejercicio.', english: 'It is important to follow a healthy diet and exercise.' },
+        { spanish: 'Tengo mucho estrés y necesito descansar.', english: 'I have a lot of stress and I need to rest.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_68',
+    unitId: 'unit_07',
+    title: 'At the Pharmacy',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w307', 'w308', 'w309', 'w310', 'w311', 'w312'],
+    grammarNote: {
+      tip: "At the pharmacy: 'Necesito algo para...' (I need something for...). Describe symptoms with 'tener': 'Tengo tos / alergia / dolor.' Dosage: 'Tómelo tres veces al día' — use 'lo' for masculine nouns.",
+      examples: [
+        { spanish: 'Necesito algo para la tos y la alergia al polen.', english: 'I need something for my cough and pollen allergy.' },
+        { spanish: 'El médico me recetó unas pastillas y un jarabe.', english: 'The doctor prescribed me some tablets and a syrup.' },
+      ],
+    },
+  },
 ];
 
 export const UNITS: Unit[] = [
@@ -897,7 +1011,7 @@ export const UNITS: Unit[] = [
     id: 'unit_03',
     title: 'Travel & Directions',
     description: 'Navigate airports, hotels, and streets with confidence — and get around by public transport.',
-    lessonIds: ['lesson_08', 'lesson_09', 'lesson_29', 'lesson_31'],
+    lessonIds: ['lesson_08', 'lesson_09', 'lesson_29', 'lesson_61', 'lesson_62', 'lesson_31'],
     icon: '✈️',
   },
   {
@@ -911,21 +1025,21 @@ export const UNITS: Unit[] = [
     id: 'unit_05',
     title: 'Shopping & Money',
     description: 'Buy clothes and goods, ask prices, and handle payments in Spanish.',
-    lessonIds: ['lesson_14', 'lesson_15', 'lesson_16', 'lesson_33'],
+    lessonIds: ['lesson_14', 'lesson_15', 'lesson_16', 'lesson_63', 'lesson_64', 'lesson_33'],
     icon: '🛍️',
   },
   {
     id: 'unit_06',
     title: 'Weather & Nature',
     description: 'Talk about the weather, seasons, and the natural world around you.',
-    lessonIds: ['lesson_17', 'lesson_18', 'lesson_19', 'lesson_34'],
+    lessonIds: ['lesson_17', 'lesson_18', 'lesson_19', 'lesson_65', 'lesson_66', 'lesson_34'],
     icon: '☀️',
   },
   {
     id: 'unit_07',
     title: 'Health & Body',
     description: 'Describe body parts, talk about illness, and handle a visit to the doctor or pharmacy.',
-    lessonIds: ['lesson_20', 'lesson_21', 'lesson_22', 'lesson_35'],
+    lessonIds: ['lesson_20', 'lesson_21', 'lesson_22', 'lesson_67', 'lesson_68', 'lesson_35'],
     icon: '💊',
   },
   {

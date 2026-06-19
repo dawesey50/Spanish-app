@@ -315,6 +315,70 @@ export const WORDS: Word[] = [
   { id: 'w262', spanish: 'la arquitectura', english: 'architecture', example: 'La arquitectura de Gaudí es única en el mundo.', topic: 'culture', difficulty: 3, gender: 'f' },
   { id: 'w263', spanish: 'la capital', english: 'capital city', example: 'Madrid es la capital de España.', topic: 'culture', difficulty: 2, gender: 'f' },
   { id: 'w264', spanish: 'el turismo', english: 'tourism', example: 'El turismo es muy importante para la economía española.', topic: 'culture', difficulty: 2, gender: 'm' },
+
+  // Unit 3 – Hotel (w265–w270)
+  { id: 'w265', spanish: 'la habitación', english: 'room (hotel)', example: 'Quiero una habitación doble, por favor.', topic: 'travel', difficulty: 1, gender: 'f' },
+  { id: 'w266', spanish: 'la reserva', english: 'reservation / booking', example: 'Tengo una reserva a nombre de García.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w267', spanish: 'la recepción', english: 'reception desk', example: 'Por favor, deje la llave en la recepción.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w268', spanish: 'el equipaje', english: 'luggage / baggage', example: 'Tengo mucho equipaje y necesito ayuda.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w269', spanish: 'la llave', english: 'key', example: 'He perdido la llave de mi habitación.', topic: 'travel', difficulty: 1, gender: 'f' },
+  { id: 'w270', spanish: 'el ascensor', english: 'elevator / lift', example: 'El ascensor está al final del pasillo.', topic: 'travel', difficulty: 2, gender: 'm' },
+
+  // Unit 3 – Transport & Tickets (w271–w276)
+  { id: 'w271', spanish: 'el billete', english: 'ticket (transport)', example: 'Compré un billete de tren para Madrid.', topic: 'travel', difficulty: 1, gender: 'm' },
+  { id: 'w272', spanish: 'el andén', english: 'platform (train)', example: 'El tren sale del andén número tres.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w273', spanish: 'la salida', english: 'departure / exit', example: 'La salida de nuestro vuelo es a las diez.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w274', spanish: 'la llegada', english: 'arrival', example: 'La llegada está prevista para las dos de la tarde.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w275', spanish: 'facturar', english: 'to check in (luggage)', example: 'Hay que facturar el equipaje antes de embarcar.', topic: 'travel', difficulty: 2, gender: null },
+  { id: 'w276', spanish: 'el retraso', english: 'delay', example: 'El tren tiene un retraso de veinte minutos.', topic: 'travel', difficulty: 2, gender: 'm' },
+
+  // Unit 5 – At the Market (w277–w282)
+  { id: 'w277', spanish: 'el mercado', english: 'market', example: 'Los domingos vamos al mercado a comprar fruta.', topic: 'shopping', difficulty: 1, gender: 'm' },
+  { id: 'w278', spanish: 'fresco', english: 'fresh', example: 'El pescado del mercado siempre es muy fresco.', topic: 'shopping', difficulty: 1, gender: null },
+  { id: 'w279', spanish: 'barato', english: 'cheap / inexpensive', example: 'Esta camisa es muy barata, solo cuesta diez euros.', topic: 'shopping', difficulty: 1, gender: null },
+  { id: 'w280', spanish: 'caro', english: 'expensive', example: 'El abrigo me parece demasiado caro.', topic: 'shopping', difficulty: 1, gender: null },
+  { id: 'w281', spanish: 'el kilo', english: 'kilogram / kilo', example: 'Póngame un kilo de tomates, por favor.', topic: 'shopping', difficulty: 1, gender: 'm' },
+  { id: 'w282', spanish: 'la bolsa', english: 'bag', example: 'Necesito una bolsa para llevar la compra.', topic: 'shopping', difficulty: 1, gender: 'f' },
+
+  // Unit 5 – Clothes & Sizes (w283–w288)
+  { id: 'w283', spanish: 'la ropa', english: 'clothing / clothes', example: 'Necesito comprar ropa nueva para el verano.', topic: 'shopping', difficulty: 1, gender: 'f' },
+  { id: 'w284', spanish: 'la talla', english: 'size (clothing)', example: '¿Tienes esta camiseta en mi talla?', topic: 'shopping', difficulty: 2, gender: 'f' },
+  { id: 'w285', spanish: 'la camisa', english: 'shirt', example: 'Esa camisa azul te queda muy bien.', topic: 'shopping', difficulty: 1, gender: 'f' },
+  { id: 'w286', spanish: 'el pantalón', english: 'trousers / pants', example: 'Busco un pantalón negro de talla mediana.', topic: 'shopping', difficulty: 1, gender: 'm' },
+  { id: 'w287', spanish: 'probarse', english: 'to try on (clothes)', example: '¿Puedo probarme estos pantalones?', topic: 'shopping', difficulty: 2, gender: null },
+  { id: 'w288', spanish: 'el zapato', english: 'shoe', example: 'Estos zapatos son muy cómodos para caminar.', topic: 'shopping', difficulty: 1, gender: 'm' },
+
+  // Unit 6 – Geography & Landscape (w289–w294)
+  { id: 'w289', spanish: 'la montaña', english: 'mountain', example: 'En invierno vamos a esquiar a la montaña.', topic: 'nature', difficulty: 1, gender: 'f' },
+  { id: 'w290', spanish: 'el río', english: 'river', example: 'El río Ebro es el más largo de España.', topic: 'nature', difficulty: 1, gender: 'm' },
+  { id: 'w291', spanish: 'la playa', english: 'beach', example: 'En verano nos gusta ir a la playa.', topic: 'nature', difficulty: 1, gender: 'f' },
+  { id: 'w292', spanish: 'el bosque', english: 'forest / wood', example: 'Dimos un paseo por el bosque esta mañana.', topic: 'nature', difficulty: 2, gender: 'm' },
+  { id: 'w293', spanish: 'la isla', english: 'island', example: 'Las Canarias son un archipiélago de ocho islas.', topic: 'nature', difficulty: 2, gender: 'f' },
+  { id: 'w294', spanish: 'el lago', english: 'lake', example: 'El lago está rodeado de bosques y montañas.', topic: 'nature', difficulty: 2, gender: 'm' },
+
+  // Unit 6 – Animals (w295–w300)
+  { id: 'w295', spanish: 'el perro', english: 'dog', example: 'Mi perro se llama Bruno y es muy juguetón.', topic: 'nature', difficulty: 1, gender: 'm' },
+  { id: 'w296', spanish: 'el gato', english: 'cat', example: 'El gato duerme todo el día en el sofá.', topic: 'nature', difficulty: 1, gender: 'm' },
+  { id: 'w297', spanish: 'el pájaro', english: 'bird', example: 'Hay un pájaro cantando en el árbol del jardín.', topic: 'nature', difficulty: 1, gender: 'm' },
+  { id: 'w298', spanish: 'el caballo', english: 'horse', example: 'El caballo es un animal muy inteligente y noble.', topic: 'nature', difficulty: 1, gender: 'm' },
+  { id: 'w299', spanish: 'el pez', english: 'fish', example: 'Tenemos varios peces tropicales en casa.', topic: 'nature', difficulty: 1, gender: 'm' },
+  { id: 'w300', spanish: 'la vaca', english: 'cow', example: 'Las vacas pastan en el campo junto al río.', topic: 'nature', difficulty: 1, gender: 'f' },
+
+  // Unit 7 – Healthy Habits (w301–w306)
+  { id: 'w301', spanish: 'dormir', english: 'to sleep', example: 'Es importante dormir al menos ocho horas cada noche.', topic: 'health', difficulty: 1, gender: null },
+  { id: 'w302', spanish: 'descansar', english: 'to rest', example: 'Necesito descansar después de tanto trabajo.', topic: 'health', difficulty: 1, gender: null },
+  { id: 'w303', spanish: 'el estrés', english: 'stress', example: 'El estrés puede afectar a la salud de forma negativa.', topic: 'health', difficulty: 2, gender: 'm' },
+  { id: 'w304', spanish: 'la dieta', english: 'diet', example: 'Sigo una dieta equilibrada con mucha fruta y verdura.', topic: 'health', difficulty: 2, gender: 'f' },
+  { id: 'w305', spanish: 'saludable', english: 'healthy', example: 'Caminar todos los días es un hábito muy saludable.', topic: 'health', difficulty: 2, gender: null },
+  { id: 'w306', spanish: 'el bienestar', english: 'wellbeing / wellness', example: 'El deporte contribuye al bienestar físico y mental.', topic: 'health', difficulty: 3, gender: 'm' },
+
+  // Unit 7 – Pharmacy (w307–w312)
+  { id: 'w307', spanish: 'la farmacia', english: 'pharmacy / chemist', example: 'Necesito ir a la farmacia a comprar aspirinas.', topic: 'health', difficulty: 1, gender: 'f' },
+  { id: 'w308', spanish: 'la pastilla', english: 'tablet / pill', example: 'El médico me recetó unas pastillas para el dolor.', topic: 'health', difficulty: 2, gender: 'f' },
+  { id: 'w309', spanish: 'el jarabe', english: 'syrup (medicine)', example: 'Toma este jarabe para la tos tres veces al día.', topic: 'health', difficulty: 2, gender: 'm' },
+  { id: 'w310', spanish: 'la alergia', english: 'allergy', example: 'Tengo alergia al polen en primavera.', topic: 'health', difficulty: 2, gender: 'f' },
+  { id: 'w311', spanish: 'la receta', english: 'prescription / recipe', example: 'El médico me dio una receta para el antibiótico.', topic: 'health', difficulty: 2, gender: 'f' },
+  { id: 'w312', spanish: 'el antibiótico', english: 'antibiotic', example: 'Solo toma antibióticos cuando el médico lo indique.', topic: 'health', difficulty: 3, gender: 'm' },
 ];
 
 export const WORDS_BY_ID: Record<string, Word> = Object.fromEntries(
