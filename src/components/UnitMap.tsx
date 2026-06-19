@@ -8,7 +8,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fonts, gradients, type ThemeColors } from '../theme';
+import { fonts, gradients, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import { UNITS_BY_ID, LESSONS_BY_ID, isUnitUnlocked, isLessonUnlocked } from '../data/units';
 
@@ -26,6 +26,7 @@ interface Props {
   onLessonPress: (lessonId: string) => void;
   unlockAll?: boolean;
   lessonScores?: Record<string, number>;
+  onMiniGamePress?: (wordIds: string[], sectionLabel: string) => void;
 }
 
 // Curriculum sections — groups 12 units by CEFR level
@@ -134,6 +135,7 @@ export default function UnitMap({
   onLessonPress,
   unlockAll = false,
   lessonScores = {},
+  onMiniGamePress,
 }: Props) {
   const { c } = useTheme();
   const styles    = useThemedStyles(createStyles);
@@ -162,6 +164,13 @@ export default function UnitMap({
           return u && u.lessonIds.every((lId) => completedLessons.includes(lId)) ? n + 1 : n;
         }, 0);
         const sectionDone  = doneUnits === section.unitIds.length;
+        const sectionWordIds = [...new Set(
+          section.unitIds.flatMap((uId) =>
+            (UNITS_BY_ID[uId]?.lessonIds ?? []).flatMap((lId) =>
+              LESSONS_BY_ID[lId]?.wordIds ?? []
+            )
+          )
+        )];
 
         return (
           <View key={section.id}>
@@ -193,6 +202,7 @@ export default function UnitMap({
 
             {/* ── Units in section ────────────────────────────────────── */}
             {sectionUnits.map((unit) => {
+
               const unitUnlocked = unlockAll || isUnitUnlocked(unit.id, completedLessons);
               const doneCount    = unit.lessonIds.filter((id) => completedLessons.includes(id)).length;
               const allDone      = doneCount === unit.lessonIds.length && unit.lessonIds.length > 0;
@@ -410,6 +420,29 @@ export default function UnitMap({
                 </View>
               );
             })}
+
+            {/* ── Section checkpoint ──────────────────────────────────── */}
+            {sectionDone && onMiniGamePress && (
+              <TouchableOpacity
+                style={styles.checkpoint}
+                onPress={() => onMiniGamePress(sectionWordIds, section.label)}
+                activeOpacity={0.82}
+              >
+                <LinearGradient
+                  colors={section.grad}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.checkpointGradient}
+                >
+                  <Text style={styles.checkpointIcon}>🎮</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.checkpointTitle}>{section.cefr} Challenge Unlocked!</Text>
+                    <Text style={styles.checkpointDesc}>Word Match · Earn +30 XP</Text>
+                  </View>
+                  <Text style={styles.checkpointArrow}>›</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
           </View>
         );
       })}
@@ -587,4 +620,31 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     paddingVertical: 2,
   },
   scorePillText: { fontSize: 10, fontWeight: '800' },
+
+  // ── Section checkpoint ────────────────────────────────────────────────────
+  checkpoint: {
+    marginBottom: 28,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  checkpointGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  checkpointIcon: { fontSize: 24 },
+  checkpointTitle: {
+    fontSize: 14,
+    fontFamily: fonts.display,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  checkpointDesc: { fontSize: 11, color: 'rgba(255,255,255,0.8)' },
+  checkpointArrow: {
+    fontSize: 28,
+    color: 'rgba(255,255,255,0.65)',
+    fontWeight: '300',
+  },
 });

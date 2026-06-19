@@ -330,6 +330,9 @@ export default function HomeScreen() {
             <UnitMap
               completedLessons={progress.completedLessons}
               onLessonPress={(lessonId) => navigation.navigate('Lesson', { lessonId })}
+              onMiniGamePress={(wordIds, sectionLabel) =>
+                navigation.navigate('MiniGame', { wordIds, sectionLabel })
+              }
               unlockAll={progress.developerMode}
               lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
                 acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);
