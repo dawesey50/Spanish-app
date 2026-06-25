@@ -70,6 +70,7 @@ export type RootStackParamList = {
   Lesson: { lessonId: string };
   Conversation: { scenario?: string };
   MiniGame: { wordIds: string[]; sectionLabel: string };
+  SpeedRound: { wordIds: string[]; sectionLabel: string };
   Results: {
     lessonId: string;
     score: number;

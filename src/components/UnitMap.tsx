@@ -27,6 +27,7 @@ interface Props {
   unlockAll?: boolean;
   lessonScores?: Record<string, number>;
   onMiniGamePress?: (wordIds: string[], sectionLabel: string) => void;
+  onSpeedRoundPress?: (wordIds: string[], sectionLabel: string) => void;
 }
 
 // Curriculum sections — groups 12 units by CEFR level
@@ -136,6 +137,7 @@ export default function UnitMap({
   unlockAll = false,
   lessonScores = {},
   onMiniGamePress,
+  onSpeedRoundPress,
 }: Props) {
   const { c } = useTheme();
   const styles    = useThemedStyles(createStyles);
@@ -422,26 +424,53 @@ export default function UnitMap({
             })}
 
             {/* ── Section checkpoint ──────────────────────────────────── */}
-            {sectionDone && onMiniGamePress && (
-              <TouchableOpacity
-                style={styles.checkpoint}
-                onPress={() => onMiniGamePress(sectionWordIds, section.label)}
-                activeOpacity={0.82}
-              >
+            {sectionDone && (onMiniGamePress || onSpeedRoundPress) && (
+              <View style={styles.checkpoint}>
                 <LinearGradient
                   colors={section.grad}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.checkpointGradient}
+                  style={styles.checkpointHeader}
                 >
-                  <Text style={styles.checkpointIcon}>🎮</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.checkpointTitle}>{section.cefr} Challenge Unlocked!</Text>
-                    <Text style={styles.checkpointDesc}>Word Match · Earn +30 XP</Text>
-                  </View>
-                  <Text style={styles.checkpointArrow}>›</Text>
+                  <Text style={styles.checkpointTrophy}>🏆</Text>
+                  <Text style={styles.checkpointHeaderTitle}>{section.cefr} Complete — Play a Mini-Game!</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+                <View style={styles.checkpointGames}>
+                  {onMiniGamePress && (
+                    <TouchableOpacity
+                      style={styles.gameBtn}
+                      onPress={() => onMiniGamePress(sectionWordIds, section.label)}
+                      activeOpacity={0.78}
+                    >
+                      <Text style={styles.gameBtnIcon}>🎮</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.gameBtnTitle}>Word Match</Text>
+                        <Text style={styles.gameBtnDesc}>Match pairs to earn XP</Text>
+                      </View>
+                      <View style={[styles.gameBtnXP, { backgroundColor: '#EEF2FF' }]}>
+                        <Text style={[styles.gameBtnXPText, { color: '#4F46E5' }]}>+30 XP</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  {onMiniGamePress && onSpeedRoundPress && <View style={styles.gameDivider} />}
+                  {onSpeedRoundPress && (
+                    <TouchableOpacity
+                      style={styles.gameBtn}
+                      onPress={() => onSpeedRoundPress(sectionWordIds, section.label)}
+                      activeOpacity={0.78}
+                    >
+                      <Text style={styles.gameBtnIcon}>⚡</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.gameBtnTitle}>Speed Round</Text>
+                        <Text style={styles.gameBtnDesc}>Rapid-fire quiz challenge</Text>
+                      </View>
+                      <View style={[styles.gameBtnXP, { backgroundColor: '#FEF3C7' }]}>
+                        <Text style={[styles.gameBtnXPText, { color: '#D97706' }]}>+40 XP</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
             )}
           </View>
         );
@@ -624,27 +653,46 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   // ── Section checkpoint ────────────────────────────────────────────────────
   checkpoint: {
     marginBottom: 28,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.card,
     ...shadows.card,
   },
-  checkpointGradient: {
+  checkpointHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    gap: 12,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  checkpointIcon: { fontSize: 24 },
-  checkpointTitle: {
-    fontSize: 14,
+  checkpointTrophy: { fontSize: 20 },
+  checkpointHeaderTitle: {
+    fontSize: 13,
     fontFamily: fonts.display,
     color: '#FFFFFF',
-    marginBottom: 2,
   },
-  checkpointDesc: { fontSize: 11, color: 'rgba(255,255,255,0.8)' },
-  checkpointArrow: {
-    fontSize: 28,
-    color: 'rgba(255,255,255,0.65)',
-    fontWeight: '300',
+  checkpointGames: { paddingVertical: 4 },
+  gameBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  gameBtnIcon:  { fontSize: 22 },
+  gameBtnTitle: { fontSize: 14, fontFamily: fonts.display, color: c.text, marginBottom: 2 },
+  gameBtnDesc:  { fontSize: 11, color: c.textMuted },
+  gameBtnXP: {
+    borderRadius: 10,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  gameBtnXPText: { fontSize: 12, fontWeight: '800' },
+  gameDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.borderLight,
+    marginHorizontal: 16,
   },
 });
