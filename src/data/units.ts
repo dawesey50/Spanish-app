@@ -1104,6 +1104,176 @@ export const LESSONS: Lesson[] = [
       ],
     },
   },
+
+  // ── Final expansion: all units to 8 lessons ───────────────────────────────
+  {
+    id: 'lesson_77',
+    unitId: 'unit_01',
+    title: 'Numbers & Quantities',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w361', 'w362', 'w363', 'w364', 'w365', 'w366'],
+    grammarNote: {
+      tip: "Hundreds: cien (100), ciento uno (101), doscientos (200). Thousands: mil (1,000), dos mil (2,000). Ordinals: primero, segundo, tercero (1st, 2nd, 3rd) — first contracts: 'el primer día', 'el tercer piso'.",
+      examples: [
+        { spanish: 'Hay más de mil personas en el concierto esta noche.', english: 'There are more than a thousand people at the concert tonight.' },
+        { spanish: 'Este es el primer capítulo — vamos a contar las páginas.', english: 'This is the first chapter — let us count the pages.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_78',
+    unitId: 'unit_02',
+    title: 'Food Shopping',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w367', 'w368', 'w369', 'w370', 'w371', 'w372'],
+    grammarNote: {
+      tip: "Shops ending in '-ería' often sell a specific product: panadería (bread), carnicería (meat), frutería (fruit). Make a shopping list with 'necesito comprar': 'Necesito comprar pan y leche.' Offers: 'está de oferta' (it's on offer).",
+      examples: [
+        { spanish: 'Voy a la panadería y al supermercado para hacer la lista de la compra.', english: 'I am going to the bakery and supermarket to do the shopping list.' },
+        { spanish: 'El pollo congelado está de oferta en el supermercado esta semana.', english: 'Frozen chicken is on offer at the supermarket this week.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_79',
+    unitId: 'unit_03',
+    title: 'Asking for Directions',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w373', 'w374', 'w375', 'w376', 'w377', 'w378'],
+    grammarNote: {
+      tip: "Ask politely: 'Perdone, ¿cómo se va a...?' Give directions with imperatives: 'Gire a la derecha / izquierda en el semáforo.' 'Siga todo recto hasta el cruce.' 'Está cerca / lejos de aquí.'",
+      examples: [
+        { spanish: 'Perdone, ¿puede decirme cómo llegar al cruce con la calle Mayor?', english: 'Excuse me, can you tell me how to get to the junction with Calle Mayor?' },
+        { spanish: 'Siga todo recto y gire a la izquierda en el semáforo.', english: 'Go straight on and turn left at the traffic light.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_80',
+    unitId: 'unit_03',
+    title: 'Sightseeing',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w379', 'w380', 'w381', 'w382', 'w383', 'w384'],
+    grammarNote: {
+      tip: "Plan a visit: '¿A qué hora abre el museo?' (What time does the museum open?) 'La entrada cuesta...' (The ticket costs...) 'La visita guiada dura...' (The guided tour lasts...) 'Es gratuito los domingos' (It's free on Sundays).",
+      examples: [
+        { spanish: 'La entrada al museo cuesta doce euros, pero es gratuita los domingos.', english: 'The museum ticket costs twelve euros but is free on Sundays.' },
+        { spanish: 'La guía nos explicó el horario de la visita al castillo.', english: 'The guide explained the timetable for the castle visit to us.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_81',
+    unitId: 'unit_04',
+    title: 'Physical Descriptions',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w385', 'w386', 'w387', 'w388', 'w389', 'w390'],
+    grammarNote: {
+      tip: "Physical traits use 'tener' (to have): 'Tiene el pelo rubio y los ojos azules.' Height/build use 'ser': 'Es alto y delgado.' Adjectives agree with gender: rubio → rubia, moreno → morena, delgado → delgada.",
+      examples: [
+        { spanish: 'Tiene el pelo moreno, los ojos verdes y es bastante alto.', english: 'He has dark hair, green eyes and is quite tall.' },
+        { spanish: 'Mi hermana es rubia y delgada — se parece mucho a mi madre.', english: 'My sister is blonde and slim — she looks a lot like my mother.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_82',
+    unitId: 'unit_05',
+    title: 'In the Department Store',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w391', 'w392', 'w393', 'w394', 'w395', 'w396'],
+    grammarNote: {
+      tip: "Shopping phrases: '¿Puedo probármelo?' (Can I try it on?) 'Las rebajas empiezan en enero.' Returning goods: 'Quiero devolver esto' + reason. Discounts: 'Tiene un descuento del veinte por ciento' (It has a 20% discount).",
+      examples: [
+        { spanish: 'Vi un abrigo en el escaparate y quiero devolverlo por el descuento.', english: 'I saw a coat in the shop window and want to return it because of the discount.' },
+        { spanish: '¿Puedo usar el probador? Quiero probarme este vestido de moda.', english: 'Can I use the fitting room? I want to try on this fashionable dress.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_83',
+    unitId: 'unit_05',
+    title: 'Paying & Money',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w397', 'w398', 'w399', 'w400', 'w401', 'w402'],
+    grammarNote: {
+      tip: "Paying: '¿Cómo quiere pagar — con tarjeta o en efectivo?' (How do you want to pay?) '¿Me puede dar el recibo?' (Can you give me the receipt?) 'Me devolvió el cambio' (He/she gave me the change back).",
+      examples: [
+        { spanish: 'Pago con tarjeta. ¿Puede darme el recibo, por favor?', english: 'I will pay by card. Can you give me the receipt, please?' },
+        { spanish: 'Solo tengo efectivo — ¿hay un cajero automático cerca?', english: 'I only have cash — is there an ATM nearby?' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_84',
+    unitId: 'unit_06',
+    title: 'Extreme Weather',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w403', 'w404', 'w405', 'w406', 'w407', 'w408'],
+    grammarNote: {
+      tip: "Weather events: 'hay niebla / granizo' (there is fog / hail), 'cae granizo' (it is hailing). For reports: 'El pronóstico dice que habrá tormenta.' Impersonal: 'Se espera lluvia' (Rain is expected). 'Causar daños' (to cause damage).",
+      examples: [
+        { spanish: 'El pronóstico anuncia tormenta con granizo para esta tarde.', english: 'The forecast announces a storm with hail for this afternoon.' },
+        { spanish: 'La sequía ha causado graves inundaciones en el sur del país.', english: 'The drought has caused serious floods in the south of the country.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_85',
+    unitId: 'unit_06',
+    title: 'The Environment',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w409', 'w410', 'w411', 'w412', 'w413', 'w414'],
+    grammarNote: {
+      tip: "'Hay que + infinitive' for obligations: 'Hay que reciclar la basura.' 'Es importante + infinitive': 'Es importante no contaminar.' Use 'debería' for advice: 'Deberíamos usar energías renovables.'",
+      examples: [
+        { spanish: 'Hay que reciclar y no contaminar para proteger el medioambiente.', english: 'We must recycle and not pollute to protect the environment.' },
+        { spanish: 'El calentamiento global nos afecta a todos — deberíamos actuar ya.', english: 'Global warming affects us all — we should act now.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_86',
+    unitId: 'unit_07',
+    title: 'Symptoms & Illness',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w415', 'w416', 'w417', 'w418', 'w419', 'w420'],
+    grammarNote: {
+      tip: "Describe symptoms with 'tener': 'Tengo fiebre / dolor de cabeza / catarro.' 'Me siento mareado/a' (I feel dizzy). For duration: 'Llevo tres días con gripe' (I've had the flu for three days). The doctor: 'El médico me dijo que...'",
+      examples: [
+        { spanish: 'Tengo fiebre alta y me siento mareado — creo que es la gripe.', english: 'I have a high fever and feel dizzy — I think it is the flu.' },
+        { spanish: 'El médico me dijo que tenía catarro y me recetó jarabe.', english: 'The doctor told me I had a cold and prescribed me syrup.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_87',
+    unitId: 'unit_07',
+    title: 'Mental Wellbeing',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w421', 'w422', 'w423', 'w424', 'w425', 'w426'],
+    grammarNote: {
+      tip: "Reflexive verbs for wellness: 'relajarse' → me relajo, te relajas. 'Sentirse bien/mal' (to feel good/bad). Express mood: 'Hoy tengo muy buen ánimo.' 'El apoyo social es fundamental para superar la ansiedad.'",
+      examples: [
+        { spanish: 'Medito cada mañana para reducir la ansiedad y mejorar el ánimo.', english: 'I meditate every morning to reduce anxiety and improve my mood.' },
+        { spanish: 'Con el apoyo de mis amigos pude superar ese momento tan difícil.', english: 'With the support of my friends I was able to overcome that very difficult time.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_88',
+    unitId: 'unit_08',
+    title: 'Reading & Books',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w427', 'w428', 'w429', 'w430', 'w431', 'w432'],
+    grammarNote: {
+      tip: "'Leer' is irregular in the preterite: leí, leíste, leyó, leímos, leyeron. 'Estoy leyendo' (I am reading) — present continuous. Recommend a book: 'Te recomiendo este libro' or 'Deberías leer...'",
+      examples: [
+        { spanish: 'Estoy leyendo un libro que saqué de la biblioteca — ¡es increíble!', english: 'I am reading a book I got from the library — it is incredible!' },
+        { spanish: 'Leo el periódico online y a veces compro alguna revista de viajes.', english: 'I read the newspaper online and sometimes buy a travel magazine.' },
+      ],
+    },
+  },
 ];
 
 export const UNITS: Unit[] = [
@@ -1111,56 +1281,56 @@ export const UNITS: Unit[] = [
     id: 'unit_01',
     title: 'Greetings & Introductions',
     description: 'Learn how to say hello, introduce yourself, use basic pleasantries, count to 100, and ask key questions.',
-    lessonIds: ['lesson_01', 'lesson_02', 'lesson_03', 'lesson_27', 'lesson_69', 'lesson_70', 'lesson_28'],
+    lessonIds: ['lesson_01', 'lesson_02', 'lesson_03', 'lesson_27', 'lesson_69', 'lesson_70', 'lesson_77', 'lesson_28'],
     icon: '👋',
   },
   {
     id: 'unit_02',
     title: 'Food & Everyday Verbs',
     description: 'Order food, describe meals, and master the most common Spanish verbs including ser vs. estar.',
-    lessonIds: ['lesson_04', 'lesson_05', 'lesson_06', 'lesson_07', 'lesson_71', 'lesson_72', 'lesson_30'],
+    lessonIds: ['lesson_04', 'lesson_05', 'lesson_06', 'lesson_07', 'lesson_71', 'lesson_72', 'lesson_78', 'lesson_30'],
     icon: '🍽️',
   },
   {
     id: 'unit_03',
     title: 'Travel & Directions',
     description: 'Navigate airports, hotels, and streets with confidence — and get around by public transport.',
-    lessonIds: ['lesson_08', 'lesson_09', 'lesson_29', 'lesson_61', 'lesson_62', 'lesson_31'],
+    lessonIds: ['lesson_08', 'lesson_09', 'lesson_29', 'lesson_61', 'lesson_62', 'lesson_79', 'lesson_80', 'lesson_31'],
     icon: '✈️',
   },
   {
     id: 'unit_04',
     title: 'Family & Descriptions',
     description: 'Talk about your family, describe people and things using adjectives, colors, and time expressions.',
-    lessonIds: ['lesson_10', 'lesson_11', 'lesson_12', 'lesson_13', 'lesson_73', 'lesson_74', 'lesson_32'],
+    lessonIds: ['lesson_10', 'lesson_11', 'lesson_12', 'lesson_13', 'lesson_73', 'lesson_74', 'lesson_81', 'lesson_32'],
     icon: '👨‍👩‍👧‍👦',
   },
   {
     id: 'unit_05',
     title: 'Shopping & Money',
     description: 'Buy clothes and goods, ask prices, and handle payments in Spanish.',
-    lessonIds: ['lesson_14', 'lesson_15', 'lesson_16', 'lesson_63', 'lesson_64', 'lesson_33'],
+    lessonIds: ['lesson_14', 'lesson_15', 'lesson_16', 'lesson_63', 'lesson_64', 'lesson_82', 'lesson_83', 'lesson_33'],
     icon: '🛍️',
   },
   {
     id: 'unit_06',
     title: 'Weather & Nature',
     description: 'Talk about the weather, seasons, and the natural world around you.',
-    lessonIds: ['lesson_17', 'lesson_18', 'lesson_19', 'lesson_65', 'lesson_66', 'lesson_34'],
+    lessonIds: ['lesson_17', 'lesson_18', 'lesson_19', 'lesson_65', 'lesson_66', 'lesson_84', 'lesson_85', 'lesson_34'],
     icon: '☀️',
   },
   {
     id: 'unit_07',
     title: 'Health & Body',
     description: 'Describe body parts, talk about illness, and handle a visit to the doctor or pharmacy.',
-    lessonIds: ['lesson_20', 'lesson_21', 'lesson_22', 'lesson_67', 'lesson_68', 'lesson_35'],
+    lessonIds: ['lesson_20', 'lesson_21', 'lesson_22', 'lesson_67', 'lesson_68', 'lesson_86', 'lesson_87', 'lesson_35'],
     icon: '💊',
   },
   {
     id: 'unit_08',
     title: 'Hobbies & Free Time',
     description: 'Chat about sports, music, reading, and what you enjoy doing at the weekend.',
-    lessonIds: ['lesson_23', 'lesson_24', 'lesson_25', 'lesson_26', 'lesson_75', 'lesson_76', 'lesson_36'],
+    lessonIds: ['lesson_23', 'lesson_24', 'lesson_25', 'lesson_26', 'lesson_75', 'lesson_76', 'lesson_88', 'lesson_36'],
     icon: '🎯',
   },
   {

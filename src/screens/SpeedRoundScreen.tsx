@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
+import { awardXP } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -78,11 +79,12 @@ export default function SpeedRoundScreen() {
   const [correctCount, setCorrectCount] = useState(0);
   const [wasCorrect,   setWasCorrect]   = useState(false);
 
-  const barAnim        = useRef(new Animated.Value(1)).current;
-  const scaleAnim      = useRef(new Animated.Value(0)).current;
+  const barAnim         = useRef(new Animated.Value(1)).current;
+  const scaleAnim       = useRef(new Animated.Value(0)).current;
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
-  const timerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const barAnimRef     = useRef<Animated.CompositeAnimation | null>(null);
+  const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const barAnimRef      = useRef<Animated.CompositeAnimation | null>(null);
+  const xpAwarded       = useRef(false);
 
   const clearTimer = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -140,6 +142,11 @@ export default function SpeedRoundScreen() {
         useNativeDriver: true,
       }).start();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (!xpAwarded.current) {
+        xpAwarded.current = true;
+        const earned = Math.round((correctCount / questions.length) * XP_SPEED_ROUND);
+        awardXP(earned).catch(() => {});
+      }
     }
     return () => {
       if (phase === 'playing') clearTimer();

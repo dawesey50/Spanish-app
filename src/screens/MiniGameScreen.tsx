@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
+import { awardXP } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -67,12 +68,17 @@ export default function MiniGameScreen() {
   const [phase,     setPhase]     = useState<'playing' | 'finished'>('playing');
   const [attempts,  setAttempts]  = useState(0);
 
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim  = useRef(new Animated.Value(0)).current;
+  const scaleAnim  = useRef(new Animated.Value(0)).current;
+  const xpAwarded  = useRef(false);
 
   const celebrate = useCallback(() => {
     Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }).start();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (!xpAwarded.current) {
+      xpAwarded.current = true;
+      awardXP(XP_MINI_GAME).catch(() => {});
+    }
   }, [scaleAnim]);
 
   useEffect(() => {

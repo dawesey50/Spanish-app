@@ -443,6 +443,102 @@ export const WORDS: Word[] = [
   { id: 'w358', spanish: 'el concierto', english: 'concert', example: 'Fui al concierto de mi grupo favorito el sábado.', topic: 'hobbies', difficulty: 2, gender: 'm' },
   { id: 'w359', spanish: 'la película', english: 'film / movie', example: 'Vimos una película de terror que me dio mucho miedo.', topic: 'hobbies', difficulty: 1, gender: 'f' },
   { id: 'w360', spanish: 'el teatro', english: 'theatre / theater', example: 'Fui al teatro a ver una obra de Lope de Vega.', topic: 'hobbies', difficulty: 2, gender: 'm' },
+
+  // Unit 1 – Numbers & Quantities (w361–w366)
+  { id: 'w361', spanish: 'cien', english: 'one hundred', example: 'Hay más de cien personas en la sala de conferencias.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w362', spanish: 'mil', english: 'one thousand', example: 'El vuelo cuesta mil doscientos euros en total.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w363', spanish: 'el número', english: 'number', example: '¿Cuál es tu número de teléfono?', topic: 'greetings', difficulty: 1, gender: 'm' },
+  { id: 'w364', spanish: 'contar', english: 'to count', example: 'Los niños aprenden a contar desde pequeños.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w365', spanish: 'la cantidad', english: 'quantity / amount', example: 'Necesitamos una gran cantidad de agua potable.', topic: 'greetings', difficulty: 2, gender: 'f' },
+  { id: 'w366', spanish: 'primero', english: 'first', example: 'Llegué primero a la carrera y gané la medalla.', topic: 'greetings', difficulty: 1, gender: null },
+
+  // Unit 2 – Food Shopping (w367–w372)
+  { id: 'w367', spanish: 'la panadería', english: 'bakery', example: 'Compro el pan fresco en la panadería cada mañana.', topic: 'food', difficulty: 2, gender: 'f' },
+  { id: 'w368', spanish: 'la carnicería', english: "butcher's shop", example: 'En la carnicería venden carne fresca de calidad.', topic: 'food', difficulty: 2, gender: 'f' },
+  { id: 'w369', spanish: 'el supermercado', english: 'supermarket', example: 'Hacemos la compra semanal en el supermercado del barrio.', topic: 'food', difficulty: 1, gender: 'm' },
+  { id: 'w370', spanish: 'la lista', english: 'list', example: 'Haz una lista antes de ir al supermercado.', topic: 'food', difficulty: 1, gender: 'f' },
+  { id: 'w371', spanish: 'la oferta', english: 'special offer / deal', example: 'El aceite de oliva está de oferta esta semana.', topic: 'food', difficulty: 2, gender: 'f' },
+  { id: 'w372', spanish: 'congelado', english: 'frozen', example: 'Prefiero fruta fresca antes que congelada.', topic: 'food', difficulty: 2, gender: null },
+
+  // Unit 3 – Asking for Directions (w373–w378)
+  { id: 'w373', spanish: 'perdone', english: 'excuse me (polite)', example: 'Perdone, ¿sabe dónde está la estación de metro?', topic: 'travel', difficulty: 1, gender: null },
+  { id: 'w374', spanish: 'girar', english: 'to turn', example: 'Gire a la derecha en el semáforo.', topic: 'travel', difficulty: 2, gender: null },
+  { id: 'w375', spanish: 'el semáforo', english: 'traffic light', example: 'Para en el semáforo rojo y sigue en verde.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w376', spanish: 'el cruce', english: 'crossroads / junction', example: 'En el cruce, tome la segunda calle a la izquierda.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w377', spanish: 'cerca', english: 'near / nearby', example: 'El hotel está muy cerca de la estación de tren.', topic: 'travel', difficulty: 1, gender: null },
+  { id: 'w378', spanish: 'seguir todo recto', english: 'to go straight on', example: 'Siga todo recto hasta llegar a la plaza mayor.', topic: 'travel', difficulty: 2, gender: null },
+
+  // Unit 3 – Sightseeing (w379–w384)
+  { id: 'w379', spanish: 'el museo', english: 'museum', example: 'El Museo del Prado es uno de los más importantes del mundo.', topic: 'travel', difficulty: 1, gender: 'm' },
+  { id: 'w380', spanish: 'la entrada', english: 'entrance ticket / entry', example: 'Las entradas al museo cuestan doce euros.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w381', spanish: 'la visita', english: 'visit / tour', example: 'La visita guiada dura dos horas aproximadamente.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w382', spanish: 'la guía', english: 'guide / guidebook', example: 'La guía turística nos explicó la historia del castillo.', topic: 'travel', difficulty: 2, gender: 'f' },
+  { id: 'w383', spanish: 'el horario', english: 'opening hours / timetable', example: 'El museo tiene horario reducido los lunes.', topic: 'travel', difficulty: 2, gender: 'm' },
+  { id: 'w384', spanish: 'gratuito', english: 'free of charge', example: 'La entrada al museo es gratuita los domingos.', topic: 'travel', difficulty: 2, gender: null },
+
+  // Unit 4 – Physical Descriptions (w385–w390)
+  { id: 'w385', spanish: 'el pelo', english: 'hair', example: 'Tiene el pelo largo y castaño muy bonito.', topic: 'family', difficulty: 1, gender: 'm' },
+  { id: 'w386', spanish: 'los ojos', english: 'eyes', example: 'Sus ojos son de color verde claro.', topic: 'family', difficulty: 1, gender: 'm' },
+  { id: 'w387', spanish: 'alto', english: 'tall', example: 'Mi padre es muy alto, mide casi dos metros.', topic: 'family', difficulty: 1, gender: null },
+  { id: 'w388', spanish: 'delgado', english: 'slim / thin', example: 'Está delgado porque hace mucho deporte.', topic: 'family', difficulty: 1, gender: null },
+  { id: 'w389', spanish: 'rubio', english: 'blonde', example: 'Su hija pequeña es rubia con los ojos azules.', topic: 'family', difficulty: 1, gender: null },
+  { id: 'w390', spanish: 'moreno', english: 'dark-haired / swarthy', example: 'Es moreno y lleva barba desde hace años.', topic: 'family', difficulty: 1, gender: null },
+
+  // Unit 5 – Department Store (w391–w396)
+  { id: 'w391', spanish: 'el probador', english: 'fitting room', example: 'Puedes usar el probador para ver si te queda bien.', topic: 'shopping', difficulty: 2, gender: 'm' },
+  { id: 'w392', spanish: 'la moda', english: 'fashion', example: 'Le interesa mucho la moda y siempre viste bien.', topic: 'shopping', difficulty: 2, gender: 'f' },
+  { id: 'w393', spanish: 'el descuento', english: 'discount', example: 'Con la tarjeta del socio tienes un descuento del diez por ciento.', topic: 'shopping', difficulty: 2, gender: 'm' },
+  { id: 'w394', spanish: 'las rebajas', english: 'sales / discounts', example: 'Las rebajas de enero son las mejores del año.', topic: 'shopping', difficulty: 2, gender: 'f' },
+  { id: 'w395', spanish: 'el escaparate', english: 'shop window', example: 'Vi unos zapatos preciosos en el escaparate.', topic: 'shopping', difficulty: 2, gender: 'm' },
+  { id: 'w396', spanish: 'devolver', english: 'to return / exchange (goods)', example: 'Puedes devolver el artículo en un plazo de treinta días.', topic: 'shopping', difficulty: 2, gender: null },
+
+  // Unit 5 – Paying & Money (w397–w402)
+  { id: 'w397', spanish: 'la tarjeta', english: 'card (payment)', example: '¿Puedo pagar con tarjeta o solo en efectivo?', topic: 'shopping', difficulty: 1, gender: 'f' },
+  { id: 'w398', spanish: 'el efectivo', english: 'cash', example: 'En ese mercado solo aceptan efectivo, no tarjetas.', topic: 'shopping', difficulty: 2, gender: 'm' },
+  { id: 'w399', spanish: 'el recibo', english: 'receipt', example: 'Guarda el recibo por si necesitas devolver el artículo.', topic: 'shopping', difficulty: 2, gender: 'm' },
+  { id: 'w400', spanish: 'cobrar', english: 'to charge / to cost', example: 'El mecánico me cobró doscientos euros por la reparación.', topic: 'shopping', difficulty: 2, gender: null },
+  { id: 'w401', spanish: 'el cambio', english: 'change (money returned)', example: 'Pagué con un billete de cincuenta y me devolvieron el cambio.', topic: 'shopping', difficulty: 2, gender: 'm' },
+  { id: 'w402', spanish: 'el cajero automático', english: 'ATM / cash machine', example: 'Necesito sacar dinero del cajero automático.', topic: 'shopping', difficulty: 2, gender: 'm' },
+
+  // Unit 6 – Extreme Weather & Climate (w403–w408)
+  { id: 'w403', spanish: 'el granizo', english: 'hail', example: 'Cayó granizo tan fuerte que rompió algunos cristales.', topic: 'nature', difficulty: 2, gender: 'm' },
+  { id: 'w404', spanish: 'la niebla', english: 'fog / mist', example: 'Hay mucha niebla esta mañana; conduce con cuidado.', topic: 'nature', difficulty: 2, gender: 'f' },
+  { id: 'w405', spanish: 'la tormenta', english: 'storm', example: 'La tormenta de anoche fue muy fuerte y asustadora.', topic: 'nature', difficulty: 1, gender: 'f' },
+  { id: 'w406', spanish: 'la inundación', english: 'flood', example: 'Las inundaciones causaron graves daños en la ciudad.', topic: 'nature', difficulty: 3, gender: 'f' },
+  { id: 'w407', spanish: 'la sequía', english: 'drought', example: 'La sequía de este verano ha afectado a los cultivos.', topic: 'nature', difficulty: 3, gender: 'f' },
+  { id: 'w408', spanish: 'el pronóstico', english: 'forecast', example: 'El pronóstico del tiempo dice que lloverá mañana.', topic: 'nature', difficulty: 2, gender: 'm' },
+
+  // Unit 6 – Environment (w409–w414)
+  { id: 'w409', spanish: 'el medioambiente', english: 'environment', example: 'Debemos cuidar el medioambiente para las generaciones futuras.', topic: 'nature', difficulty: 3, gender: 'm' },
+  { id: 'w410', spanish: 'reciclar', english: 'to recycle', example: 'En casa reciclamos el papel, el vidrio y el plástico.', topic: 'nature', difficulty: 2, gender: null },
+  { id: 'w411', spanish: 'contaminar', english: 'to pollute', example: 'Las fábricas contaminan el río con sus residuos.', topic: 'nature', difficulty: 2, gender: null },
+  { id: 'w412', spanish: 'la basura', english: 'rubbish / waste', example: 'No tires la basura al suelo, usa la papelera.', topic: 'nature', difficulty: 1, gender: 'f' },
+  { id: 'w413', spanish: 'renovable', english: 'renewable', example: 'La energía solar es una fuente renovable y limpia.', topic: 'nature', difficulty: 3, gender: null },
+  { id: 'w414', spanish: 'el calentamiento', english: 'warming', example: 'El calentamiento global es uno de los grandes retos actuales.', topic: 'nature', difficulty: 3, gender: 'm' },
+
+  // Unit 7 – Symptoms & Illness (w415–w420)
+  { id: 'w415', spanish: 'el dolor', english: 'pain / ache', example: 'Tengo un dolor de cabeza muy fuerte desde esta mañana.', topic: 'health', difficulty: 1, gender: 'm' },
+  { id: 'w416', spanish: 'la fiebre', english: 'fever / temperature', example: 'El niño tiene fiebre alta y necesita ver al médico.', topic: 'health', difficulty: 2, gender: 'f' },
+  { id: 'w417', spanish: 'el catarro', english: 'cold (illness)', example: 'Tengo catarro y me duele la garganta.', topic: 'health', difficulty: 2, gender: 'm' },
+  { id: 'w418', spanish: 'la gripe', english: 'flu / influenza', example: 'Me quedé en cama tres días con la gripe.', topic: 'health', difficulty: 2, gender: 'f' },
+  { id: 'w419', spanish: 'mareado', english: 'dizzy / nauseous', example: 'Me siento mareado después del viaje en barco.', topic: 'health', difficulty: 2, gender: null },
+  { id: 'w420', spanish: 'el médico', english: 'doctor', example: 'El médico me recomendó descansar durante una semana.', topic: 'health', difficulty: 1, gender: 'm' },
+
+  // Unit 7 – Mental Wellbeing (w421–w426)
+  { id: 'w421', spanish: 'la ansiedad', english: 'anxiety', example: 'La ansiedad puede afectar tanto a la mente como al cuerpo.', topic: 'health', difficulty: 3, gender: 'f' },
+  { id: 'w422', spanish: 'relajarse', english: 'to relax', example: 'Los fines de semana me gusta relajarme en el campo.', topic: 'health', difficulty: 2, gender: null },
+  { id: 'w423', spanish: 'meditar', english: 'to meditate', example: 'Medito diez minutos cada mañana para reducir el estrés.', topic: 'health', difficulty: 2, gender: null },
+  { id: 'w424', spanish: 'el apoyo', english: 'support', example: 'El apoyo de la familia es fundamental en momentos difíciles.', topic: 'health', difficulty: 2, gender: 'm' },
+  { id: 'w425', spanish: 'el ánimo', english: 'mood / spirit', example: 'Hoy tengo muy buen ánimo después de dormir bien.', topic: 'health', difficulty: 2, gender: 'm' },
+  { id: 'w426', spanish: 'superar', english: 'to overcome', example: 'Con esfuerzo puedes superar cualquier dificultad.', topic: 'health', difficulty: 2, gender: null },
+
+  // Unit 8 – Reading & Culture (w427–w432)
+  { id: 'w427', spanish: 'el libro', english: 'book', example: 'Estoy leyendo un libro de aventuras muy emocionante.', topic: 'hobbies', difficulty: 1, gender: 'm' },
+  { id: 'w428', spanish: 'leer', english: 'to read', example: 'Leo media hora antes de dormir todas las noches.', topic: 'hobbies', difficulty: 1, gender: null },
+  { id: 'w429', spanish: 'el periódico', english: 'newspaper', example: 'Mi padre lee el periódico cada mañana con el café.', topic: 'hobbies', difficulty: 2, gender: 'm' },
+  { id: 'w430', spanish: 'la revista', english: 'magazine', example: 'Compro una revista de viajes cuando vuelo larga distancia.', topic: 'hobbies', difficulty: 2, gender: 'f' },
+  { id: 'w431', spanish: 'la biblioteca', english: 'library', example: 'Estudio en la biblioteca porque hay más silencio.', topic: 'hobbies', difficulty: 2, gender: 'f' },
+  { id: 'w432', spanish: 'el capítulo', english: 'chapter', example: 'Leí tres capítulos del libro de un tirón.', topic: 'hobbies', difficulty: 2, gender: 'm' },
 ];
 
 export const WORDS_BY_ID: Record<string, Word> = Object.fromEntries(
