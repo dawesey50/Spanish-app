@@ -379,6 +379,70 @@ export const WORDS: Word[] = [
   { id: 'w310', spanish: 'la alergia', english: 'allergy', example: 'Tengo alergia al polen en primavera.', topic: 'health', difficulty: 2, gender: 'f' },
   { id: 'w311', spanish: 'la receta', english: 'prescription / recipe', example: 'El médico me dio una receta para el antibiótico.', topic: 'health', difficulty: 2, gender: 'f' },
   { id: 'w312', spanish: 'el antibiótico', english: 'antibiotic', example: 'Solo toma antibióticos cuando el médico lo indique.', topic: 'health', difficulty: 3, gender: 'm' },
+
+  // Unit 1 – Feelings & Emotions (w313–w318)
+  { id: 'w313', spanish: 'contento', english: 'happy / pleased', example: 'Estoy muy contento con mis notas del examen.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w314', spanish: 'triste', english: 'sad', example: 'Está triste porque su equipo perdió el partido.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w315', spanish: 'enfadado', english: 'angry / annoyed', example: 'Estaba enfadado porque llegaste tarde.', topic: 'greetings', difficulty: 2, gender: null },
+  { id: 'w316', spanish: 'nervioso', english: 'nervous / anxious', example: 'Estoy nervioso antes de la presentación.', topic: 'greetings', difficulty: 2, gender: null },
+  { id: 'w317', spanish: 'cansado', english: 'tired', example: 'Estoy muy cansado después de trabajar todo el día.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w318', spanish: 'aburrido', english: 'bored / boring', example: 'Los niños están aburridos cuando llueve mucho.', topic: 'greetings', difficulty: 2, gender: null },
+
+  // Unit 1 – Time Expressions (w319–w324)
+  { id: 'w319', spanish: 'ahora', english: 'now', example: 'Ahora mismo no puedo hablar, llámame más tarde.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w320', spanish: 'siempre', english: 'always', example: 'Siempre desayuno un café con leche y tostadas.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w321', spanish: 'nunca', english: 'never', example: 'Nunca llego tarde al trabajo.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w322', spanish: 'a veces', english: 'sometimes', example: 'A veces salimos a cenar los viernes por la noche.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w323', spanish: 'tarde', english: 'late', example: 'El tren llegó muy tarde y perdimos la reunión.', topic: 'greetings', difficulty: 1, gender: null },
+  { id: 'w324', spanish: 'temprano', english: 'early', example: 'Me levanto temprano para ir al gimnasio antes del trabajo.', topic: 'greetings', difficulty: 1, gender: null },
+
+  // Unit 2 – In the Kitchen (w325–w330)
+  { id: 'w325', spanish: 'cocinar', english: 'to cook', example: 'Me encanta cocinar platos tradicionales españoles.', topic: 'food', difficulty: 1, gender: null },
+  { id: 'w326', spanish: 'el horno', english: 'oven', example: 'Mete el pollo en el horno a 180 grados.', topic: 'food', difficulty: 2, gender: 'm' },
+  { id: 'w327', spanish: 'freír', english: 'to fry', example: 'Freír los huevos con aceite de oliva es muy sencillo.', topic: 'food', difficulty: 2, gender: null },
+  { id: 'w328', spanish: 'hervir', english: 'to boil', example: 'Hierve el agua antes de añadir la pasta.', topic: 'food', difficulty: 2, gender: null },
+  { id: 'w329', spanish: 'la sartén', english: 'frying pan', example: 'Calienta la sartén con un poco de aceite.', topic: 'food', difficulty: 2, gender: 'f' },
+  { id: 'w330', spanish: 'los ingredientes', english: 'ingredients', example: 'Compra todos los ingredientes antes de empezar a cocinar.', topic: 'food', difficulty: 2, gender: 'm' },
+
+  // Unit 2 – At the Café (w331–w336)
+  { id: 'w331', spanish: 'el café', english: 'coffee', example: 'Tomo un café con leche todas las mañanas.', topic: 'food', difficulty: 1, gender: 'm' },
+  { id: 'w332', spanish: 'el zumo', english: 'juice', example: 'Un zumo de naranja natural, por favor.', topic: 'food', difficulty: 1, gender: 'm' },
+  { id: 'w333', spanish: 'pedir', english: 'to order / to ask for', example: 'Voy a pedir el menú del día, ¿y tú?', topic: 'food', difficulty: 2, gender: null },
+  { id: 'w334', spanish: 'la cuenta', english: 'the bill / check', example: 'Cuando quieras, tráenos la cuenta, por favor.', topic: 'food', difficulty: 2, gender: 'f' },
+  { id: 'w335', spanish: 'la propina', english: 'tip (gratuity)', example: 'Dejamos una propina al camarero por el buen servicio.', topic: 'food', difficulty: 2, gender: 'f' },
+  { id: 'w336', spanish: 'el camarero', english: 'waiter', example: 'El camarero nos recomendó el plato del día.', topic: 'food', difficulty: 1, gender: 'm' },
+
+  // Unit 4 – Personality & Character (w337–w342)
+  { id: 'w337', spanish: 'amable', english: 'kind / friendly', example: 'Los vecinos son muy amables y siempre ayudan.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w338', spanish: 'inteligente', english: 'intelligent / clever', example: 'Es un estudiante muy inteligente y saca buenas notas.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w339', spanish: 'gracioso', english: 'funny / amusing', example: 'Mi amigo es muy gracioso y siempre nos hace reír.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w340', spanish: 'tímido', english: 'shy / timid', example: 'Al principio era tímido pero luego se abrió más.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w341', spanish: 'generoso', english: 'generous', example: 'Es muy generoso y siempre invita a sus amigos.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w342', spanish: 'trabajador', english: 'hard-working', example: 'Es una persona muy trabajadora y nunca llega tarde.', topic: 'family', difficulty: 2, gender: null },
+
+  // Unit 4 – Relationships (w343–w348)
+  { id: 'w343', spanish: 'el amigo', english: 'friend', example: 'Mi mejor amigo vive en Barcelona desde hace años.', topic: 'family', difficulty: 1, gender: 'm' },
+  { id: 'w344', spanish: 'el novio', english: 'boyfriend / fiancé', example: 'Mi novio y yo llevamos tres años saliendo juntos.', topic: 'family', difficulty: 1, gender: 'm' },
+  { id: 'w345', spanish: 'la pareja', english: 'partner / couple', example: 'Mi pareja y yo nos conocimos en la universidad.', topic: 'family', difficulty: 2, gender: 'f' },
+  { id: 'w346', spanish: 'casarse', english: 'to get married', example: 'Mi hermana se casó en junio con una boda preciosa.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w347', spanish: 'llevarse bien', english: 'to get along well', example: 'Me llevo muy bien con mis compañeros de trabajo.', topic: 'family', difficulty: 2, gender: null },
+  { id: 'w348', spanish: 'conocerse', english: 'to meet / get to know each other', example: 'Nos conocimos en una fiesta el año pasado.', topic: 'family', difficulty: 2, gender: null },
+
+  // Unit 8 – Sports & Exercise (w349–w354)
+  { id: 'w349', spanish: 'el fútbol', english: 'football / soccer', example: 'El fútbol es el deporte más popular en España.', topic: 'hobbies', difficulty: 1, gender: 'm' },
+  { id: 'w350', spanish: 'nadar', english: 'to swim', example: 'Nado en la piscina municipal tres veces a la semana.', topic: 'hobbies', difficulty: 1, gender: null },
+  { id: 'w351', spanish: 'correr', english: 'to run', example: 'Corro media hora cada mañana para mantenerme en forma.', topic: 'hobbies', difficulty: 1, gender: null },
+  { id: 'w352', spanish: 'el gimnasio', english: 'gym', example: 'Voy al gimnasio los lunes, miércoles y viernes.', topic: 'hobbies', difficulty: 1, gender: 'm' },
+  { id: 'w353', spanish: 'ganar', english: 'to win / to earn', example: 'Nuestro equipo ganó el partido por dos goles a uno.', topic: 'hobbies', difficulty: 2, gender: null },
+  { id: 'w354', spanish: 'perder', english: 'to lose', example: 'No importa perder, lo importante es participar.', topic: 'hobbies', difficulty: 2, gender: null },
+
+  // Unit 8 – Music & Entertainment (w355–w360)
+  { id: 'w355', spanish: 'la música', english: 'music', example: 'Escucho música clásica cuando estudio o trabajo.', topic: 'hobbies', difficulty: 1, gender: 'f' },
+  { id: 'w356', spanish: 'tocar', english: 'to play (an instrument)', example: 'Toco la guitarra desde que tenía diez años.', topic: 'hobbies', difficulty: 2, gender: null },
+  { id: 'w357', spanish: 'cantar', english: 'to sing', example: 'Le encanta cantar en el coro del colegio.', topic: 'hobbies', difficulty: 1, gender: null },
+  { id: 'w358', spanish: 'el concierto', english: 'concert', example: 'Fui al concierto de mi grupo favorito el sábado.', topic: 'hobbies', difficulty: 2, gender: 'm' },
+  { id: 'w359', spanish: 'la película', english: 'film / movie', example: 'Vimos una película de terror que me dio mucho miedo.', topic: 'hobbies', difficulty: 1, gender: 'f' },
+  { id: 'w360', spanish: 'el teatro', english: 'theatre / theater', example: 'Fui al teatro a ver una obra de Lope de Vega.', topic: 'hobbies', difficulty: 2, gender: 'm' },
 ];
 
 export const WORDS_BY_ID: Record<string, Word> = Object.fromEntries(

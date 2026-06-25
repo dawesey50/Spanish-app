@@ -990,6 +990,120 @@ export const LESSONS: Lesson[] = [
       ],
     },
   },
+
+  // ── New lessons: Units 1, 2, 4, 8 expansion ──────────────────────────────
+  {
+    id: 'lesson_69',
+    unitId: 'unit_01',
+    title: 'Feelings & Emotions',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w313', 'w314', 'w315', 'w316', 'w317', 'w318'],
+    grammarNote: {
+      tip: "Use 'estar' for temporary feelings: 'Estoy contento/a' (I'm happy right now). Adjectives agree with gender: contento → contenta, nervioso → nerviosa, cansado → cansada. ¿Cómo estás? — ¡Estoy muy bien, gracias!",
+      examples: [
+        { spanish: 'Estoy muy cansado porque no dormí bien anoche.', english: 'I am very tired because I did not sleep well last night.' },
+        { spanish: 'Ella está nerviosa porque tiene un examen mañana.', english: 'She is nervous because she has an exam tomorrow.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_70',
+    unitId: 'unit_01',
+    title: 'Time Expressions',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w319', 'w320', 'w321', 'w322', 'w323', 'w324'],
+    grammarNote: {
+      tip: "Frequency adverbs can go at the start or end of a sentence: 'Siempre desayuno temprano' / 'Desayuno temprano siempre.' 'Nunca' and 'a veces' follow the same pattern. Use 'ahora mismo' to mean 'right now.'",
+      examples: [
+        { spanish: 'Siempre llego temprano, nunca llego tarde.', english: 'I always arrive early, I never arrive late.' },
+        { spanish: 'A veces salimos a cenar, pero ahora preferimos cocinar en casa.', english: 'Sometimes we go out for dinner, but right now we prefer to cook at home.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_71',
+    unitId: 'unit_02',
+    title: 'In the Kitchen',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w325', 'w326', 'w327', 'w328', 'w329', 'w330'],
+    grammarNote: {
+      tip: "Cooking verbs: 'freír en aceite' (fry in oil), 'hervir en agua' (boil in water), 'meter en el horno' (put in the oven). Note that 'freír' is irregular: fríe/fríen. Temperature: 'a 180 grados' (at 180 degrees).",
+      examples: [
+        { spanish: 'Hierve el agua y añade la pasta con un poco de sal.', english: 'Boil the water and add the pasta with a pinch of salt.' },
+        { spanish: 'Fríe los huevos en la sartén con aceite de oliva.', english: 'Fry the eggs in the frying pan with olive oil.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_72',
+    unitId: 'unit_02',
+    title: 'At the Café',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w331', 'w332', 'w333', 'w334', 'w335', 'w336'],
+    grammarNote: {
+      tip: "Ordering in a café: 'Quiero / Me pone / Póngame un café.' Asking for the bill: '¿Nos trae la cuenta, por favor?' The waiter is 'el camarero' (m) or 'la camarera' (f). Tips (la propina) are optional in Spain.",
+      examples: [
+        { spanish: 'Camarero, ¿nos puede traer la cuenta cuando pueda?', english: 'Waiter, could you bring us the bill when you can?' },
+        { spanish: 'Voy a pedir un café con leche y un zumo de naranja.', english: 'I am going to order a white coffee and an orange juice.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_73',
+    unitId: 'unit_04',
+    title: 'Personality & Character',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w337', 'w338', 'w339', 'w340', 'w341', 'w342'],
+    grammarNote: {
+      tip: "Use 'ser' for permanent character traits: 'Es muy amable.' Adjective agreement: amable → amable (same), gracioso → graciosa, tímido → tímida, trabajador → trabajadora. Stack adjectives with 'y': 'Es inteligente y generoso.'",
+      examples: [
+        { spanish: 'Mi jefe es muy trabajador e inteligente pero también amable.', english: 'My boss is very hard-working and clever, but also kind.' },
+        { spanish: 'Al principio era tímida, pero ahora es muy graciosa y generosa.', english: 'At first she was shy, but now she is very funny and generous.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_74',
+    unitId: 'unit_04',
+    title: 'Relationships',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w343', 'w344', 'w345', 'w346', 'w347', 'w348'],
+    grammarNote: {
+      tip: "Reflexive verbs express mutual actions: 'conocerse' (to meet each other), 'llevarse bien' (to get on well). Conjugate: 'nos conocemos, os conocéis, se conocen.' 'Casarse con' — note the 'con': 'Se casó con María.'",
+      examples: [
+        { spanish: 'Mis padres se conocieron en la universidad hace treinta años.', english: 'My parents met each other at university thirty years ago.' },
+        { spanish: 'Me llevo muy bien con mi novio porque somos muy similares.', english: 'I get along very well with my boyfriend because we are very similar.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_75',
+    unitId: 'unit_08',
+    title: 'Sports & Exercise',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w349', 'w350', 'w351', 'w352', 'w353', 'w354'],
+    grammarNote: {
+      tip: "'Jugar a' + team sport: 'juego al fútbol.' 'Hacer' + activity: 'hago natación, hago deporte.' Or simply the verb: 'nado, corro.' Win/lose: 'ganar el partido / perder el partido.' ¡Ánimo! (Come on!)",
+      examples: [
+        { spanish: 'Juego al fútbol los sábados y nado en la piscina entre semana.', english: 'I play football on Saturdays and swim in the pool during the week.' },
+        { spanish: 'Corremos en el parque y luego vamos al gimnasio juntos.', english: 'We run in the park and then go to the gym together.' },
+      ],
+    },
+  },
+  {
+    id: 'lesson_76',
+    unitId: 'unit_08',
+    title: 'Music & Entertainment',
+    questionTypes: ['multipleChoice', 'typing', 'listening', 'speaking', 'sentenceBuilder'],
+    wordIds: ['w355', 'w356', 'w357', 'w358', 'w359', 'w360'],
+    grammarNote: {
+      tip: "'Tocar' = to play an instrument: 'toco la guitarra.' 'Jugar' = to play a game/sport. 'Escuchar música' (listen to music), 'ver una película' (watch a film), 'ir al teatro' (go to the theatre). 'Me encanta + infinitive' for things you love.",
+      examples: [
+        { spanish: 'Toco el piano y canto en un coro — me encanta la música.', english: 'I play the piano and sing in a choir — I love music.' },
+        { spanish: 'El sábado fuimos al concierto y después vimos una película.', english: 'On Saturday we went to the concert and then watched a film.' },
+      ],
+    },
+  },
 ];
 
 export const UNITS: Unit[] = [
@@ -997,14 +1111,14 @@ export const UNITS: Unit[] = [
     id: 'unit_01',
     title: 'Greetings & Introductions',
     description: 'Learn how to say hello, introduce yourself, use basic pleasantries, count to 100, and ask key questions.',
-    lessonIds: ['lesson_01', 'lesson_02', 'lesson_03', 'lesson_27', 'lesson_28'],
+    lessonIds: ['lesson_01', 'lesson_02', 'lesson_03', 'lesson_27', 'lesson_69', 'lesson_70', 'lesson_28'],
     icon: '👋',
   },
   {
     id: 'unit_02',
     title: 'Food & Everyday Verbs',
     description: 'Order food, describe meals, and master the most common Spanish verbs including ser vs. estar.',
-    lessonIds: ['lesson_04', 'lesson_05', 'lesson_06', 'lesson_07', 'lesson_30'],
+    lessonIds: ['lesson_04', 'lesson_05', 'lesson_06', 'lesson_07', 'lesson_71', 'lesson_72', 'lesson_30'],
     icon: '🍽️',
   },
   {
@@ -1018,7 +1132,7 @@ export const UNITS: Unit[] = [
     id: 'unit_04',
     title: 'Family & Descriptions',
     description: 'Talk about your family, describe people and things using adjectives, colors, and time expressions.',
-    lessonIds: ['lesson_10', 'lesson_11', 'lesson_12', 'lesson_13', 'lesson_32'],
+    lessonIds: ['lesson_10', 'lesson_11', 'lesson_12', 'lesson_13', 'lesson_73', 'lesson_74', 'lesson_32'],
     icon: '👨‍👩‍👧‍👦',
   },
   {
@@ -1046,7 +1160,7 @@ export const UNITS: Unit[] = [
     id: 'unit_08',
     title: 'Hobbies & Free Time',
     description: 'Chat about sports, music, reading, and what you enjoy doing at the weekend.',
-    lessonIds: ['lesson_23', 'lesson_24', 'lesson_25', 'lesson_26', 'lesson_36'],
+    lessonIds: ['lesson_23', 'lesson_24', 'lesson_25', 'lesson_26', 'lesson_75', 'lesson_76', 'lesson_36'],
     icon: '🎯',
   },
   {
