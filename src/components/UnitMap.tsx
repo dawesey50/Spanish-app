@@ -28,6 +28,7 @@ interface Props {
   lessonScores?: Record<string, number>;
   onMiniGamePress?: (wordIds: string[], sectionLabel: string) => void;
   onSpeedRoundPress?: (wordIds: string[], sectionLabel: string) => void;
+  onWordScramblePress?: (wordIds: string[], sectionLabel: string) => void;
 }
 
 // Curriculum sections — groups 12 units by CEFR level
@@ -138,6 +139,7 @@ export default function UnitMap({
   lessonScores = {},
   onMiniGamePress,
   onSpeedRoundPress,
+  onWordScramblePress,
 }: Props) {
   const { c } = useTheme();
   const styles    = useThemedStyles(createStyles);
@@ -424,7 +426,7 @@ export default function UnitMap({
             })}
 
             {/* ── Section checkpoint ──────────────────────────────────── */}
-            {sectionDone && (onMiniGamePress || onSpeedRoundPress) && (
+            {sectionDone && (onMiniGamePress || onSpeedRoundPress || onWordScramblePress) && (
               <View style={styles.checkpoint}>
                 <LinearGradient
                   colors={section.grad}
@@ -466,6 +468,23 @@ export default function UnitMap({
                       </View>
                       <View style={[styles.gameBtnXP, { backgroundColor: '#FEF3C7' }]}>
                         <Text style={[styles.gameBtnXPText, { color: '#D97706' }]}>+40 XP</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  {(onMiniGamePress || onSpeedRoundPress) && onWordScramblePress && <View style={styles.gameDivider} />}
+                  {onWordScramblePress && (
+                    <TouchableOpacity
+                      style={styles.gameBtn}
+                      onPress={() => onWordScramblePress(sectionWordIds, section.label)}
+                      activeOpacity={0.78}
+                    >
+                      <Text style={styles.gameBtnIcon}>🔤</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.gameBtnTitle}>Word Scramble</Text>
+                        <Text style={styles.gameBtnDesc}>Unscramble the letters</Text>
+                      </View>
+                      <View style={[styles.gameBtnXP, { backgroundColor: '#F3E8FF' }]}>
+                        <Text style={[styles.gameBtnXPText, { color: '#7C3AED' }]}>+35 XP</Text>
                       </View>
                     </TouchableOpacity>
                   )}

@@ -20,6 +20,7 @@ import PronunciationScreen from '../screens/PronunciationScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import MiniGameScreen from '../screens/MiniGameScreen';
 import SpeedRoundScreen from '../screens/SpeedRoundScreen';
+import WordScrambleScreen from '../screens/WordScrambleScreen';
 import TabBar from '../components/TabBar';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -99,6 +100,7 @@ export default function AppNavigator({ hasCompletedOnboarding }: Props) {
           <Stack.Screen name="Pronunciation" component={PronunciationScreen} options={{ animation: 'slide_from_right'  }} />
           <Stack.Screen name="MiniGame"      component={MiniGameScreen}      options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="SpeedRound"    component={SpeedRoundScreen}    options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="WordScramble"  component={WordScrambleScreen}  options={{ animation: 'slide_from_bottom' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </View>

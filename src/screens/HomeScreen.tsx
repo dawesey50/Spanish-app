@@ -336,6 +336,9 @@ export default function HomeScreen() {
               onSpeedRoundPress={(wordIds, sectionLabel) =>
                 navigation.navigate('SpeedRound', { wordIds, sectionLabel })
               }
+              onWordScramblePress={(wordIds, sectionLabel) =>
+                navigation.navigate('WordScramble', { wordIds, sectionLabel })
+              }
               unlockAll={progress.developerMode}
               lessonScores={progress.history.reduce<Record<string, number>>((acc, h) => {
                 acc[h.lessonId] = Math.max(acc[h.lessonId] ?? 0, h.score);

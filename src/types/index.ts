@@ -71,6 +71,7 @@ export type RootStackParamList = {
   Conversation: { scenario?: string };
   MiniGame: { wordIds: string[]; sectionLabel: string };
   SpeedRound: { wordIds: string[]; sectionLabel: string };
+  WordScramble: { wordIds: string[]; sectionLabel: string };
   Results: {
     lessonId: string;
     score: number;
