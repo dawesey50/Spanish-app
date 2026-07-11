@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
-import { awardXP } from '../database/db';
+import { awardXP, recordWrongAnswer, scheduleWordReview } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -104,7 +104,7 @@ export default function SpeedRoundScreen() {
     setPhase('playing');
   }, [questions.length]);
 
-  const startQuestion = useCallback(() => {
+  const startQuestion = useCallback((wordId: string) => {
     barAnim.setValue(1);
     barAnimRef.current = Animated.timing(barAnim, {
       toValue: 0,
@@ -118,13 +118,14 @@ export default function SpeedRoundScreen() {
         setPhase('feedback');
         playSound('wrong');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        recordWrongAnswer(wordId).catch(() => {});
       }
     });
   }, [barAnim]);
 
   useEffect(() => {
     if (phase === 'playing') {
-      startQuestion();
+      startQuestion(questions[currentIdx].wordId);
     } else if (phase === 'feedback') {
       clearTimer();
       timerRef.current = setTimeout(() => {
@@ -166,13 +167,15 @@ export default function SpeedRoundScreen() {
       setCorrectCount((n) => n + 1);
       playSound('correct');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      scheduleWordReview(questions[currentIdx].wordId, true).catch(() => {});
     } else {
       playSound('wrong');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      recordWrongAnswer(questions[currentIdx].wordId).catch(() => {});
     }
   };
 
-  // ── Finished ─────────────────────────────────────────────────────────────
+  // ── Finished ───────────────────────────────────────────────────────────────────
   if (phase === 'finished') {
     const accuracy    = Math.round((correctCount / questions.length) * 100);
     const xpEarned    = Math.round((correctCount / questions.length) * XP_SPEED_ROUND);
@@ -226,7 +229,7 @@ export default function SpeedRoundScreen() {
     );
   }
 
-  // ── Playing / Feedback ────────────────────────────────────────────────────
+  // ── Playing / Feedback ──────────────────────────────────────────────────────────
   const question = questions[currentIdx];
 
   const barColor = barAnim.interpolate({

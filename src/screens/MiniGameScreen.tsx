@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
-import { awardXP } from '../database/db';
+import { awardXP, recordWrongAnswer, scheduleWordReview } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -104,6 +104,7 @@ export default function MiniGameScreen() {
       setSelectedRight(null);
       playSound('correct');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      scheduleWordReview(leftId, true).catch(() => {});
       if (next.size === NUM_PAIRS) {
         setTimeout(() => setPhase('finished'), 350);
       }
@@ -112,6 +113,8 @@ export default function MiniGameScreen() {
       doShake();
       playSound('wrong');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      recordWrongAnswer(leftId).catch(() => {});
+      recordWrongAnswer(rightId).catch(() => {});
       setTimeout(() => {
         setSelectedLeft(null);
         setSelectedRight(null);
@@ -173,7 +176,7 @@ export default function MiniGameScreen() {
     );
   };
 
-  // ── Finished ─────────────────────────────────────────────────────────────
+  // ── Finished ───────────────────────────────────────────────────────────────────
   if (phase === 'finished') {
     const accuracy = Math.round((NUM_PAIRS / Math.max(attempts, NUM_PAIRS)) * 100);
     return (
@@ -220,7 +223,7 @@ export default function MiniGameScreen() {
     );
   }
 
-  // ── Playing ───────────────────────────────────────────────────────────────
+  // ── Playing ─────────────────────────────────────────────────────────────────────
   const pairsLeft = NUM_PAIRS - matched.size;
 
   return (
