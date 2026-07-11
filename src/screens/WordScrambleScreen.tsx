@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
-import { awardXP } from '../database/db';
+import { awardXP, recordWrongAnswer, scheduleWordReview } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -138,7 +138,10 @@ export default function WordScrambleScreen() {
       setSolved(true);
       playSound('correct');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (!missedThisWord.current) setFirstTrySolves((n) => n + 1);
+      if (!missedThisWord.current) {
+        setFirstTrySolves((n) => n + 1);
+        scheduleWordReview(word.id, true).catch(() => {});
+      }
       setTimeout(advance, 650);
     } else {
       setWrong(true);
@@ -146,6 +149,7 @@ export default function WordScrambleScreen() {
       doShake();
       playSound('wrong');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      recordWrongAnswer(word.id).catch(() => {});
       setTimeout(() => {
         setPlaced([]);
         setWrong(false);
@@ -173,7 +177,7 @@ export default function WordScrambleScreen() {
     setPlaced([]);
   };
 
-  // ── Finished ─────────────────────────────────────────────────────────────
+  // ── Finished ───────────────────────────────────────────────────────────────────
   if (phase === 'finished') {
     const total    = Math.max(words.length, 1);
     const accuracy = Math.round((firstTrySolves / total) * 100);
@@ -222,7 +226,7 @@ export default function WordScrambleScreen() {
     );
   }
 
-  // ── Playing ───────────────────────────────────────────────────────────────
+  // ── Playing ─────────────────────────────────────────────────────────────────────
   const slotColor = solved ? c.green : wrong ? c.red : c.indigo;
 
   return (
