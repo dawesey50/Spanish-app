@@ -39,6 +39,15 @@ export async function initDatabase(): Promise<void> {
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch { /* already exists */ }
   }
+  // Phase 64: mini-game best scores
+  await db.execAsync(`CREATE TABLE IF NOT EXISTS game_scores (
+    game_type TEXT NOT NULL,
+    context TEXT NOT NULL,
+    best_score INTEGER NOT NULL DEFAULT 0,
+    plays INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (game_type, context)
+  )`);
 }
 
 function getDb(): SQLite.SQLiteDatabase {
@@ -505,6 +514,45 @@ export async function toggleFavourite(wordId: string): Promise<boolean> {
   }
 }
 
+export type GameType = 'match' | 'speed' | 'scramble';
+
+// Record a finished mini-game; returns best-so-far so screens can show "New best!"
+export async function recordGameScore(
+  gameType: GameType,
+  context: string,
+  score: number
+): Promise<{ best: number; previousBest: number; isNewBest: boolean; plays: number }> {
+  const database = getDb();
+  const today = new Date().toISOString().split('T')[0];
+  const row = await database.getFirstAsync<{ best_score: number; plays: number }>(
+    'SELECT best_score, plays FROM game_scores WHERE game_type = ? AND context = ?',
+    [gameType, context]
+  );
+  const previousBest = row?.best_score ?? 0;
+  const plays = (row?.plays ?? 0) + 1;
+  const best = Math.max(previousBest, score);
+  await database.runAsync(
+    `INSERT INTO game_scores (game_type, context, best_score, plays, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(game_type, context) DO UPDATE SET best_score = ?, plays = ?, updated_at = ?`,
+    [gameType, context, best, plays, today, best, plays, today]
+  );
+  return { best, previousBest, isNewBest: plays > 1 && score > previousBest, plays };
+}
+
+// All bests keyed `${gameType}:${context}` — for checkpoint rows and stats
+export async function getGameBests(): Promise<Record<string, { best: number; plays: number }>> {
+  const rows = await getDb().getAllAsync<{
+    game_type: string;
+    context: string;
+    best_score: number;
+    plays: number;
+  }>('SELECT game_type, context, best_score, plays FROM game_scores');
+  return Object.fromEntries(
+    rows.map((r) => [`${r.game_type}:${r.context}`, { best: r.best_score, plays: r.plays }])
+  );
+}
+
 export async function completeDailyChallenge(): Promise<void> {
   const today = new Date().toISOString().split('T')[0];
   await getDb().runAsync(
@@ -527,4 +575,5 @@ export async function clearAllProgress(): Promise<void> {
   await database.runAsync('DELETE FROM weak_words');
   await database.runAsync('DELETE FROM achievements');
   await database.runAsync('DELETE FROM favourite_words');
+  await database.runAsync('DELETE FROM game_scores');
 }

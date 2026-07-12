@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
-import { awardXP, recordWrongAnswer, scheduleWordReview } from '../database/db';
+import { awardXP, recordWrongAnswer, scheduleWordReview, recordGameScore } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -67,6 +67,7 @@ export default function MiniGameScreen() {
   const [wrong,     setWrong]     = useState(false);
   const [phase,     setPhase]     = useState<'playing' | 'finished'>('playing');
   const [attempts,  setAttempts]  = useState(0);
+  const [bestInfo,  setBestInfo]  = useState<{ best: number; isNewBest: boolean } | null>(null);
 
   const shakeAnim  = useRef(new Animated.Value(0)).current;
   const scaleAnim  = useRef(new Animated.Value(0)).current;
@@ -82,7 +83,12 @@ export default function MiniGameScreen() {
   }, [scaleAnim]);
 
   useEffect(() => {
-    if (phase === 'finished') celebrate();
+    if (phase === 'finished') {
+      celebrate();
+      const accuracy = Math.round((NUM_PAIRS / Math.max(attempts, NUM_PAIRS)) * 100);
+      recordGameScore('match', sectionLabel, accuracy).then(setBestInfo).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, celebrate]);
 
   const doShake = () => {
@@ -176,7 +182,7 @@ export default function MiniGameScreen() {
     );
   };
 
-  // ── Finished ───────────────────────────────────────────────────────────────────
+  // ── Finished ───────────────────────────────────────────────────────────────────────────────
   if (phase === 'finished') {
     const accuracy = Math.round((NUM_PAIRS / Math.max(attempts, NUM_PAIRS)) * 100);
     return (
@@ -191,6 +197,13 @@ export default function MiniGameScreen() {
             <Text style={styles.finishedEmoji}>🎉</Text>
             <Text style={styles.finishedTitle}>Section Complete!</Text>
             <Text style={styles.finishedSub}>{sectionLabel} · Word Match</Text>
+            {bestInfo && (
+              <View style={[styles.bestPill, bestInfo.isNewBest && styles.bestPillNew]}>
+                <Text style={[styles.bestPillText, bestInfo.isNewBest && styles.bestPillTextNew]}>
+                  {bestInfo.isNewBest ? '🏆 New best score!' : `Best: ${bestInfo.best}%`}
+                </Text>
+              </View>
+            )}
             <View style={styles.finishedStats}>
               <View style={styles.finishedStat}>
                 <Text style={styles.finishedStatValue}>{NUM_PAIRS}/{NUM_PAIRS}</Text>
@@ -223,7 +236,7 @@ export default function MiniGameScreen() {
     );
   }
 
-  // ── Playing ─────────────────────────────────────────────────────────────────────
+  // ── Playing ───────────────────────────────────────────────────────────────────────────────────
   const pairsLeft = NUM_PAIRS - matched.size;
 
   return (
@@ -365,6 +378,15 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     marginTop: 4,
     width: '100%',
   },
+  bestPill: {
+    backgroundColor: c.indigoSoft,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  bestPillNew: { backgroundColor: '#FEF3C7' },
+  bestPillText: { fontSize: 12, fontWeight: '800', color: c.indigo },
+  bestPillTextNew: { color: '#D97706' },
   finishedStat: { flex: 1, alignItems: 'center', gap: 4 },
   finishedStatValue: { fontSize: 22, fontFamily: fonts.display, color: c.text },
   finishedStatLabel: { fontSize: 11, color: c.textMuted, fontWeight: '600' },
