@@ -95,6 +95,18 @@ export default function HomeScreen() {
   const completedToday = progress.lastChallengeDate === todayStr;
   const shieldUsedToday = progress.shieldUsedDate === todayStr;
 
+  // Arcade — word pool from every unlocked lesson
+  const arcadeWordIds = [...new Set(
+    UNITS.flatMap((u) => u.lessonIds)
+      .filter((lId) =>
+        progress.completedLessons.includes(lId) ||
+        progress.developerMode ||
+        isLessonUnlocked(lId, progress.completedLessons)
+      )
+      .flatMap((lId) => LESSONS_BY_ID[lId]?.wordIds ?? [])
+  )];
+  const arcadeReady = arcadeWordIds.length >= 8;
+
   // Word of the day — deterministic daily rotation
   const dayIndex = Math.floor(Date.now() / 86400000);
   const wotd = WORDS[dayIndex % WORDS.length];
@@ -130,7 +142,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ─── Indigo header ─────────────────────────────────────────────── */}
+      {/* ─── Indigo header ───────────────────────────────────────────── */}
       <LinearGradient
         colors={gradients.hero}
         start={{ x: 0, y: 0 }}
@@ -213,7 +225,7 @@ export default function HomeScreen() {
         )}
       </LinearGradient>
 
-      {/* ─── White content area ────────────────────────────────────────── */}
+      {/* ─── White content area ──────────────────────────────────────── */}
       <View style={styles.contentWrapper}>
         <ScrollView
           ref={scrollRef}
@@ -221,7 +233,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
         >
-          {/* ── Continue CTA ─────────────────────────────────────────── */}
+          {/* ── Continue CTA ─────────────────────────────────────── */}
           <FadeSlideIn index={0}>
             {nextLessonId ? (
               <PressableScale
@@ -257,7 +269,7 @@ export default function HomeScreen() {
             )}
           </FadeSlideIn>
 
-          {/* ── Quick Actions ─────────────────────────────────────────── */}
+          {/* ── Quick Actions ───────────────────────────────────── */}
           <FadeSlideIn index={1}>
             <View style={styles.quickRow}>
               <PressableScale
@@ -301,9 +313,45 @@ export default function HomeScreen() {
                 <Text style={styles.quickPillDesc}>Practice Spanish</Text>
               </PressableScale>
             </View>
+
+            {/* ── Arcade ─────────────────────────────────────────── */}
+            {arcadeReady && (
+              <View style={styles.arcadeCard}>
+                <View style={styles.arcadeHeader}>
+                  <Text style={styles.arcadeTitle}>🕹️  Arcade</Text>
+                  <Text style={styles.arcadeSub}>{arcadeWordIds.length} words unlocked</Text>
+                </View>
+                <View style={styles.arcadeRow}>
+                  <PressableScale
+                    style={styles.arcadeBtn}
+                    onPress={() => navigation.navigate('MiniGame', { wordIds: arcadeWordIds, sectionLabel: 'Your Words' })}
+                  >
+                    <Text style={styles.arcadeBtnIcon}>🎮</Text>
+                    <Text style={styles.arcadeBtnLabel}>Match</Text>
+                    <Text style={styles.arcadeBtnXP}>+30</Text>
+                  </PressableScale>
+                  <PressableScale
+                    style={styles.arcadeBtn}
+                    onPress={() => navigation.navigate('SpeedRound', { wordIds: arcadeWordIds, sectionLabel: 'Your Words' })}
+                  >
+                    <Text style={styles.arcadeBtnIcon}>⚡</Text>
+                    <Text style={styles.arcadeBtnLabel}>Speed</Text>
+                    <Text style={styles.arcadeBtnXP}>+40</Text>
+                  </PressableScale>
+                  <PressableScale
+                    style={styles.arcadeBtn}
+                    onPress={() => navigation.navigate('WordScramble', { wordIds: arcadeWordIds, sectionLabel: 'Your Words' })}
+                  >
+                    <Text style={styles.arcadeBtnIcon}>🔤</Text>
+                    <Text style={styles.arcadeBtnLabel}>Scramble</Text>
+                    <Text style={styles.arcadeBtnXP}>+35</Text>
+                  </PressableScale>
+                </View>
+              </View>
+            )}
           </FadeSlideIn>
 
-          {/* ── Word of the Day ───────────────────────────────────────── */}
+          {/* ── Word of the Day ─────────────────────────────────── */}
           <FadeSlideIn index={2}>
             <View style={styles.wotdCard}>
               <View style={styles.wotdHeader}>
@@ -324,7 +372,7 @@ export default function HomeScreen() {
             </View>
           </FadeSlideIn>
 
-          {/* ── Your Lessons ─────────────────────────────────────────── */}
+          {/* ── Your Lessons ─────────────────────────────────────── */}
           <FadeSlideIn index={3}>
             <Text style={styles.sectionTitle}>Your Lessons</Text>
             <UnitMap
@@ -347,7 +395,7 @@ export default function HomeScreen() {
             />
           </FadeSlideIn>
 
-          {/* ── Stats ────────────────────────────────────────────────── */}
+          {/* ── Stats ────────────────────────────────────────── */}
           <FadeSlideIn index={4}>
             <View style={styles.statsStrip}>
               <View style={styles.stripStat}>
@@ -381,7 +429,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg },
   loadingText: { fontSize: 16, color: c.textSecondary },
 
-  // ─── Header ───────────────────────────────────────────────────────────
+  // ─── Header ───────────────────────────────────────────────────────
   header: {
     backgroundColor: c.indigo,
     paddingHorizontal: 20,
@@ -476,7 +524,7 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   shieldBannerIcon: { fontSize: 18 },
   shieldBannerText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', flex: 1 },
 
-  // ─── Content ──────────────────────────────────────────────────────────
+  // ─── Content ──────────────────────────────────────────────────
   contentWrapper: {
     flex: 1,
     backgroundColor: c.bg,
@@ -532,6 +580,43 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
   quickPillDesc: { fontSize: 11, color: 'rgba(255,255,255,0.72)' },
   quickPillTitleDark: { color: '#065F46' },
   quickPillDescDark: { color: c.textSecondary },
+
+  // Arcade
+  arcadeCard: {
+    backgroundColor: c.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: 14,
+    marginBottom: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  arcadeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  arcadeTitle: { fontSize: 14, fontFamily: fonts.display, color: c.text },
+  arcadeSub: { fontSize: 11, color: c.textMuted, fontWeight: '600' },
+  arcadeRow: { flexDirection: 'row', gap: 10 },
+  arcadeBtn: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: isDark ? c.bg : '#F8FAFC',
+    borderWidth: 1,
+    borderColor: c.borderLight,
+  },
+  arcadeBtnIcon: { fontSize: 22 },
+  arcadeBtnLabel: { fontSize: 12, fontWeight: '700', color: c.text },
+  arcadeBtnXP: { fontSize: 10, fontWeight: '800', color: c.indigo },
 
   // Stats strip
   statsStrip: {
