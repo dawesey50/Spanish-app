@@ -10,7 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { getUserProgress, getXPHistory } from '../database/db';
+import { getUserProgress, getXPHistory, getGameBests } from '../database/db';
 import { getUserLevel } from '../utils/level';
 import { UNITS, LESSONS_BY_ID } from '../data/units';
 import type { UserProgress } from '../types';
@@ -33,7 +33,7 @@ const UNIT_IMAGES: Partial<Record<string, ReturnType<typeof require>>> = {
 const BAR_MAX = 80;
 const CAL_DAYS = 30;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────
 
 function labelDate(iso: string): string {
   const today = new Date().toISOString().split('T')[0];
@@ -56,7 +56,7 @@ function groupHistory(history: UserProgress['history']) {
   return Object.entries(map).sort(([a], [b]) => b.localeCompare(a)).slice(0, 8);
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────
+// ─── Sub-components ────────────────────────────────────────────────
 
 function StatCard({ emoji, value, label, sub, tint }: {
   emoji: string; value: string; label: string; sub?: string; tint: string;
@@ -146,7 +146,7 @@ function XPChart({ data, goalXP }: { data: { date: string; xp: number }[]; goalX
   );
 }
 
-// ─── Main screen ─────────────────────────────────────────────────────────
+// ─── Main screen ─────────────────────────────────────────────────────
 
 export default function ProgressScreen() {
   const navigation = useNavigation<any>();
@@ -155,10 +155,11 @@ export default function ProgressScreen() {
   const [progress, setProgress]   = useState<UserProgress | null>(null);
   const [weekXP, setWeekXP]       = useState<{ date: string; xp: number }[]>([]);
   const [monthXP, setMonthXP]     = useState<{ date: string; xp: number }[]>([]);
+  const [gameBests, setGameBests] = useState<Record<string, { best: number; plays: number }>>({});
 
   useFocusEffect(useCallback(() => {
-    Promise.all([getUserProgress(), getXPHistory(7), getXPHistory(CAL_DAYS)]).then(
-      ([p, week, month]) => { setProgress(p); setWeekXP(week); setMonthXP(month); }
+    Promise.all([getUserProgress(), getXPHistory(7), getXPHistory(CAL_DAYS), getGameBests()]).then(
+      ([p, week, month, bests]) => { setProgress(p); setWeekXP(week); setMonthXP(month); setGameBests(bests); }
     );
   }, []));
 
@@ -190,6 +191,21 @@ export default function ProgressScreen() {
   const startDay  = new Date(`${last30[0]}T12:00:00`).getDay(); // 0=Sun
 
   const histGroups = groupHistory(progress.history);
+
+  // Arcade aggregates — max best / total plays per game type across contexts
+  const gameAgg = (type: string) =>
+    Object.entries(gameBests)
+      .filter(([k]) => k.startsWith(`${type}:`))
+      .reduce(
+        (acc, [, v]) => ({ best: Math.max(acc.best, v.best), plays: acc.plays + v.plays }),
+        { best: 0, plays: 0 }
+      );
+  const ARCADE_GAMES = [
+    { key: 'match',    icon: '🎮', name: 'Word Match' },
+    { key: 'speed',    icon: '⚡', name: 'Speed Round' },
+    { key: 'scramble', icon: '🔤', name: 'Word Scramble' },
+  ];
+  const totalGamePlays = ARCADE_GAMES.reduce((s, g) => s + gameAgg(g.key).plays, 0);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -244,7 +260,7 @@ export default function ProgressScreen() {
 
         <View style={styles.body}>
 
-          {/* ─── Stats grid ──────────────────────────────────────── */}
+          {/* ─── Stats grid ────────────────────────────────────── */}
           <FadeSlideIn index={0}>
           <View style={styles.statsGrid}>
             <StatCard emoji="🔥" value={String(progress.streak)} label="Streak"
@@ -261,12 +277,12 @@ export default function ProgressScreen() {
           </View>
           </FadeSlideIn>
 
-          {/* ─── XP chart ────────────────────────────────────────── */}
+          {/* ─── XP chart ──────────────────────────────────────── */}
           <FadeSlideIn index={1}>
             <XPChart data={weekXP} goalXP={progress.dailyGoalXP} />
           </FadeSlideIn>
 
-          {/* ─── 30-day calendar ─────────────────────────────────── */}
+          {/* ─── 30-day calendar ───────────────────────────────── */}
           <FadeSlideIn index={2}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -325,7 +341,7 @@ export default function ProgressScreen() {
 
           </FadeSlideIn>
 
-          {/* ─── Unit mastery ────────────────────────────────────── */}
+          {/* ─── Unit mastery ──────────────────────────────────── */}
           <FadeSlideIn index={3}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -370,8 +386,53 @@ export default function ProgressScreen() {
 
           </FadeSlideIn>
 
-          {/* ─── Review shortcut ─────────────────────────────────── */}
+          {/* ─── Arcade records ────────────────────────────────── */}
           <FadeSlideIn index={4}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Arcade Records</Text>
+              <Text style={styles.sectionSub}>
+                {totalGamePlays > 0
+                  ? `${totalGamePlays} game${totalGamePlays !== 1 ? 's' : ''} played`
+                  : 'No games yet'}
+              </Text>
+            </View>
+            {totalGamePlays === 0 ? (
+              <View style={styles.emptyHistory}>
+                <Text style={styles.emptyHistoryText}>
+                  Play mini-games from the Home screen Arcade to set records here.
+                </Text>
+              </View>
+            ) : (
+              ARCADE_GAMES.map((g) => {
+                const agg = gameAgg(g.key);
+                return (
+                  <View key={g.key} style={styles.gameRow}>
+                    <View style={styles.gameIconWrap}>
+                      <Text style={styles.gameIcon}>{g.icon}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.gameName}>{g.name}</Text>
+                      <Text style={styles.gamePlays}>
+                        {agg.plays > 0
+                          ? `${agg.plays} play${agg.plays !== 1 ? 's' : ''}`
+                          : 'Not played yet'}
+                      </Text>
+                    </View>
+                    {agg.plays > 0 ? (
+                      <ScoreRing score={agg.best} />
+                    ) : (
+                      <Text style={styles.gameNoScore}>—</Text>
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </View>
+          </FadeSlideIn>
+
+          {/* ─── Review shortcut ───────────────────────────────── */}
+          <FadeSlideIn index={5}>
           {progress.weakWords.length > 0 && (
             <TouchableOpacity
               style={styles.reviewBanner}
@@ -390,8 +451,8 @@ export default function ProgressScreen() {
           )}
           </FadeSlideIn>
 
-          {/* ─── Lesson history ──────────────────────────────────── */}
-          <FadeSlideIn index={5}>
+          {/* ─── Lesson history ────────────────────────────────── */}
+          <FadeSlideIn index={6}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Lesson History</Text>
@@ -659,6 +720,29 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     overflow: 'hidden',
   },
   unitFill: { height: '100%', borderRadius: radius.pill },
+
+  // Arcade records
+  gameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.borderLight,
+  },
+  gameIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: c.indigoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gameIcon: { fontSize: 18 },
+  gameName: { fontSize: 14, fontWeight: '700', color: c.text },
+  gamePlays: { fontSize: 11, color: c.textMuted, fontWeight: '600', marginTop: 2 },
+  gameNoScore: { fontSize: 14, color: c.textMuted, fontWeight: '700', paddingHorizontal: 10 },
 
   // Review banner
   reviewBanner: {
