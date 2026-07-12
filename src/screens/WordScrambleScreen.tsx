@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WORDS_BY_ID } from '../data/words';
 import { playSound } from '../utils/sounds';
-import { awardXP, recordWrongAnswer, scheduleWordReview } from '../database/db';
+import { awardXP, recordWrongAnswer, scheduleWordReview, recordGameScore } from '../database/db';
 import { fonts, gradients, radius, shadows, type ThemeColors } from '../theme';
 import { useTheme, useThemedStyles } from '../ThemeContext';
 import type { RootStackParamList } from '../types';
@@ -87,6 +87,7 @@ export default function WordScrambleScreen() {
   const [solved, setSolved] = useState(false);
   const [phase,  setPhase]  = useState<'playing' | 'finished'>(words.length > 0 ? 'playing' : 'finished');
   const [firstTrySolves, setFirstTrySolves] = useState(0);
+  const [bestInfo, setBestInfo] = useState<{ best: number; isNewBest: boolean } | null>(null);
   const missedThisWord = useRef(false);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -103,6 +104,8 @@ export default function WordScrambleScreen() {
         xpAwarded.current = true;
         const earned = Math.max(10, Math.round((firstTrySolves / words.length) * XP_SCRAMBLE));
         awardXP(earned).catch(() => {});
+        const accuracy = Math.round((firstTrySolves / words.length) * 100);
+        recordGameScore('scramble', sectionLabel, accuracy).then(setBestInfo).catch(() => {});
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +180,7 @@ export default function WordScrambleScreen() {
     setPlaced([]);
   };
 
-  // ── Finished ───────────────────────────────────────────────────────────────────
+  // ── Finished ───────────────────────────────────────────────────────────────────────────────
   if (phase === 'finished') {
     const total    = Math.max(words.length, 1);
     const accuracy = Math.round((firstTrySolves / total) * 100);
@@ -194,6 +197,13 @@ export default function WordScrambleScreen() {
             <Text style={styles.finishedEmoji}>🔤</Text>
             <Text style={styles.finishedTitle}>Scramble Solved!</Text>
             <Text style={styles.finishedSub}>{sectionLabel} · Word Scramble</Text>
+            {bestInfo && (
+              <View style={[styles.bestPill, bestInfo.isNewBest && styles.bestPillNew]}>
+                <Text style={[styles.bestPillText, bestInfo.isNewBest && styles.bestPillTextNew]}>
+                  {bestInfo.isNewBest ? '🏆 New best score!' : `Best: ${bestInfo.best}%`}
+                </Text>
+              </View>
+            )}
             <View style={styles.finishedStats}>
               <View style={styles.finishedStat}>
                 <Text style={styles.finishedStatValue}>{words.length}</Text>
@@ -226,7 +236,7 @@ export default function WordScrambleScreen() {
     );
   }
 
-  // ── Playing ─────────────────────────────────────────────────────────────────────
+  // ── Playing ───────────────────────────────────────────────────────────────────────────────────
   const slotColor = solved ? c.green : wrong ? c.red : c.indigo;
 
   return (
@@ -507,6 +517,15 @@ const createStyles = (c: ThemeColors, isDark: boolean) => StyleSheet.create({
     marginTop: 4,
     width: '100%',
   },
+  bestPill: {
+    backgroundColor: c.indigoSoft,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  bestPillNew: { backgroundColor: '#FEF3C7' },
+  bestPillText: { fontSize: 12, fontWeight: '800', color: c.indigo },
+  bestPillTextNew: { color: '#D97706' },
   finishedStat:      { flex: 1, alignItems: 'center', gap: 4 },
   finishedStatValue: { fontSize: 22, fontFamily: fonts.display, color: c.text },
   finishedStatLabel: { fontSize: 11, color: c.textMuted, fontWeight: '600' },
